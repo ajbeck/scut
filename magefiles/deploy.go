@@ -12,13 +12,11 @@ import (
 	"github.com/magefile/mage/sh"
 )
 
-const localBinDir = "../../../616a/bin"
-
-// LocalDeploy builds the binary and copies it to the local bin directory.
-func LocalDeploy(ctx context.Context) error {
+// LocalDeploy builds the binary and copies it to the given directory.
+func LocalDeploy(ctx context.Context, dest string) error {
 	mg.CtxDeps(ctx, Build)
 	src := filepath.Join(buildDir, binaryName)
-	dst := filepath.Join(localBinDir, binaryName)
+	dst := filepath.Join(dest, binaryName)
 	if err := sh.Run("cp", src, dst); err != nil {
 		return err
 	}

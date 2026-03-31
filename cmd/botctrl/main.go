@@ -15,7 +15,7 @@ import (
 
 type cli struct {
 	Version versionFlag `name:"version" help:"Print version and exit." short:"v"`
-	Hook    hook.Cmd    `cmd:"hook" help:"Hook handlers for AI coding assistants."`
+	Hook    hook.Cmd    `cmd:"hook" help:"Hook event handlers. Called by AI coding agents as subprocesses during their lifecycle."`
 }
 
 // versionFlag is a kong flag type that prints the version and exits.
@@ -31,11 +31,16 @@ func main() {
 	var c cli
 	ctx := kong.Parse(&c,
 		kong.Name("botctrl"),
-		kong.Description("CLI tool for managing AI coding assistants."),
+		kong.Description("CLI tool for managing AI coding agents. Called as a subprocess by agent hooks — reads JSON from stdin, writes JSON to stdout."),
 		kong.Vars{"version": version.String()},
 		kong.BindTo(os.Stdin, (*io.Reader)(nil)),
 		kong.BindTo(os.Stdout, (*io.Writer)(nil)),
 		kong.BindTo(afero.NewOsFs(), (*afero.Fs)(nil)),
+		kong.HelpOptions{
+			NoExpandSubcommands: true,
+			FlagsLast:           true,
+			Compact:             true,
+		},
 	)
 	ctx.FatalIfErrorf(ctx.Run())
 }

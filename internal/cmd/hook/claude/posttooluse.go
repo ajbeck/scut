@@ -14,6 +14,13 @@ import (
 
 type postToolUseCmd struct{}
 
+func (c *postToolUseCmd) Help() string {
+	return `Formats files in place after successful Write or Edit tool calls.
+Dispatches by file extension: .go files are formatted with gofmt,
+.md and .mdx files are formatted with goldmark-prettier-markdown.
+Files with other extensions or syntax errors are left unchanged.`
+}
+
 func (c *postToolUseCmd) Run(stdin io.Reader, stdout io.Writer, fs afero.Fs) error {
 	var in cc.PostToolUseInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {

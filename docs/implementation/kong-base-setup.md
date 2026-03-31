@@ -22,6 +22,7 @@ func main() {
         kong.Vars{"version": version.String()},
         kong.BindTo(os.Stdin, (*io.Reader)(nil)),
         kong.BindTo(os.Stdout, (*io.Writer)(nil)),
+        kong.BindTo(afero.NewOsFs(), (*afero.Fs)(nil)),
     )
     ctx.FatalIfErrorf(ctx.Run())
 }
@@ -39,6 +40,7 @@ Current bindings registered at parse time:
 |---------|-----------|----------------|---------|
 | `kong.BindTo(os.Stdin, (*io.Reader)(nil))` | `io.Reader` | `os.Stdin` | Commands read input (e.g., hook JSON payloads) from stdin |
 | `kong.BindTo(os.Stdout, (*io.Writer)(nil))` | `io.Writer` | `os.Stdout` | Commands write output (e.g., hook JSON responses) to stdout |
+| `kong.BindTo(afero.NewOsFs(), (*afero.Fs)(nil))` | `afero.Fs` | `afero.OsFs` | Commands that need filesystem access (e.g., post-tool-use formatting) |
 
 The `(*io.Reader)(nil)` syntax is a nil pointer used only for its type — Kong reflects on it to determine the interface. The concrete value (`os.Stdin`) is what gets injected at runtime.
 

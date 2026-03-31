@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/alecthomas/kong"
+	"github.com/spf13/afero"
 
 	"github.com/ajbeck/botctrl/internal/cmd/hook"
 	"github.com/ajbeck/botctrl/internal/version"
@@ -34,6 +35,7 @@ func main() {
 		kong.Vars{"version": version.String()},
 		kong.BindTo(os.Stdin, (*io.Reader)(nil)),
 		kong.BindTo(os.Stdout, (*io.Writer)(nil)),
+		kong.BindTo(afero.NewOsFs(), (*afero.Fs)(nil)),
 	)
 	ctx.FatalIfErrorf(ctx.Run())
 }

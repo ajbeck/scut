@@ -272,6 +272,21 @@ type PostToolUseInput struct {
 	ToolResponse json.RawMessage `json:"tool_response"`
 }
 
+// FilePath extracts the file_path field from ToolInput.
+// Returns an empty string if the field is absent, empty, or not a string.
+func (in *PostToolUseInput) FilePath() string {
+	if len(in.ToolInput) == 0 {
+		return ""
+	}
+	var ti struct {
+		FilePath string `json:"file_path"`
+	}
+	if err := json.Unmarshal(in.ToolInput, &ti); err != nil {
+		return ""
+	}
+	return ti.FilePath
+}
+
 // PostToolUseFailureInput is sent after a tool call fails.
 type PostToolUseFailureInput struct {
 	Input

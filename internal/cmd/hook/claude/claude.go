@@ -126,22 +126,6 @@ func (c *preToolUseCmd) Run(stdin io.Reader, stdout io.Writer) error {
 }
 
 // ---------------------------------------------------------------------------
-// PostToolUse
-// ---------------------------------------------------------------------------
-
-type postToolUseCmd struct{}
-
-func (c *postToolUseCmd) Run(stdin io.Reader, stdout io.Writer) error {
-	var in cc.PostToolUseInput
-	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
-		return fmt.Errorf("decoding PostToolUse input: %w", err)
-	}
-	return writeJSON(stdout, cc.PostToolUseOutput{
-		AdditionalContext: new("hello from botctrl post-tool-use"),
-	})
-}
-
-// ---------------------------------------------------------------------------
 // PostToolUseFailure
 // ---------------------------------------------------------------------------
 

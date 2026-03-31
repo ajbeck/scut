@@ -1,6 +1,6 @@
 # botctrl
 
-CLI tool for managing AI coding assistants like Claude Code.
+CLI tool to be used by LLM agents via hooks, rules and instructions. Provides a consistent interface for agent authors to interact with tools, the environment, and each other.
 
 ## Architecture
 
@@ -35,15 +35,19 @@ We use `encoding/json/v2` (the new JSON package). This requires:
 
 Implementation docs live in `docs/implementation/`. Each document covers a specific subsystem or design decision.
 
-| Document | Covers |
-|----------|--------|
-| [kong-base-setup.md](docs/implementation/kong-base-setup.md) | Kong CLI framework setup, BindTo dependency injection, command tree structure, how to add commands and groups |
+| Document                                                               | Covers                                                                                                                 |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| [kong-base-setup.md](docs/implementation/kong-base-setup.md)           | Kong CLI framework setup, BindTo dependency injection, command tree structure, how to add commands and groups          |
+| [claude-hook-commands.md](docs/implementation/claude-hook-commands.md) | Claude Code hook subcommands, event types, input/output types, decision control per event, shared types package design |
+| [post-tool-use.md](docs/implementation/post-tool-use.md)               | PostToolUse hook deep-dive — input/output fields, decision control, MCP output replacement, code locations             |
 
 ### Commit-time documentation check
 
 **Before every commit**, check whether any changed files are covered by a document in the index above. Matching rules:
 
 - `cmd/botctrl/main.go` or `internal/cmd/**` changes → review `kong-base-setup.md`
+- `hooks/claudecode/**` or `internal/cmd/hook/claude/**` changes → review `claude-hook-commands.md`
+- `internal/cmd/hook/claude/posttooluse.go` or `PostToolUseInput`/`PostToolUseOutput` changes → review `post-tool-use.md`
 - Any new `docs/implementation/*.md` file → add it to the index table above
 
 If a matching document exists and the commit changes behavior it describes (new bindings, new command groups, changed struct tags, altered command tree layout), update the document to reflect the current state **in the same commit**.

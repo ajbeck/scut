@@ -1,0 +1,39 @@
+// The botctrl command is a CLI tool for managing AI coding assistants.
+package main
+
+import (
+	"fmt"
+	"io"
+	"os"
+
+	"github.com/alecthomas/kong"
+
+	"github.com/ajbeck/botctrl/internal/cmd/hook"
+	"github.com/ajbeck/botctrl/internal/version"
+)
+
+type cli struct {
+	Version versionFlag `name:"version" help:"Print version and exit." short:"v"`
+	Hook    hook.Cmd    `cmd:"hook" help:"Hook handlers for AI coding assistants."`
+}
+
+// versionFlag is a kong flag type that prints the version and exits.
+type versionFlag bool
+
+func (v versionFlag) BeforeReset(app *kong.Kong, vars kong.Vars) error {
+	fmt.Fprintln(app.Stdout, vars["version"])
+	app.Exit(0)
+	return nil
+}
+
+func main() {
+	var c cli
+	ctx := kong.Parse(&c,
+		kong.Name("botctrl"),
+		kong.Description("CLI tool for managing AI coding assistants."),
+		kong.Vars{"version": version.String()},
+		kong.BindTo(os.Stdin, (*io.Reader)(nil)),
+		kong.BindTo(os.Stdout, (*io.Writer)(nil)),
+	)
+	ctx.FatalIfErrorf(ctx.Run())
+}

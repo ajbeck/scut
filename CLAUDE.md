@@ -23,6 +23,20 @@ Target version is **Go 1.26**. Use these features where appropriate:
 - `io.ReadAll()` is faster and allocates less.
 - `bytes.Buffer.Peek(n)` — read without advancing.
 
+## Mage Targets
+
+**DO NOT run `go test`, `go build`, `go vet`, or `gofmt` directly.** Always use the corresponding Mage target. Magefiles set `GOEXPERIMENT=jsonv2` and other required environment configuration automatically. Running Go toolchain commands directly will produce incorrect results or miss build tags.
+
+| Command | What it does |
+|---------|-------------|
+| `mage test` | Run all tests with race detector (`go test -race ./...`) |
+| `mage build` | Compile binary into `bin/` with version ldflags |
+| `mage vet` | Run `go vet` across all packages |
+| `mage fmt` | Run `gofmt -w` on all source files |
+| `mage localDeploy` | Build and copy binary to local bin directory |
+
+This applies to all contexts: manual terminal use, CI, agent tool calls, and hook scripts. If you need to run tests for a single package, use `mage test` — do not construct a `go test` invocation yourself.
+
 ## JSON v2
 
 We use `encoding/json/v2` (the new JSON package). This requires:

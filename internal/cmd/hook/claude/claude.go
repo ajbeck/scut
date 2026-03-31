@@ -11,31 +11,31 @@ import (
 
 // Cmd is the Kong command group for "botctrl hook claude".
 type Cmd struct {
-	SessionStart       sessionStartCmd       `cmd:"session-start" help:"Handle SessionStart events."`
-	SessionEnd         sessionEndCmd         `cmd:"session-end" help:"Handle SessionEnd events."`
-	InstructionsLoaded instructionsLoadedCmd `cmd:"instructions-loaded" help:"Handle InstructionsLoaded events."`
-	UserPromptSubmit   userPromptSubmitCmd   `cmd:"user-prompt-submit" help:"Handle UserPromptSubmit events."`
-	PreToolUse         preToolUseCmd         `cmd:"pre-tool-use" help:"Handle PreToolUse events."`
-	PostToolUse        postToolUseCmd        `cmd:"post-tool-use" help:"Handle PostToolUse events."`
-	PostToolUseFailure postToolUseFailureCmd `cmd:"post-tool-use-failure" help:"Handle PostToolUseFailure events."`
-	PermissionRequest  permissionRequestCmd  `cmd:"permission-request" help:"Handle PermissionRequest events."`
-	Notification       notificationCmd       `cmd:"notification" help:"Handle Notification events."`
-	SubagentStart      subagentStartCmd      `cmd:"subagent-start" help:"Handle SubagentStart events."`
-	SubagentStop       subagentStopCmd       `cmd:"subagent-stop" help:"Handle SubagentStop events."`
-	Stop               stopCmd               `cmd:"stop" help:"Handle Stop events."`
-	StopFailure        stopFailureCmd        `cmd:"stop-failure" help:"Handle StopFailure events."`
-	TaskCreated        taskCreatedCmd        `cmd:"task-created" help:"Handle TaskCreated events."`
-	TaskCompleted      taskCompletedCmd      `cmd:"task-completed" help:"Handle TaskCompleted events."`
-	TeammateIdle       teammateIdleCmd       `cmd:"teammate-idle" help:"Handle TeammateIdle events."`
-	ConfigChange       configChangeCmd       `cmd:"config-change" help:"Handle ConfigChange events."`
-	CwdChanged         cwdChangedCmd         `cmd:"cwd-changed" help:"Handle CwdChanged events."`
-	FileChanged        fileChangedCmd        `cmd:"file-changed" help:"Handle FileChanged events."`
-	WorktreeCreate     worktreeCreateCmd     `cmd:"worktree-create" help:"Handle WorktreeCreate events."`
-	WorktreeRemove     worktreeRemoveCmd     `cmd:"worktree-remove" help:"Handle WorktreeRemove events."`
-	PreCompact         preCompactCmd         `cmd:"pre-compact" help:"Handle PreCompact events."`
-	PostCompact        postCompactCmd        `cmd:"post-compact" help:"Handle PostCompact events."`
-	Elicitation        elicitationCmd        `cmd:"elicitation" help:"Handle Elicitation events."`
-	ElicitationResult  elicitationResultCmd  `cmd:"elicitation-result" help:"Handle ElicitationResult events."`
+	SessionStart       sessionStartCmd       `cmd:"session-start" help:"Inject context when a session begins or resumes."`
+	SessionEnd         sessionEndCmd         `cmd:"session-end" help:"Record session termination."`
+	InstructionsLoaded instructionsLoadedCmd `cmd:"instructions-loaded" help:"Record when a CLAUDE.md or rules file is loaded."`
+	UserPromptSubmit   userPromptSubmitCmd   `cmd:"user-prompt-submit" help:"Validate or annotate user prompts before processing."`
+	PreToolUse         preToolUseCmd         `cmd:"pre-tool-use" help:"Allow, deny, or modify tool calls before execution."`
+	PostToolUse        postToolUseCmd        `cmd:"post-tool-use" help:"Format files after successful write or edit tool calls."`
+	PostToolUseFailure postToolUseFailureCmd `cmd:"post-tool-use-failure" help:"Record context after a tool call fails."`
+	PermissionRequest  permissionRequestCmd  `cmd:"permission-request" help:"Auto-approve or deny permission prompts."`
+	Notification       notificationCmd       `cmd:"notification" help:"Record agent notifications."`
+	SubagentStart      subagentStartCmd      `cmd:"subagent-start" help:"Inject context when a subagent is spawned."`
+	SubagentStop       subagentStopCmd       `cmd:"subagent-stop" help:"Allow or block subagent termination."`
+	Stop               stopCmd               `cmd:"stop" help:"Allow or block agent turn completion."`
+	StopFailure        stopFailureCmd        `cmd:"stop-failure" help:"Record API errors that ended a turn."`
+	TaskCreated        taskCreatedCmd        `cmd:"task-created" help:"Validate or block task creation."`
+	TaskCompleted      taskCompletedCmd      `cmd:"task-completed" help:"Validate or block task completion."`
+	TeammateIdle       teammateIdleCmd       `cmd:"teammate-idle" help:"Decide whether an idle teammate should continue."`
+	ConfigChange       configChangeCmd       `cmd:"config-change" help:"Allow or block configuration changes."`
+	CwdChanged         cwdChangedCmd         `cmd:"cwd-changed" help:"React to working directory changes."`
+	FileChanged        fileChangedCmd        `cmd:"file-changed" help:"React to watched file changes on disk."`
+	WorktreeCreate     worktreeCreateCmd     `cmd:"worktree-create" help:"Provide a custom worktree path."`
+	WorktreeRemove     worktreeRemoveCmd     `cmd:"worktree-remove" help:"Record worktree removal."`
+	PreCompact         preCompactCmd         `cmd:"pre-compact" help:"Record before context compaction begins."`
+	PostCompact        postCompactCmd        `cmd:"post-compact" help:"Record after context compaction completes."`
+	Elicitation        elicitationCmd        `cmd:"elicitation" help:"Accept, decline, or cancel MCP user input requests."`
+	ElicitationResult  elicitationResultCmd  `cmd:"elicitation-result" help:"Validate or modify MCP elicitation responses."`
 }
 
 // writeJSON encodes v as JSON to w.

@@ -212,10 +212,18 @@ func writeDirtyIndicators(b *strings.Builder, staged, unstaged int) {
 // ---------------------------------------------------------------------------
 
 // Bar configuration.
-const barWidth = 15
+const (
+	barWidth = 15
+	fillArea = barWidth - 1 // characters available for fill (last char is the compaction marker)
+)
 
 // nullBar is the muted bar shown before the first API call.
-var nullBar = mutedStyle.Render(strings.Repeat("░", barWidth) + " –")
+var nullBar = mutedStyle.Render(strings.Repeat("░", fillArea)) +
+	markerStyle.Render("│") +
+	mutedStyle.Render(" –")
+
+// Compaction marker style — always error red.
+var markerStyle = lipgloss.NewStyle().Foreground(colorError)
 
 // Context bar accent styles — one per threshold.
 var (
@@ -227,16 +235,16 @@ var (
 // Half-block transition styles — FG = accent, BG = slate.
 // The ▌ character fills the left half of the cell in the foreground colour;
 // the right half shows the background colour. This eliminates the black-gap
-// artefact of partial-width blocks while giving 2× resolution (30 fill levels).
+// artefact of partial-width blocks while giving 2× resolution.
 var (
 	halfStyleMint    = lipgloss.NewStyle().Foreground(colorMint).Background(colorSlate)
 	halfStyleWarning = lipgloss.NewStyle().Foreground(colorWarning).Background(colorSlate)
 	halfStyleError   = lipgloss.NewStyle().Foreground(colorError).Background(colorSlate)
 )
 
-// renderContextBar returns a styled two-tone 15-character progress bar with percentage.
-// Uses ▌ (left half-block) with FG+BG colours for sub-character resolution — 30
-// distinct fill levels in 15 characters with no black-gap artefacts.
+// renderContextBar returns a styled 15-character progress bar with percentage.
+// The first 14 characters are fill area (28 half-block levels). The 15th
+// character is a fixed red │ marking the ~95% auto-compaction threshold.
 // Colour shifts by threshold: mint <70%, warning 70–89%, error 90%+.
 // When pct is nil (before first API call), returns a muted empty bar.
 func renderContextBar(pct *float64) string {
@@ -246,12 +254,11 @@ func renderContextBar(pct *float64) string {
 
 	p := min(max(int(math.Round(*pct)), 0), 100)
 
-	// Compute filled/half/empty character counts.
-	// Each character has 2 states (empty, full), plus a half-block transition.
-	halves := p * barWidth * 2 / 100
+	// Compute filled/half/empty within the 14-char fill area.
+	halves := p * fillArea * 2 / 100
 	full := halves / 2
 	half := halves % 2
-	empty := barWidth - full
+	empty := fillArea - full
 	if half > 0 {
 		empty--
 	}
@@ -286,6 +293,9 @@ func renderContextBar(pct *float64) string {
 	if empty > 0 {
 		b.WriteString(mutedStyle.Render(strings.Repeat("░", empty)))
 	}
+
+	// Compaction marker: fixed red │ at the ~95% threshold.
+	b.WriteString(markerStyle.Render("│"))
 
 	// Percentage label in accent colour.
 	b.WriteByte(' ')

@@ -40,6 +40,20 @@ func TestRenderContextBar_Nil(t *testing.T) {
 	}
 }
 
+func TestRenderContextBar_MarkerAlwaysPresent(t *testing.T) {
+	// The compaction marker │ must appear at every percentage and at nil.
+	for p := range 101 {
+		pct := float64(p)
+		result := renderContextBar(&pct)
+		if !strings.Contains(result, "│") {
+			t.Errorf("marker missing at %d%%", p)
+		}
+	}
+	if !strings.Contains(renderContextBar(nil), "│") {
+		t.Error("marker missing in nil bar")
+	}
+}
+
 func TestRenderContextBar_Boundaries(t *testing.T) {
 	for _, tc := range []struct {
 		pct       float64
@@ -47,9 +61,9 @@ func TestRenderContextBar_Boundaries(t *testing.T) {
 		wantEmpty int
 		wantHalf  int
 	}{
-		{0, 0, barWidth, 0},
-		{100, barWidth, 0, 0},
-		{50, 7, 7, 1}, // 50*15*2/100=15, full=7, half=1, empty=7
+		{0, 0, fillArea, 0},
+		{100, fillArea, 0, 0},
+		{50, 7, 7, 0}, // 50*14*2/100=14, full=7, half=0, empty=7
 	} {
 		t.Run(fmt.Sprintf("%d%%", int(tc.pct)), func(t *testing.T) {
 			pct := tc.pct
@@ -79,7 +93,6 @@ func TestRenderContextBar_AllPercentages(t *testing.T) {
 		if result == "" {
 			t.Fatalf("empty result at %d%%", p)
 		}
-		// Count full blocks + half blocks as "fill progress".
 		fillCount := strings.Count(result, "█") + strings.Count(result, "▌")
 		if fillCount < prevFull {
 			t.Errorf("fill decreased from %d to %d at %d%%", prevFull, fillCount, p)

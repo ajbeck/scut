@@ -312,12 +312,19 @@ const (
 
 // nullBar is the muted bar shown before the first API call.
 var nullBar = mutedStyle.Render(strings.Repeat("█", preFill)) +
-	markerStyle.Render("│") +
+	markerOnSlate.Render("│") +
 	mutedStyle.Render(strings.Repeat("█", postFill)) +
 	mutedStyle.Render(" –")
 
-// Compaction marker style — always error red.
-var markerStyle = lipgloss.NewStyle().Foreground(colorError)
+// Compaction marker styles — red │ with a background that matches
+// the surrounding bar segment (accent when in filled territory, slate
+// when in unfilled territory).
+var (
+	markerOnSlate   = lipgloss.NewStyle().Foreground(colorError).Background(colorSlate)
+	markerOnMint    = lipgloss.NewStyle().Foreground(colorError).Background(colorMint)
+	markerOnWarning = lipgloss.NewStyle().Foreground(colorError).Background(colorWarning)
+	markerOnError   = lipgloss.NewStyle().Foreground(colorError).Background(colorError)
+)
 
 // Context bar accent styles — one per threshold.
 var (
@@ -357,32 +364,35 @@ func renderContextBar(pct *float64) string {
 		empty--
 	}
 
-	// Pick accent + half-block styles by threshold.
-	var accent, halfAccent lipgloss.Style
+	// Pick accent + half-block + marker styles by threshold.
+	var accent, halfAccent, markerFilled lipgloss.Style
 	switch {
 	case p >= compactionThreshold:
 		accent = barStyleError
 		halfAccent = halfStyleError
+		markerFilled = markerOnError
 	case p >= 70:
 		accent = barStyleWarning
 		halfAccent = halfStyleWarning
+		markerFilled = markerOnWarning
 	default:
 		accent = barStyleMint
 		halfAccent = halfStyleMint
+		markerFilled = markerOnMint
 	}
 
-	// Render the fill area as a flat sequence, then split at markerPos
-	// to insert the compaction marker.
-	chars := full + half + empty // should equal fillArea
-	_ = chars
-
 	// Build the bar by walking through each character position.
-	// At markerPos, insert the red │ instead of a fill character.
+	// At markerPos, insert the red │ with a background matching
+	// whether the fill has reached that point.
 	var b strings.Builder
 	fillIdx := 0 // how many fill characters we've emitted
 	for pos := range barWidth {
 		if pos == markerPos {
-			b.WriteString(markerStyle.Render("│"))
+			if fillIdx < full {
+				b.WriteString(markerFilled.Render("│"))
+			} else {
+				b.WriteString(markerOnSlate.Render("│"))
+			}
 			continue
 		}
 		if fillIdx < full {

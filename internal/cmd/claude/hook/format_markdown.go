@@ -5,7 +5,6 @@ import (
 
 	prettier "github.com/ajbeck/goldmark-prettier-markdown"
 	"github.com/yuin/goldmark"
-	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/renderer"
 	"github.com/yuin/goldmark/util"
 )
@@ -14,7 +13,6 @@ import (
 // Returns nil, nil if the source cannot be parsed (decline to format).
 func formatMarkdown(src []byte) ([]byte, error) {
 	md := goldmark.New(
-		goldmark.WithExtensions(extension.GFM),
 		goldmark.WithRenderer(
 			renderer.NewRenderer(
 				renderer.WithNodeRenderers(

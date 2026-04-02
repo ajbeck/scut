@@ -23,6 +23,7 @@ Context bar <70%      Mint       #00D97F    lipgloss.Color("#00D97F")
 Context bar 70–89%    Warning    #E9A512    lipgloss.Color("#E9A512")
 Context bar 90%+      Error      #F03E3E    lipgloss.Color("#F03E3E")
 Context bar unfilled  Slate      #6C757D    lipgloss.Color("#6C757D")
+Compaction marker     Error      #F03E3E    lipgloss.Color("#F03E3E")
 ```
 
 All colours are specified as true-colour hex values via `lipgloss.Color`. In lipgloss v2, `Render()` always emits true-colour ANSI; downsampling for lower-capability terminals happens at the output layer (`Sprint`/`Fprint`/`Writer`), which we bypass since Claude Code's status line consumer handles ANSI directly.
@@ -54,16 +55,16 @@ Error      #F03E3E
 ### Output format
 
 ```
-botctrl/internal/cmd | getting-started +2 ~5 | ███████▌░░░░░░░ 50%
-└─ sky ─────────────┘   └─ violet ───┘        └─mint─┘└slate─┘
-                           └mint┘└warn┘       FG+BG──┘
+botctrl/internal/cmd | getting-started +2 ~5 | ███████░░░░░░░│ 50%
+└─ sky ─────────────┘   └─ violet ───┘        └mint─┘└slate┘│
+                           └mint┘└warn┘                error─┘
          └─ slate (separators) ────────┘
 ```
 
 - **Path**: current working directory relative to the git repository root. The repo name is the first segment (e.g., `botctrl/internal/cmd`). If not in a git repo, the path is relative to `$HOME` prefixed with `~`.
 - **Branch**: the current git branch from HEAD. Omitted if not in a git repo or HEAD is detached.
 - **Dirty indicators**: `+N` (staged, mint) and `~N` (unstaged/untracked, warning amber). Shown next to the branch; omitted when clean.
-- **Context bar**: 15-character two-tone progress bar. Filled portion (`█`) in accent colour, half-block transition (`▌`) with FG=accent BG=muted, unfilled portion (`░`) in muted slate. Colour shifts by threshold. Always shown — displays `░░░░░░░░░░░░░░░ –` in muted slate before the first API call when `used_percentage` is null.
+- **Context bar**: 15-character progress bar (14 fill + 1 marker). Filled portion (`█`) in accent colour, half-block transition (`▌`) with FG=accent BG=muted, unfilled portion (`░`) in muted slate. The last character is a fixed red `│` marking the ~95% auto-compaction threshold. Colour shifts by threshold. Always shown — displays `░░░░░░░░░░░░░░│ –` in muted slate before the first API call when `used_percentage` is null.
 - **Separators**: pipe `|` in muted slate between each segment.
 
 ### Styling library
@@ -196,38 +197,39 @@ exceeds_200k_tokens                       bool      Whether last response exceed
 
 ### Design
 
-The context bar is a 15-character progress bar that displays context window usage as a percentage. It uses the left half-block character (`▌`) with foreground + background colours for sub-character resolution — **30 distinct fill levels** in 15 characters, compared to 15 levels with full blocks alone.
+The context bar is a 15-character progress bar that displays context window usage as a percentage. The first 14 characters are the fill area, and the 15th character is a fixed red `│` marking the ~95% auto-compaction threshold. The fill area uses the left half-block character (`▌`) with foreground + background colours for sub-character resolution — **28 distinct fill levels** in 14 characters.
 
-The technique (borrowed from [charmbracelet/bubbles](https://github.com/charmbracelet/bubbles) progress bar): `▌` fills the left half of the cell in the foreground colour while the right half shows the background colour. By setting FG=accent and BG=muted, the half-block transition has no black-gap artefact — both halves of the cell are explicitly coloured.
+The half-block technique (borrowed from [charmbracelet/bubbles](https://github.com/charmbracelet/bubbles) progress bar): `▌` fills the left half of the cell in the foreground colour while the right half shows the background colour. By setting FG=accent and BG=muted, the half-block transition has no black-gap artefact — both halves of the cell are explicitly coloured.
 
-The bar is rendered in two tones: the filled portion (`█` + optional `▌` transition) uses the threshold accent colour (mint/warning/error), while the unfilled portion (`░`) uses muted slate. This gives a clear visual boundary between progress and remaining capacity.
+The bar is rendered in three parts: the filled portion (`█` + optional `▌` transition) in the threshold accent colour (mint/warning/error), the unfilled portion (`░`) in muted slate, and the compaction marker (`│`) in error red. The marker provides a fixed visual landmark so you can gauge proximity to auto-compaction at a glance.
 
 ### Runtime computation
 
 The bar is computed at render time inside a goroutine that runs in parallel with the git operations. The math:
 
 ```go
-halves := p * barWidth * 2 / 100  // total fill in halves (0–30)
+halves := p * fillArea * 2 / 100  // total fill in halves (0–28)
 full   := halves / 2              // fully filled characters
 half   := halves % 2              // 0 or 1 (half-block transition)
-empty  := barWidth - full
+empty  := fillArea - full
 if half > 0 { empty-- }
 ```
 
-The three styled segments are assembled into a string: accent-coloured full blocks, half-block with FG+BG, and muted empty blocks. Benchmarks show ~4–6µs per render on Apple M4 Pro — negligible against the 300ms debounce interval, and the render runs in parallel with the git operations so it's effectively free.
+The styled segments are assembled into a string: accent-coloured full blocks, optional half-block with FG+BG, muted empty blocks, and the red compaction marker. Benchmarks show ~4–6µs per render on Apple M4 Pro — negligible against the 300ms debounce interval, and the render runs in parallel with the git operations so it's effectively free.
 
 ### Render path
 
 `renderContextBar` returns the complete styled bar string:
 
 1. Clamp percentage to `[0, 100]` using `min(max(...))` builtins.
-2. Compute filled/half/empty character counts via integer arithmetic.
+2. Compute filled/half/empty character counts within the 14-char fill area.
 3. Style the filled portion (`█`) in the accent colour.
 4. Style the half-block transition (`▌`) with FG=accent, BG=muted.
 5. Style the unfilled portion (`░`) in muted slate.
-6. Append the integer percentage label in the accent colour.
+6. Append the red compaction marker (`│`).
+7. Append the integer percentage label in the accent colour.
 
-When the percentage is nil (before the first API call), a precomputed `nullBar` is returned — the muted empty bar with an en-dash instead of a number.
+When the percentage is nil (before the first API call), a precomputed `nullBar` is returned — the muted empty bar with the red marker and an en-dash instead of a number.
 
 ## Code
 

@@ -9,13 +9,13 @@ import (
 	"github.com/alecthomas/kong"
 	"github.com/spf13/afero"
 
-	"github.com/ajbeck/botctrl/internal/cmd/hook"
+	"github.com/ajbeck/botctrl/internal/cmd/claude"
 	"github.com/ajbeck/botctrl/internal/version"
 )
 
 type cli struct {
 	Version versionFlag `name:"version" help:"Print version and exit." short:"v"`
-	Hook    hook.Cmd    `cmd:"hook" help:"Hook event handlers. Called by AI coding agents as subprocesses during their lifecycle."`
+	Claude  claude.Cmd  `cmd:"claude" help:"Claude Code agent commands — hooks, status line, and configuration."`
 }
 
 // versionFlag is a kong flag type that prints the version and exits.

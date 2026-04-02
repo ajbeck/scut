@@ -54,14 +54,16 @@ Implementation docs live in `docs/implementation/`. Each document covers a speci
 | [kong-base-setup.md](docs/implementation/kong-base-setup.md)           | Kong CLI framework setup, BindTo dependency injection, command tree structure, how to add commands and groups          |
 | [claude-hook-commands.md](docs/implementation/claude-hook-commands.md) | Claude Code hook subcommands, event types, input/output types, decision control per event, shared types package design |
 | [post-tool-use.md](docs/implementation/post-tool-use.md)               | PostToolUse hook deep-dive — input/output fields, decision control, MCP output replacement, code locations             |
+| [status-line.md](docs/implementation/status-line.md)                   | Status line command — colour palette, formatting, go-git integration, available input fields                           |
 
 ### Commit-time documentation check
 
 **Before every commit**, check whether any changed files are covered by a document in the index above. Matching rules:
 
 - `cmd/botctrl/main.go` or `internal/cmd/**` changes → review `kong-base-setup.md`
-- `hooks/claudecode/**` or `internal/cmd/hook/claude/**` changes → review `claude-hook-commands.md`
-- `internal/cmd/hook/claude/posttooluse.go` or `PostToolUseInput`/`PostToolUseOutput` changes → review `post-tool-use.md`
+- `hooks/claudecode/**` or `internal/cmd/claude/hook/**` changes → review `claude-hook-commands.md`
+- `internal/cmd/claude/hook/posttooluse.go` or `PostToolUseInput`/`PostToolUseOutput` changes → review `post-tool-use.md`
+- `internal/cmd/claude/statusline.go` or `hooks/claudecode/statusline.go` changes → review `status-line.md`
 - Any new `docs/implementation/*.md` file → add it to the index table above
 
 If a matching document exists and the commit changes behavior it describes (new bindings, new command groups, changed struct tags, altered command tree layout), update the document to reflect the current state **in the same commit**.

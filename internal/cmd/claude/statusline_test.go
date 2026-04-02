@@ -116,6 +116,73 @@ func TestWriteGitIndicators_AheadBehind(t *testing.T) {
 	}
 }
 
+func TestShortModelName(t *testing.T) {
+	for _, tc := range []struct {
+		id      string
+		ctxSize int
+		want    string
+	}{
+		{"claude-sonnet-4-5-20250514", 200000, "S4.5"},
+		{"claude-opus-4-6-v1", 200000, "O4.6"},
+		{"eu.anthropic.claude-opus-4-6-v1", 200000, "O4.6"},
+		{"claude-haiku-4-5-20251001", 200000, "H4.5"},
+		{"claude-sonnet-4-5-20250514", 1000000, "S4.5-1M"},
+		{"claude-opus-4-6-v1", 1000000, "O4.6-1M"},
+	} {
+		t.Run(tc.want, func(t *testing.T) {
+			got := shortModelName(tc.id, tc.ctxSize)
+			if got != tc.want {
+				t.Errorf("shortModelName(%q, %d) = %q, want %q", tc.id, tc.ctxSize, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestCompactPath(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		path string
+		max  int
+		want string
+	}{
+		{"fits", "botctrl/cmd", 25, "botctrl/cmd"},
+		{"collapse_one", "botctrl/internal/cmd/claude", 20, "botctrl/i/cmd/claude"},
+		{"collapse_all", "botctrl/internal/cmd/claude", 19, "botctrl/i/c/claude"},
+		{"elision", "botctrl/internal/cmd/claude", 15, "botctrl/…/clau…"},
+		{"two_segments", "botctrl/claude", 12, "botctrl/cla…"},
+		{"single", "botctrl", 6, "botct…"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got := compactPath(tc.path, tc.max)
+			if got != tc.want {
+				t.Errorf("compactPath(%q, %d) = %q, want %q", tc.path, tc.max, got, tc.want)
+			}
+			if runeLen := len([]rune(got)); runeLen > tc.max {
+				t.Errorf("result display width %d exceeds max %d", runeLen, tc.max)
+			}
+		})
+	}
+}
+
+func TestTruncate(t *testing.T) {
+	for _, tc := range []struct {
+		s    string
+		max  int
+		want string
+	}{
+		{"short", 10, "short"},
+		{"getting-started", 10, "getting-s…"},
+		{"feat/very-long-branch-name", 20, "feat/very-long-bran…"},
+	} {
+		t.Run(tc.want, func(t *testing.T) {
+			got := truncate(tc.s, tc.max)
+			if got != tc.want {
+				t.Errorf("truncate(%q, %d) = %q, want %q", tc.s, tc.max, got, tc.want)
+			}
+		})
+	}
+}
+
 func TestRenderContextBar_AllPercentages(t *testing.T) {
 	// Verify every percentage produces non-empty output and the total block
 	// count (█ + ▌) always equals fillArea (both filled and unfilled use █).

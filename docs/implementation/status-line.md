@@ -10,20 +10,22 @@ Design priorities: **zero subprocess overhead** and **sub-millisecond execution*
 
 ## Colour Palette
 
-Colours are drawn from the [Data Monocle colour system](https://github.com/ajbeck/data-monocle), using the **400 stop** of each named palette. The 400 stop is the "primary" shade — vibrant enough for terminal accents on both dark and light backgrounds.
+Colours are drawn from the [Data Monocle colour system](https://github.com/ajbeck/data-monocle). Text elements (path, branch) use the **300 stop** — brighter/lighter for readability on dark backgrounds, paired with bold. Accent/status elements use the **400 stop**.
 
 ```
-Role                  Palette    Hex        lipgloss Usage
-Path / directory      Sky        #2196F5    lipgloss.Color("#2196F5")
-Git branch            Violet     #8B5CF6    lipgloss.Color("#8B5CF6")
-Separators / muted    Slate      #6C757D    lipgloss.Color("#6C757D")
-Staged file count     Mint       #00D97F    lipgloss.Color("#00D97F")
-Unstaged file count   Warning    #E9A512    lipgloss.Color("#E9A512")
-Context bar <70%      Mint       #00D97F    lipgloss.Color("#00D97F")
-Context bar 70–89%    Warning    #E9A512    lipgloss.Color("#E9A512")
-Context bar 90%+      Error      #F03E3E    lipgloss.Color("#F03E3E")
-Context bar unfilled  Slate      #6C757D    lipgloss.Color("#6C757D")
-Compaction marker     Error      #F03E3E    lipgloss.Color("#F03E3E")
+Role                  Palette    Stop   Hex        lipgloss Usage
+Path / directory      Sky        300    #5CB3FF    lipgloss.Color("#5CB3FF") + Bold
+Git branch            Violet     300    #A47DFF    lipgloss.Color("#A47DFF") + Bold
+Separators / muted    Slate      400    #6C757D    lipgloss.Color("#6C757D")
+Staged / clean ✓      Mint       400    #00D97F    lipgloss.Color("#00D97F")
+Unstaged file count   Warning    400    #E9A512    lipgloss.Color("#E9A512")
+Ahead arrows          Mint       400    #00D97F    lipgloss.Color("#00D97F")
+Behind arrows         Warning    400    #E9A512    lipgloss.Color("#E9A512")
+Context bar <70%      Mint       400    #00D97F    lipgloss.Color("#00D97F")
+Context bar 70–89%    Warning    400    #E9A512    lipgloss.Color("#E9A512")
+Context bar 85%+      Error      400    #F03E3E    lipgloss.Color("#F03E3E")
+Context bar unfilled  Slate      400    #6C757D    lipgloss.Color("#6C757D")
+Compaction marker     Error      400    #F03E3E    lipgloss.Color("#F03E3E")
 ```
 
 All colours are specified as true-colour hex values via `lipgloss.Color`. In lipgloss v2, `Render()` always emits true-colour ANSI; downsampling for lower-capability terminals happens at the output layer (`Sprint`/`Fprint`/`Writer`), which we bypass since Claude Code's status line consumer handles ANSI directly.
@@ -55,25 +57,25 @@ Error      #F03E3E
 ### Output format
 
 ```
-botctrl/internal/cmd | getting-started +2 ~5 | ███████░░░░░░░│ 50%
-└─ sky ─────────────┘   └─ violet ───┘        └mint─┘└slate┘│
-                           └mint┘└warn┘                error─┘
-         └─ slate (separators) ────────┘
+██████████████│ 50% | botctrl/internal/cmd | getting-started ✓ ↑1
+└mint─┘└slate┘│      └── sky (bold) ──────┘   └─ violet (bold) ─┘
+               └error┘                         └mint┘ └mint┘
+     └─ slate (separators) ───────────────┘
 ```
 
-- **Path**: current working directory relative to the git repository root. The repo name is the first segment (e.g., `botctrl/internal/cmd`). If not in a git repo, the path is relative to `$HOME` prefixed with `~`.
-- **Branch**: the current git branch from HEAD. Omitted if not in a git repo or HEAD is detached.
-- **Dirty indicators**: `+N` (staged, mint) and `~N` (unstaged/untracked, warning amber). Shown next to the branch; omitted when clean.
-- **Context bar**: 15-character progress bar (14 fill + 1 marker). Filled portion (`█`) in accent colour, half-block transition (`▌`) with FG=accent BG=muted, unfilled portion (`░`) in muted slate. The last character is a fixed red `│` marking the ~95% auto-compaction threshold. Colour shifts by threshold. Always shown — displays `░░░░░░░░░░░░░░│ –` in muted slate before the first API call when `used_percentage` is null.
-- **Separators**: pipe `|` in muted slate between each segment.
+- **Context bar** (first segment): 20-character progress bar (19 fill + 1 marker). Filled portion (`█`) in accent colour, half-block transition (`▌`) with FG=accent BG=slate, unfilled portion (`█`) in muted slate. A red `│` marker sits at position 12 (85% of 15), marking the auto-compaction threshold. Colour shifts by threshold. Always shown — displays `████████████│██ –` in muted slate before the first API call. Uses `used_percentage` from the session snapshot directly.
+- **Path**: current working directory relative to the git repository root. Bold sky 300. The repo name is the first segment (e.g., `botctrl/internal/cmd`). If not in a git repo, the path is relative to `$HOME` prefixed with `~`.
+- **Branch**: the current git branch from HEAD. Bold violet 300. Omitted if not in a git repo or HEAD is detached.
+- **Git indicators**: `✓` (mint) when clean, otherwise `+N` (staged, mint) and `~N` (unstaged/untracked, warning amber). `↑N` (ahead, mint) and `↓N` (behind, warning) show divergence from `origin/<branch>` based on last-fetch state.
+- **Separators**: `|` in muted slate between each segment.
 
 ### Styling library
 
 [lipgloss v2](https://github.com/charmbracelet/lipgloss) (`charm.land/lipgloss/v2`) generates ANSI escape codes. In v2, `Style.Render()` always emits full true-colour ANSI — colour downsampling is a separate output concern (via `Sprint`/`Fprint`/`Writer`). Since Claude Code's status line consumer understands ANSI, we write `Render()` output directly without downsampling. This ensures colours survive the stdin/stdout pipe that Claude Code uses to capture the status line. Styles are defined as package-level `lipgloss.Style` values:
 
 ```go
-pathStyle      = lipgloss.NewStyle().Foreground(colorSky)
-branchStyle    = lipgloss.NewStyle().Foreground(colorViolet)
+pathStyle      = lipgloss.NewStyle().Foreground(colorSky).Bold(true)
+branchStyle    = lipgloss.NewStyle().Foreground(colorViolet).Bold(true)
 sepStyle       = lipgloss.NewStyle().Foreground(colorSlate)
 gitStagedStyle = lipgloss.NewStyle().Foreground(colorMint)
 gitDirtyStyle  = lipgloss.NewStyle().Foreground(colorWarning)
@@ -93,12 +95,13 @@ The `gitInfo` struct wraps `*gogit.Repository` and `*gogit.Worktree`, opened onc
 
 ### Concurrent data collection
 
-Three goroutines run in parallel via `sync.WaitGroup.Go`:
+Four goroutines run in parallel via `sync.WaitGroup.Go`:
 
 ```
 Goroutine              What it does                                      Why it's separate
 gi.resolve(cwd)        Path + branch from HEAD ref                       Fast (ref lookup), but independent
 gi.dirtyCount()        Walk worktree status for staged/unstaged counts   Slowest — worktree diff against index
+gi.aheadBehind()       Ahead/behind counts vs origin/<branch>            Commit graph walk, independent of status
 renderContextBar(pct)  Build styled progress bar string                  Pure computation, no I/O
 ```
 
@@ -129,6 +132,7 @@ Created once via `openGit(dir)`. If `dir` is not inside a repo, both fields are 
 Method           What                            go-git API
 resolve(cwd)     Relative path + branch name     wt.Filesystem.Root(), repo.Head().Name().Short()
 dirtyCount()     Staged and unstaged file counts  wt.Status() → iterate FileStatus.Staging / .Worktree
+aheadBehind()    Commits ahead/behind origin      repo.Reference() + Commit.MergeBase() + repo.Log()
 ```
 
 ### StatusCode reference
@@ -171,8 +175,12 @@ Key fields used by the current implementation:
 Field                                Type       Usage
 workspace.current_dir                string     Current working directory (preferred over cwd)
 cwd                                  string     Fallback for workspace.current_dir
-context_window.used_percentage       *float64   Context bar fill level (null → muted empty bar)
+context_window.used_percentage       *float64   Context usage percentage — drives bar fill and colour
 ```
+
+### Context percentage
+
+The bar uses `used_percentage` from the session snapshot directly. This is the cumulative context usage metric that tracks auto-compaction (which triggers at 85%). Note: `total_input_tokens` and `total_output_tokens` are **per-call** values, not cumulative — they are not suitable for computing session-level context usage.
 
 Fields available for future segments:
 
@@ -182,7 +190,6 @@ model.id, model.display_name              string    Active model
 cost.total_cost_usd                       float64   Session cost
 cost.total_duration_ms                    int64     Wall-clock time
 cost.total_api_duration_ms                int64     Time waiting on API
-context_window.context_window_size        int       Max context tokens (200k or 1M)
 context_window.remaining_percentage       *float64  Inverse of used_percentage
 rate_limits.five_hour.used_percentage     float64   5-hour rate limit (Pro/Max only)
 rate_limits.seven_day.used_percentage     float64   7-day rate limit (Pro/Max only)
@@ -197,11 +204,11 @@ exceeds_200k_tokens                       bool      Whether last response exceed
 
 ### Design
 
-The context bar is a 15-character progress bar that displays context window usage as a percentage. The first 14 characters are the fill area, and the 15th character is a fixed red `│` marking the ~95% auto-compaction threshold. The fill area uses the left half-block character (`▌`) with foreground + background colours for sub-character resolution — **28 distinct fill levels** in 14 characters.
+The context bar is a 20-character progress bar that displays context window usage as a percentage. A red `│` marker sits at character position 17 (85% of 20), splitting the fill area into 17 pre-marker and 2 post-marker characters (19 fillable total). The fill area uses the left half-block character (`▌`) with foreground + background colours for sub-character resolution — **38 distinct fill levels** in 19 characters.
 
-The half-block technique (borrowed from [charmbracelet/bubbles](https://github.com/charmbracelet/bubbles) progress bar): `▌` fills the left half of the cell in the foreground colour while the right half shows the background colour. By setting FG=accent and BG=muted, the half-block transition has no black-gap artefact — both halves of the cell are explicitly coloured.
+The half-block technique (borrowed from [charmbracelet/bubbles](https://github.com/charmbracelet/bubbles) progress bar): `▌` fills the left half of the cell in the accent foreground colour while the right half shows the slate background — matching the solid `█` unfilled blocks.
 
-The bar is rendered in three parts: the filled portion (`█` + optional `▌` transition) in the threshold accent colour (mint/warning/error), the unfilled portion (`░`) in muted slate, and the compaction marker (`│`) in error red. The marker provides a fixed visual landmark so you can gauge proximity to auto-compaction at a glance.
+The bar is rendered by walking each position in the 15-character width. At the marker position, a red `│` is inserted; all other positions are fill characters: accent-coloured `█` for filled, optional `▌` half-block transition (FG=accent, BG=slate), and muted slate `█` for unfilled. The marker provides a fixed visual landmark so you can gauge proximity to auto-compaction at a glance.
 
 ### Runtime computation
 
@@ -223,11 +230,8 @@ The styled segments are assembled into a string: accent-coloured full blocks, op
 
 1. Clamp percentage to `[0, 100]` using `min(max(...))` builtins.
 2. Compute filled/half/empty character counts within the 14-char fill area.
-3. Style the filled portion (`█`) in the accent colour.
-4. Style the half-block transition (`▌`) with FG=accent, BG=muted.
-5. Style the unfilled portion (`░`) in muted slate.
-6. Append the red compaction marker (`│`).
-7. Append the integer percentage label in the accent colour.
+3. Walk positions 0–19: at `markerPos` (17) emit the red `│`; otherwise emit the next fill character — accent `█` for filled, `▌` (FG=accent, BG=slate) for the half-block transition, or muted `█` for unfilled.
+4. Append the integer percentage label in the accent colour.
 
 When the percentage is nil (before the first API call), a precomputed `nullBar` is returned — the muted empty bar with the red marker and an en-dash instead of a number.
 

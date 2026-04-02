@@ -13,17 +13,24 @@ import (
 
 	"charm.land/lipgloss/v2"
 	gogit "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/storer"
 
 	cc "github.com/ajbeck/botctrl/hooks/claudecode"
 )
+
+// compactionThreshold is the context window percentage at which Claude Code
+// triggers auto-compaction. The red marker on the context bar sits here.
+const compactionThreshold = 85
 
 // ---------------------------------------------------------------------------
 // Data Monocle palette — 400 stops for terminal accents
 // ---------------------------------------------------------------------------
 
 var (
-	colorSky    = lipgloss.Color("#2196F5")
-	colorViolet = lipgloss.Color("#8B5CF6")
+	colorSky    = lipgloss.Color("#5CB3FF") // Data Monocle 300 stop — brighter for text
+	colorViolet = lipgloss.Color("#A47DFF") // Data Monocle 300 stop
 	colorSlate  = lipgloss.Color("#6C757D")
 	colorMint   = lipgloss.Color("#00D97F")
 
@@ -33,8 +40,8 @@ var (
 )
 
 var (
-	pathStyle      = lipgloss.NewStyle().Foreground(colorSky)
-	branchStyle    = lipgloss.NewStyle().Foreground(colorViolet)
+	pathStyle      = lipgloss.NewStyle().Foreground(colorSky).Bold(true)
+	branchStyle    = lipgloss.NewStyle().Foreground(colorViolet).Bold(true)
 	sepStyle       = lipgloss.NewStyle().Foreground(colorSlate)
 	mutedStyle     = lipgloss.NewStyle().Foreground(colorSlate)
 	gitDirtyStyle  = lipgloss.NewStyle().Foreground(colorWarning)
@@ -78,6 +85,8 @@ func (c *statusLineCmd) Run(stdin io.Reader, stdout io.Writer) error {
 		branch      string
 		staged      int
 		unstaged    int
+		ahead       int
+		behind      int
 		contextBar  string
 	)
 
@@ -90,30 +99,30 @@ func (c *statusLineCmd) Run(stdin io.Reader, stdout io.Writer) error {
 	})
 
 	wg.Go(func() {
+		ahead, behind = gi.aheadBehind()
+	})
+
+	wg.Go(func() {
 		contextBar = renderContextBar(in.ContextWindow.UsedPercentage)
 	})
 
 	wg.Wait()
 
-	// Assemble output into a single buffer — one allocation, one write.
-	sep := sepStyle.Render("|")
+	// Assemble output: context bar | path | git status
+	sep := sepStyle.Render(" | ")
+
 	var b strings.Builder
+	b.WriteString(contextBar)
+	b.WriteString(sep)
 	b.WriteString(pathStyle.Render(displayPath))
 
 	if branch != "" {
-		b.WriteByte(' ')
 		b.WriteString(sep)
-		b.WriteByte(' ')
 		b.WriteString(branchStyle.Render(branch))
-		writeDirtyIndicators(&b, staged, unstaged)
+		writeGitIndicators(&b, staged, unstaged, ahead, behind)
 	}
 
-	b.WriteByte(' ')
-	b.WriteString(sep)
-	b.WriteByte(' ')
-	b.WriteString(contextBar)
 	b.WriteByte('\n')
-
 	io.WriteString(stdout, b.String())
 	return nil
 }
@@ -190,20 +199,101 @@ func (g gitInfo) dirtyCount() (staged, unstaged int) {
 	return staged, unstaged
 }
 
+// aheadBehind returns how many commits the local branch is ahead of and behind
+// its remote tracking branch (origin/<branch>). Uses last-fetch state only —
+// no network call. Returns (0, 0) if the remote ref doesn't exist or on error.
+func (g gitInfo) aheadBehind() (ahead, behind int) {
+	if g.repo == nil {
+		return 0, 0
+	}
+	head, err := g.repo.Head()
+	if err != nil || !head.Name().IsBranch() {
+		return 0, 0
+	}
+
+	remoteName := plumbing.NewRemoteReferenceName("origin", head.Name().Short())
+	remoteRef, err := g.repo.Reference(remoteName, true)
+	if err != nil {
+		return 0, 0
+	}
+
+	localHash := head.Hash()
+	remoteHash := remoteRef.Hash()
+	if localHash == remoteHash {
+		return 0, 0
+	}
+
+	localCommit, err := g.repo.CommitObject(localHash)
+	if err != nil {
+		return 0, 0
+	}
+	remoteCommit, err := g.repo.CommitObject(remoteHash)
+	if err != nil {
+		return 0, 0
+	}
+
+	bases, err := localCommit.MergeBase(remoteCommit)
+	if err != nil || len(bases) == 0 {
+		return 0, 0
+	}
+	baseHash := bases[0].Hash
+
+	// Count commits from local HEAD to merge base.
+	iter, err := g.repo.Log(&gogit.LogOptions{From: localHash})
+	if err != nil {
+		return 0, 0
+	}
+	iter.ForEach(func(c *object.Commit) error {
+		if c.Hash == baseHash {
+			return storer.ErrStop
+		}
+		ahead++
+		return nil
+	})
+
+	// Count commits from remote HEAD to merge base.
+	iter, err = g.repo.Log(&gogit.LogOptions{From: remoteHash})
+	if err != nil {
+		return ahead, 0
+	}
+	iter.ForEach(func(c *object.Commit) error {
+		if c.Hash == baseHash {
+			return storer.ErrStop
+		}
+		behind++
+		return nil
+	})
+
+	return ahead, behind
+}
+
 // ---------------------------------------------------------------------------
 // Git dirty indicators
 // ---------------------------------------------------------------------------
 
-// writeDirtyIndicators appends styled markers for staged/unstaged counts to b.
-// Writes nothing when the working tree is clean.
-func writeDirtyIndicators(b *strings.Builder, staged, unstaged int) {
-	if staged > 0 {
+// writeGitIndicators appends styled markers for staged/unstaged counts and
+// ahead/behind arrows to b. Shows ✓ in mint when the working tree is clean.
+func writeGitIndicators(b *strings.Builder, staged, unstaged, ahead, behind int) {
+	if staged == 0 && unstaged == 0 {
 		b.WriteByte(' ')
-		b.WriteString(gitStagedStyle.Render("+" + strconv.Itoa(staged)))
+		b.WriteString(gitStagedStyle.Render("✓"))
+	} else {
+		if staged > 0 {
+			b.WriteByte(' ')
+			b.WriteString(gitStagedStyle.Render("+" + strconv.Itoa(staged)))
+		}
+		if unstaged > 0 {
+			b.WriteByte(' ')
+			b.WriteString(gitDirtyStyle.Render("~" + strconv.Itoa(unstaged)))
+		}
 	}
-	if unstaged > 0 {
+	if ahead > 0 {
 		b.WriteByte(' ')
-		b.WriteString(gitDirtyStyle.Render("~" + strconv.Itoa(unstaged)))
+		b.WriteString(gitStagedStyle.Render("↑" + strconv.Itoa(ahead)))
+	}
+	if behind > 0 {
+		b.WriteByte(' ')
+		b.WriteString(gitDirtyStyle.Render("↓" + strconv.Itoa(behind)))
 	}
 }
 
@@ -213,13 +303,17 @@ func writeDirtyIndicators(b *strings.Builder, staged, unstaged int) {
 
 // Bar configuration.
 const (
-	barWidth = 15
-	fillArea = barWidth - 1 // characters available for fill (last char is the compaction marker)
+	barWidth  = 20                                   // total characters in the bar
+	markerPos = compactionThreshold * barWidth / 100 // character index where the compaction marker sits (0-based)
+	preFill   = markerPos                            // fill characters before the marker
+	postFill  = barWidth - markerPos - 1             // fill characters after the marker
+	fillArea  = preFill + postFill                   // total fillable characters (barWidth minus marker)
 )
 
 // nullBar is the muted bar shown before the first API call.
-var nullBar = mutedStyle.Render(strings.Repeat("░", fillArea)) +
+var nullBar = mutedStyle.Render(strings.Repeat("█", preFill)) +
 	markerStyle.Render("│") +
+	mutedStyle.Render(strings.Repeat("█", postFill)) +
 	mutedStyle.Render(" –")
 
 // Compaction marker style — always error red.
@@ -233,9 +327,8 @@ var (
 )
 
 // Half-block transition styles — FG = accent, BG = slate.
-// The ▌ character fills the left half of the cell in the foreground colour;
-// the right half shows the background colour. This eliminates the black-gap
-// artefact of partial-width blocks while giving 2× resolution.
+// The ▌ character fills the left half in the accent colour; the right half
+// shows slate background, matching the solid unfilled █ blocks.
 var (
 	halfStyleMint    = lipgloss.NewStyle().Foreground(colorMint).Background(colorSlate)
 	halfStyleWarning = lipgloss.NewStyle().Foreground(colorWarning).Background(colorSlate)
@@ -243,9 +336,10 @@ var (
 )
 
 // renderContextBar returns a styled 15-character progress bar with percentage.
-// The first 14 characters are fill area (28 half-block levels). The 15th
-// character is a fixed red │ marking the ~95% auto-compaction threshold.
-// Colour shifts by threshold: mint <70%, warning 70–89%, error 90%+.
+// The bar has 14 fillable characters split by a red │ marker at the 85%
+// auto-compaction threshold: 12 chars before the marker, 2 after.
+// Fill uses half-blocks for 2× resolution (28 levels across 14 chars).
+// Colour shifts by threshold: mint <70%, warning 70–89%, error 85%+.
 // When pct is nil (before first API call), returns a muted empty bar.
 func renderContextBar(pct *float64) string {
 	if pct == nil {
@@ -254,7 +348,7 @@ func renderContextBar(pct *float64) string {
 
 	p := min(max(int(math.Round(*pct)), 0), 100)
 
-	// Compute filled/half/empty within the 14-char fill area.
+	// Compute filled/half/empty across the full fill area (14 chars).
 	halves := p * fillArea * 2 / 100
 	full := halves / 2
 	half := halves % 2
@@ -266,7 +360,7 @@ func renderContextBar(pct *float64) string {
 	// Pick accent + half-block styles by threshold.
 	var accent, halfAccent lipgloss.Style
 	switch {
-	case p >= 90:
+	case p >= compactionThreshold:
 		accent = barStyleError
 		halfAccent = halfStyleError
 	case p >= 70:
@@ -277,25 +371,29 @@ func renderContextBar(pct *float64) string {
 		halfAccent = halfStyleMint
 	}
 
+	// Render the fill area as a flat sequence, then split at markerPos
+	// to insert the compaction marker.
+	chars := full + half + empty // should equal fillArea
+	_ = chars
+
+	// Build the bar by walking through each character position.
+	// At markerPos, insert the red │ instead of a fill character.
 	var b strings.Builder
-
-	// Filled portion: full blocks in accent colour.
-	if full > 0 {
-		b.WriteString(accent.Render(strings.Repeat("█", full)))
+	fillIdx := 0 // how many fill characters we've emitted
+	for pos := range barWidth {
+		if pos == markerPos {
+			b.WriteString(markerStyle.Render("│"))
+			continue
+		}
+		if fillIdx < full {
+			b.WriteString(accent.Render("█"))
+		} else if fillIdx == full && half > 0 {
+			b.WriteString(halfAccent.Render("▌"))
+		} else {
+			b.WriteString(mutedStyle.Render("█"))
+		}
+		fillIdx++
 	}
-
-	// Half-block transition: ▌ with FG=accent, BG=muted.
-	if half > 0 {
-		b.WriteString(halfAccent.Render("▌"))
-	}
-
-	// Unfilled portion: ░ blocks in muted slate.
-	if empty > 0 {
-		b.WriteString(mutedStyle.Render(strings.Repeat("░", empty)))
-	}
-
-	// Compaction marker: fixed red │ at the ~95% threshold.
-	b.WriteString(markerStyle.Render("│"))
 
 	// Percentage label in accent colour.
 	b.WriteByte(' ')

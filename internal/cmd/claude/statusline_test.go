@@ -55,27 +55,24 @@ func TestRenderContextBar_MarkerAlwaysPresent(t *testing.T) {
 }
 
 func TestRenderContextBar_Boundaries(t *testing.T) {
+	// Both filled and unfilled use █ (distinguished by ANSI colour), so we
+	// count total █ (should always equal fillArea minus any ▌) and ▌ separately.
 	for _, tc := range []struct {
-		pct       float64
-		wantFull  int
-		wantEmpty int
-		wantHalf  int
+		pct      float64
+		wantHalf int
 	}{
-		{0, 0, fillArea, 0},
-		{100, fillArea, 0, 0},
-		{50, 7, 7, 0}, // 50*14*2/100=14, full=7, half=0, empty=7
+		{0, 0},
+		{100, 0},
+		{50, 1}, // 50*19*2/100=19 halves, full=9, half=1
 	} {
 		t.Run(fmt.Sprintf("%d%%", int(tc.pct)), func(t *testing.T) {
 			pct := tc.pct
 			result := renderContextBar(&pct)
-			fullCount := strings.Count(result, "█")
-			emptyCount := strings.Count(result, "░")
+			totalBlocks := strings.Count(result, "█")
 			halfCount := strings.Count(result, "▌")
-			if fullCount != tc.wantFull {
-				t.Errorf("full blocks: got %d, want %d", fullCount, tc.wantFull)
-			}
-			if emptyCount != tc.wantEmpty {
-				t.Errorf("empty blocks: got %d, want %d", emptyCount, tc.wantEmpty)
+			wantBlocks := fillArea - halfCount
+			if totalBlocks != wantBlocks {
+				t.Errorf("total █ blocks: got %d, want %d", totalBlocks, wantBlocks)
 			}
 			if halfCount != tc.wantHalf {
 				t.Errorf("half blocks: got %d, want %d", halfCount, tc.wantHalf)
@@ -84,19 +81,53 @@ func TestRenderContextBar_Boundaries(t *testing.T) {
 	}
 }
 
+func TestWriteGitIndicators_Clean(t *testing.T) {
+	var b strings.Builder
+	writeGitIndicators(&b, 0, 0, 0, 0)
+	if !strings.Contains(b.String(), "✓") {
+		t.Errorf("expected ✓ for clean tree, got %q", b.String())
+	}
+}
+
+func TestWriteGitIndicators_Dirty(t *testing.T) {
+	var b strings.Builder
+	writeGitIndicators(&b, 2, 3, 0, 0)
+	s := b.String()
+	if !strings.Contains(s, "+2") {
+		t.Errorf("expected +2 staged, got %q", s)
+	}
+	if !strings.Contains(s, "~3") {
+		t.Errorf("expected ~3 unstaged, got %q", s)
+	}
+	if strings.Contains(s, "✓") {
+		t.Error("should not show ✓ when dirty")
+	}
+}
+
+func TestWriteGitIndicators_AheadBehind(t *testing.T) {
+	var b strings.Builder
+	writeGitIndicators(&b, 0, 0, 3, 1)
+	s := b.String()
+	if !strings.Contains(s, "↑3") {
+		t.Errorf("expected ↑3 ahead, got %q", s)
+	}
+	if !strings.Contains(s, "↓1") {
+		t.Errorf("expected ↓1 behind, got %q", s)
+	}
+}
+
 func TestRenderContextBar_AllPercentages(t *testing.T) {
-	// Verify every percentage produces output and filled count is monotonically non-decreasing.
-	prevFull := 0
+	// Verify every percentage produces non-empty output and the total block
+	// count (█ + ▌) always equals fillArea (both filled and unfilled use █).
 	for p := range 101 {
 		pct := float64(p)
 		result := renderContextBar(&pct)
 		if result == "" {
 			t.Fatalf("empty result at %d%%", p)
 		}
-		fillCount := strings.Count(result, "█") + strings.Count(result, "▌")
-		if fillCount < prevFull {
-			t.Errorf("fill decreased from %d to %d at %d%%", prevFull, fillCount, p)
+		blocks := strings.Count(result, "█") + strings.Count(result, "▌")
+		if blocks != fillArea {
+			t.Errorf("total blocks at %d%%: got %d, want %d", p, blocks, fillArea)
 		}
-		prevFull = fillCount
 	}
 }

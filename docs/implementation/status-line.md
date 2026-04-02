@@ -12,59 +12,63 @@ Design priorities: **zero subprocess overhead** and **sub-millisecond execution*
 
 Colours are drawn from the [Data Monocle colour system](https://github.com/ajbeck/data-monocle), using the **400 stop** of each named palette. The 400 stop is the "primary" shade — vibrant enough for terminal accents on both dark and light backgrounds.
 
-| Role | Palette | Hex | lipgloss Usage |
-|------|---------|-----|----------------|
-| Path / directory | Sky | `#2196F5` | `lipgloss.Color("#2196F5")` |
-| Git branch | Violet | `#8B5CF6` | `lipgloss.Color("#8B5CF6")` |
-| Separators / muted | Slate | `#6C757D` | `lipgloss.Color("#6C757D")` |
-| Staged file count | Mint | `#00D97F` | `lipgloss.Color("#00D97F")` |
-| Unstaged file count | Warning | `#E9A512` | `lipgloss.Color("#E9A512")` |
-| Context bar <70% | Mint | `#00D97F` | `lipgloss.Color("#00D97F")` |
-| Context bar 70–89% | Warning | `#E9A512` | `lipgloss.Color("#E9A512")` |
-| Context bar 90%+ | Error | `#F03E3E` | `lipgloss.Color("#F03E3E")` |
+```
+Role                  Palette    Hex        lipgloss Usage
+Path / directory      Sky        #2196F5    lipgloss.Color("#2196F5")
+Git branch            Violet     #8B5CF6    lipgloss.Color("#8B5CF6")
+Separators / muted    Slate      #6C757D    lipgloss.Color("#6C757D")
+Staged file count     Mint       #00D97F    lipgloss.Color("#00D97F")
+Unstaged file count   Warning    #E9A512    lipgloss.Color("#E9A512")
+Context bar <70%      Mint       #00D97F    lipgloss.Color("#00D97F")
+Context bar 70–89%    Warning    #E9A512    lipgloss.Color("#E9A512")
+Context bar 90%+      Error      #F03E3E    lipgloss.Color("#F03E3E")
+Context bar unfilled  Slate      #6C757D    lipgloss.Color("#6C757D")
+```
 
-All colours are specified as true-colour hex values via `lipgloss.Color`. Terminals that don't support true colour will get the closest ANSI approximation automatically — lipgloss handles colour profile detection and downgrading.
+All colours are specified as true-colour hex values via `lipgloss.Color`. In lipgloss v2, `Render()` always emits true-colour ANSI; downsampling for lower-capability terminals happens at the output layer (`Sprint`/`Fprint`/`Writer`), which we bypass since Claude Code's status line consumer handles ANSI directly.
 
 ### Adding colours
 
 When adding new status line segments, pick from the Data Monocle 400 stops:
 
-| Available | Hex |
-|-----------|-----|
-| Coral | `#FF6347` |
-| Sunshine | `#FFD700` |
-| Tangerine | `#FF9500` |
-| Bubblegum | `#FF47AE` |
-| Lagoon | `#00CCB8` |
+```
+Available    Hex
+Coral        #FF6347
+Sunshine     #FFD700
+Tangerine    #FF9500
+Bubblegum    #FF47AE
+Lagoon       #00CCB8
+```
 
 For status/semantic colours use the status palettes at the 400 stop:
 
-| Status | Hex |
-|--------|-----|
-| Success | `#22DD5E` |
-| Warning | `#E9A512` |
-| Error | `#F03E3E` |
+```
+Status     Hex
+Success    #22DD5E
+Warning    #E9A512
+Error      #F03E3E
+```
 
 ## Formatting
 
 ### Output format
 
 ```
-botctrl/internal/cmd | getting-started +2 ~5 | ██░░░░░░░░ 25%
-└─ sky ─────────────┘   └─ violet ───┘         └─ mint ──────┘
-                           └mint┘└warn┘
+botctrl/internal/cmd | getting-started +2 ~5 | ███████▌░░░░░░░ 50%
+└─ sky ─────────────┘   └─ violet ───┘        └─mint─┘└slate─┘
+                           └mint┘└warn┘       FG+BG──┘
          └─ slate (separators) ────────┘
 ```
 
 - **Path**: current working directory relative to the git repository root. The repo name is the first segment (e.g., `botctrl/internal/cmd`). If not in a git repo, the path is relative to `$HOME` prefixed with `~`.
 - **Branch**: the current git branch from HEAD. Omitted if not in a git repo or HEAD is detached.
 - **Dirty indicators**: `+N` (staged, mint) and `~N` (unstaged/untracked, warning amber). Shown next to the branch; omitted when clean.
-- **Context bar**: 10-character progress bar (`█` filled, `░` empty) with integer percentage. Colour shifts by threshold. Always shown — displays `░░░░░░░░░░ –` in muted slate before the first API call when `used_percentage` is null.
+- **Context bar**: 15-character two-tone progress bar. Filled portion (`█`) in accent colour, half-block transition (`▌`) with FG=accent BG=muted, unfilled portion (`░`) in muted slate. Colour shifts by threshold. Always shown — displays `░░░░░░░░░░░░░░░ –` in muted slate before the first API call when `used_percentage` is null.
 - **Separators**: pipe `|` in muted slate between each segment.
 
 ### Styling library
 
-[charmbracelet/lipgloss](https://github.com/charmbracelet/lipgloss) generates ANSI escape codes. Styles are defined as package-level `lipgloss.Style` values:
+[lipgloss v2](https://github.com/charmbracelet/lipgloss) (`charm.land/lipgloss/v2`) generates ANSI escape codes. In v2, `Style.Render()` always emits full true-colour ANSI — colour downsampling is a separate output concern (via `Sprint`/`Fprint`/`Writer`). Since Claude Code's status line consumer understands ANSI, we write `Render()` output directly without downsampling. This ensures colours survive the stdin/stdout pipe that Claude Code uses to capture the status line. Styles are defined as package-level `lipgloss.Style` values:
 
 ```go
 pathStyle      = lipgloss.NewStyle().Foreground(colorSky)
@@ -90,11 +94,12 @@ The `gitInfo` struct wraps `*gogit.Repository` and `*gogit.Worktree`, opened onc
 
 Three goroutines run in parallel via `sync.WaitGroup.Go`:
 
-| Goroutine | What it does | Why it's separate |
-|-----------|-------------|-------------------|
-| `gi.resolve(cwd)` | Path + branch from HEAD ref | Fast (ref lookup), but independent |
-| `gi.dirtyCount()` | Walk worktree status for staged/unstaged counts | Slowest — worktree diff against index |
-| `renderContextBar(pct)` | Build styled progress bar string | Pure computation, no I/O |
+```
+Goroutine              What it does                                      Why it's separate
+gi.resolve(cwd)        Path + branch from HEAD ref                       Fast (ref lookup), but independent
+gi.dirtyCount()        Walk worktree status for staged/unstaged counts   Slowest — worktree diff against index
+renderContextBar(pct)  Build styled progress bar string                  Pure computation, no I/O
+```
 
 The `wg.Wait()` gate ensures all data is ready before the final string assembly.
 
@@ -119,25 +124,27 @@ Created once via `openGit(dir)`. If `dir` is not inside a repo, both fields are 
 
 ### Operations
 
-| Method | What | go-git API |
-|--------|------|------------|
-| `resolve(cwd)` | Relative path + branch name | `wt.Filesystem.Root()`, `repo.Head().Name().Short()` |
-| `dirtyCount()` | Staged and unstaged file counts | `wt.Status()` → iterate `FileStatus.Staging` / `.Worktree` |
+```
+Method           What                            go-git API
+resolve(cwd)     Relative path + branch name     wt.Filesystem.Root(), repo.Head().Name().Short()
+dirtyCount()     Staged and unstaged file counts  wt.Status() → iterate FileStatus.Staging / .Worktree
+```
 
 ### StatusCode reference
 
 go-git's `StatusCode` is a byte matching git's short format:
 
-| Code | Constant | Meaning |
-|------|----------|---------|
-| `' '` | `Unmodified` | No changes |
-| `'?'` | `Untracked` | New file not in index |
-| `'M'` | `Modified` | Content changed |
-| `'A'` | `Added` | New file staged |
-| `'D'` | `Deleted` | File removed |
-| `'R'` | `Renamed` | File renamed (Extra has old name) |
-| `'C'` | `Copied` | File copied |
-| `'U'` | `UpdatedButUnmerged` | Merge conflict |
+```
+Code    Constant              Meaning
+' '     Unmodified            No changes
+'?'     Untracked             New file not in index
+'M'     Modified              Content changed
+'A'     Added                 New file staged
+'D'     Deleted               File removed
+'R'     Renamed               File renamed (Extra has old name)
+'C'     Copied                File copied
+'U'     UpdatedButUnmerged    Merge conflict
+```
 
 `dirtyCount` classifies: `Staging != Unmodified && Staging != Untracked` → staged; `Worktree != Unmodified` → unstaged.
 
@@ -145,12 +152,13 @@ go-git's `StatusCode` is a byte matching git's short format:
 
 If any step fails (not a git repo, bare repo, detached HEAD), the command degrades:
 
-| Failure | Path fallback | Branch | Dirty indicators |
-|---------|---------------|--------|------------------|
-| Not a git repo | `~/relative` | omitted | omitted |
-| Bare repo (no worktree) | `~/relative` | omitted | omitted |
-| Detached HEAD | repo-relative | omitted | shown if available |
-| Status error | repo-relative | shown | `0, 0` |
+```
+Failure               Path fallback    Branch     Dirty indicators
+Not a git repo        ~/relative       omitted    omitted
+Bare repo (no wt)     ~/relative       omitted    omitted
+Detached HEAD         repo-relative    omitted    shown if available
+Status error          repo-relative    shown      0, 0
+```
 
 ## Input
 
@@ -158,88 +166,66 @@ Deserialized from stdin as `claudecode.StatusLineInput`. This is **not** a hook 
 
 Key fields used by the current implementation:
 
-| Field | Type | Usage |
-|-------|------|-------|
-| `workspace.current_dir` | `string` | Current working directory (preferred over `cwd`) |
-| `cwd` | `string` | Fallback for `workspace.current_dir` |
-| `context_window.used_percentage` | `*float64` | Context bar fill level (null → muted empty bar) |
+```
+Field                                Type       Usage
+workspace.current_dir                string     Current working directory (preferred over cwd)
+cwd                                  string     Fallback for workspace.current_dir
+context_window.used_percentage       *float64   Context bar fill level (null → muted empty bar)
+```
 
 Fields available for future segments:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `model.id`, `model.display_name` | `string` | Active model |
-| `cost.total_cost_usd` | `float64` | Session cost |
-| `cost.total_duration_ms` | `int64` | Wall-clock time |
-| `cost.total_api_duration_ms` | `int64` | Time waiting on API |
-| `context_window.context_window_size` | `int` | Max context tokens (200k or 1M) |
-| `context_window.remaining_percentage` | `*float64` | Inverse of used_percentage |
-| `rate_limits.five_hour.used_percentage` | `float64` | 5-hour rate limit (Pro/Max only) |
-| `rate_limits.seven_day.used_percentage` | `float64` | 7-day rate limit (Pro/Max only) |
-| `cost.total_lines_added` / `removed` | `int` | Code churn metrics |
-| `vim.mode` | `string` | Vim mode (`NORMAL`/`INSERT`) |
-| `agent.name` | `string` | Agent name (with `--agent`) |
-| `worktree.name` | `string` | Worktree name (with `--worktree`) |
-| `exceeds_200k_tokens` | `bool` | Whether last response exceeded 200k |
+```
+Field                                      Type      Description
+model.id, model.display_name              string    Active model
+cost.total_cost_usd                       float64   Session cost
+cost.total_duration_ms                    int64     Wall-clock time
+cost.total_api_duration_ms                int64     Time waiting on API
+context_window.context_window_size        int       Max context tokens (200k or 1M)
+context_window.remaining_percentage       *float64  Inverse of used_percentage
+rate_limits.five_hour.used_percentage     float64   5-hour rate limit (Pro/Max only)
+rate_limits.seven_day.used_percentage     float64   7-day rate limit (Pro/Max only)
+cost.total_lines_added / removed          int       Code churn metrics
+vim.mode                                  string    Vim mode (NORMAL/INSERT)
+agent.name                                string    Agent name (with --agent)
+worktree.name                             string    Worktree name (with --worktree)
+exceeds_200k_tokens                       bool      Whether last response exceeded 200k
+```
 
-## Context Bar — High-Resolution Progress Bar
+## Context Bar — Two-Tone Progress Bar
 
 ### Design
 
-The context bar is a 10-character progress bar that displays context window usage as a percentage. It uses Unicode left-block partial characters to achieve sub-character resolution — **80 distinct fill levels** in 10 characters, compared to 10 levels with full blocks alone.
+The context bar is a 15-character progress bar that displays context window usage as a percentage. It uses the left half-block character (`▌`) with foreground + background colours for sub-character resolution — **30 distinct fill levels** in 15 characters, compared to 15 levels with full blocks alone.
 
-The eight partial-block characters, from thinnest to full:
+The technique (borrowed from [charmbracelet/bubbles](https://github.com/charmbracelet/bubbles) progress bar): `▌` fills the left half of the cell in the foreground colour while the right half shows the background colour. By setting FG=accent and BG=muted, the half-block transition has no black-gap artefact — both halves of the cell are explicitly coloured.
 
-```
-▏ ▎ ▍ ▌ ▋ ▊ ▉ █
-```
+The bar is rendered in two tones: the filled portion (`█` + optional `▌` transition) uses the threshold accent colour (mint/warning/error), while the unfilled portion (`░`) uses muted slate. This gives a clear visual boundary between progress and remaining capacity.
 
-Each character position can display one of 8 fill levels (0/8 through 8/8), giving 10 × 8 = 80 possible fill positions. The empty portion uses `░` (light shade) for visual contrast against unfilled space.
+### Runtime computation
 
-### Lookup table vs runtime math
-
-The bar strings are stored as a hardcoded `[101]string` array indexed by integer percentage (0–100). At render time, displaying a bar is a single array index — no arithmetic, no string building, no allocation.
-
-Three approaches were considered:
-
-| Approach | Render cost | Startup cost | Allocations per call |
-|----------|------------|--------------|---------------------|
-| Runtime math (`strings.Repeat` + partial block selection) | ~200ns | None | 3+ (string concat) |
-| `init()` computed lookup | Array index | Loop + string building | 0 |
-| Hardcoded lookup (current) | Array index | None | 0 |
-
-The hardcoded approach wins on both axes: zero allocation at render time and zero startup cost. The values are computed once by a generation script and embedded directly in source.
-
-### Generation script
-
-The lookup table was generated by a Go script run via `roboduck gorun`. The script computes how many "eighths" of fill each percentage needs across 10 character positions, then assembles the corresponding Unicode characters:
+The bar is computed at render time inside a goroutine that runs in parallel with the git operations. The math:
 
 ```go
-blocks := []string{" ", "▏", "▎", "▍", "▌", "▋", "▊", "▉", "█"}
-const w = 10
-
-for pct := range 101 {
-    eighths := pct * w * 8 / 100  // total fill in eighths (0–80)
-    full := eighths / 8           // fully filled characters
-    partial := eighths % 8        // fractional part (0–7)
-    empty := w - full
-    if partial > 0 {
-        empty--
-    }
-    // Assemble: full █ blocks + partial block + empty ░ blocks
-}
+halves := p * barWidth * 2 / 100  // total fill in halves (0–30)
+full   := halves / 2              // fully filled characters
+half   := halves % 2              // 0 or 1 (half-block transition)
+empty  := barWidth - full
+if half > 0 { empty-- }
 ```
 
-The generation script source is referenced in the `barStrings` declaration comment. To regenerate: `roboduck gorun -f <script-path>`, then paste the output into the array literal.
+The three styled segments are assembled into a string: accent-coloured full blocks, half-block with FG+BG, and muted empty blocks. Benchmarks show ~4–6µs per render on Apple M4 Pro — negligible against the 300ms debounce interval, and the render runs in parallel with the git operations so it's effectively free.
 
 ### Render path
 
-`renderContextBar` is the only function that reads the lookup table:
+`renderContextBar` returns the complete styled bar string:
 
 1. Clamp percentage to `[0, 100]` using `min(max(...))` builtins.
-2. Index into `barStrings[p]` — single array access.
-3. Append the integer percentage label via `fmt.Sprintf`.
-4. Apply threshold colour (mint <70%, warning 70–89%, error ≥90%) via lipgloss.
+2. Compute filled/half/empty character counts via integer arithmetic.
+3. Style the filled portion (`█`) in the accent colour.
+4. Style the half-block transition (`▌`) with FG=accent, BG=muted.
+5. Style the unfilled portion (`░`) in muted slate.
+6. Append the integer percentage label in the accent colour.
 
 When the percentage is nil (before the first API call), a precomputed `nullBar` is returned — the muted empty bar with an en-dash instead of a number.
 

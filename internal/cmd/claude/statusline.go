@@ -108,17 +108,21 @@ func (c *statusLineCmd) Run(stdin io.Reader, stdout io.Writer) error {
 
 	wg.Wait()
 
-	// Assemble output: context bar | path | git status
+	// Assemble output: context bar | model | path | git status
 	sep := sepStyle.Render(" | ")
+
+	model := shortModelName(in.Model.ID, in.ContextWindow.ContextWindowSize)
 
 	var b strings.Builder
 	b.WriteString(contextBar)
 	b.WriteString(sep)
-	b.WriteString(pathStyle.Render(displayPath))
+	b.WriteString(mutedStyle.Render(model))
+	b.WriteString(sep)
+	b.WriteString(pathStyle.Render(compactPath(displayPath, maxPathWidth)))
 
 	if branch != "" {
 		b.WriteString(sep)
-		b.WriteString(branchStyle.Render(branch))
+		b.WriteString(branchStyle.Render(truncate(branch, maxBranchWidth)))
 		writeGitIndicators(&b, staged, unstaged, ahead, behind)
 	}
 
@@ -342,10 +346,10 @@ var (
 	halfStyleError   = lipgloss.NewStyle().Foreground(colorError).Background(colorSlate)
 )
 
-// renderContextBar returns a styled 15-character progress bar with percentage.
-// The bar has 14 fillable characters split by a red │ marker at the 85%
-// auto-compaction threshold: 12 chars before the marker, 2 after.
-// Fill uses half-blocks for 2× resolution (28 levels across 14 chars).
+// renderContextBar returns a styled 20-character progress bar with percentage.
+// The bar has 19 fillable characters split by a red │ marker at the 85%
+// auto-compaction threshold: 17 chars before the marker, 2 after.
+// Fill uses half-blocks for 2× resolution (38 levels across 19 chars).
 // Colour shifts by threshold: mint <70%, warning 70–89%, error 85%+.
 // When pct is nil (before first API call), returns a muted empty bar.
 func renderContextBar(pct *float64) string {
@@ -410,6 +414,109 @@ func renderContextBar(pct *float64) string {
 	b.WriteString(accent.Render(strconv.Itoa(p) + "%"))
 
 	return b.String()
+}
+
+// ---------------------------------------------------------------------------
+// Model label
+// ---------------------------------------------------------------------------
+
+// shortModelName returns an abbreviated model label like "S4.5", "O4.6-1M".
+// Parses the model family and version from the ID string, prefixes with the
+// family initial, and appends "-1M" when the context window exceeds 200k.
+func shortModelName(id string, ctxSize int) string {
+	// Strip domain prefixes like "eu.anthropic."
+	if i := strings.LastIndex(id, "claude-"); i >= 0 {
+		id = id[i:]
+	}
+
+	parts := strings.Split(id, "-")
+
+	var prefix byte
+	var verParts []string
+	for i, p := range parts {
+		switch p {
+		case "sonnet":
+			prefix = 'S'
+		case "opus":
+			prefix = 'O'
+		case "haiku":
+			prefix = 'H'
+		default:
+			continue
+		}
+		// Collect subsequent short numeric parts as version segments.
+		for j := i + 1; j < len(parts); j++ {
+			if len(parts[j]) <= 2 {
+				if _, err := strconv.Atoi(parts[j]); err == nil {
+					verParts = append(verParts, parts[j])
+					continue
+				}
+			}
+			break
+		}
+		break
+	}
+
+	if prefix == 0 {
+		return id
+	}
+
+	result := string(prefix) + strings.Join(verParts, ".")
+	if ctxSize > 200_000 {
+		result += "-1M"
+	}
+	return result
+}
+
+// ---------------------------------------------------------------------------
+// Path and branch trimming
+// ---------------------------------------------------------------------------
+
+const (
+	maxPathWidth   = 25
+	maxBranchWidth = 20
+)
+
+// compactPath shortens a slash-separated path to fit within maxWidth
+// (measured in display characters, not bytes).
+// Strategy: progressively collapse intermediate segments (second through
+// second-to-last) to their first character, starting from the leftmost
+// intermediate. If still too long, falls back to "first/…/last" with
+// tail truncation as a last resort.
+func compactPath(path string, maxWidth int) string {
+	r := []rune(path)
+	if len(r) <= maxWidth {
+		return path
+	}
+
+	segs := strings.Split(path, "/")
+	if len(segs) <= 2 {
+		return truncate(path, maxWidth)
+	}
+
+	// Collapse intermediates one at a time (preserve first + last).
+	for i := 1; i < len(segs)-1; i++ {
+		sr := []rune(segs[i])
+		if len(sr) > 1 {
+			segs[i] = string(sr[:1])
+		}
+		if joined := strings.Join(segs, "/"); len([]rune(joined)) <= maxWidth {
+			return joined
+		}
+	}
+
+	// Middle elision: first/…/last.
+	elided := segs[0] + "/…/" + segs[len(segs)-1]
+	return truncate(elided, maxWidth)
+}
+
+// truncate shortens s to maxWidth display characters, appending "…" if truncated.
+func truncate(s string, maxWidth int) string {
+	r := []rune(s)
+	if len(r) <= maxWidth {
+		return s
+	}
+	return string(r[:maxWidth-1]) + "…"
 }
 
 // ---------------------------------------------------------------------------

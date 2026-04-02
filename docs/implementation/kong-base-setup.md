@@ -2,7 +2,7 @@
 
 ## CLI Framework
 
-botctrl uses [kong](https://github.com/alecthomas/kong) for CLI parsing. Kong models the entire command tree as nested Go structs — there is no imperative flag registration. The struct *is* the schema.
+botctrl uses [kong](https://github.com/alecthomas/kong) for CLI parsing. Kong models the entire command tree as nested Go structs — there is no imperative flag registration. The struct _is_ the schema.
 
 ### Entrypoint
 
@@ -11,7 +11,7 @@ botctrl uses [kong](https://github.com/alecthomas/kong) for CLI parsing. Kong mo
 ```go
 type cli struct {
     Version versionFlag `name:"version" help:"Print version and exit." short:"v"`
-    Hook    hook.Cmd    `cmd:"hook" help:"Hook handlers for AI coding assistants."`
+    Claude  claude.Cmd  `cmd:"claude" help:"Claude Code agent commands — hooks, status line, and configuration."`
 }
 
 func main() {
@@ -85,12 +85,12 @@ The `--version` / `-v` flag uses Kong's `BeforeReset` lifecycle hook. When the f
 
 ### Layout
 
-Commands live under `internal/cmd/` organized by command group:
+Commands live under `internal/cmd/` organized by agent, then by capability:
 
 ```
-cmd/botctrl/main.go              # Entrypoint, root cli struct, bindings
-internal/cmd/hook/hook.go        # "botctrl hook" group
-internal/cmd/hook/claude/claude.go  # "botctrl hook claude" subcommands
+cmd/botctrl/main.go                    # Entrypoint, root cli struct, bindings
+internal/cmd/claude/claude.go          # "botctrl claude" agent group
+internal/cmd/claude/hook/hook.go       # "botctrl claude hook" subcommands
 ```
 
 Each level exports a `Cmd` struct that the parent embeds with a `cmd:""` tag.
@@ -100,14 +100,14 @@ Each level exports a `Cmd` struct that the parent embeds with a `cmd:""` tag.
 Kong's command tree is a direct reflection of struct nesting:
 
 ```
-botctrl hook claude pre-tool-use
-   │     │     │        │
-   cli   │     │        └─ preToolUseCmd (leaf — has Run())
-         │     └─ claude.Cmd struct field
-         └─ hook.Cmd struct field
+botctrl claude hook pre-tool-use
+   │      │     │        │
+   cli    │     │        └─ preToolUseCmd (leaf — has Run())
+          │     └─ hook.Cmd struct field
+          └─ claude.Cmd struct field
 ```
 
-- **Group nodes** (hook, claude) are exported `Cmd` structs with `cmd:""` tagged fields for their children. They have no `Run()` method.
+- **Group nodes** (claude, hook) are exported `Cmd` structs with `cmd:""` tagged fields for their children. They have no `Run()` method.
 - **Leaf commands** (pre-tool-use, session-start, etc.) are unexported structs with a `Run(...) error` method. They are the actual execution targets.
 
 ### Adding a New Command

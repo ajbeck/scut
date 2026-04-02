@@ -11,7 +11,7 @@ import "golang.org/x/mod/semver"
 // Version is the semantic version of the application.
 // Must include the "v" prefix (e.g., "v0.1.0", "v1.0.0-rc.1").
 // Set at compile time via -ldflags.
-var Version = "v0.0.0-dev"
+var Version = "v0.1.0"
 
 // BuildMetadata is additional build information such as a commit SHA.
 // Set at compile time via -ldflags.

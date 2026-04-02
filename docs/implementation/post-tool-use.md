@@ -1,6 +1,6 @@
 # PostToolUse Hook
 
-`botctrl hook claude post-tool-use`
+`botctrl claude hook post-tool-use`
 
 ## Overview
 
@@ -12,7 +12,7 @@ Deserialized from stdin as `claudecode.PostToolUseInput`.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| *(base fields)* | `claudecode.Input` | `session_id`, `transcript_path`, `cwd`, `hook_event_name`, `permission_mode`, `agent_id`, `agent_type` |
+| _(base fields)_ | `claudecode.Input` | `session_id`, `transcript_path`, `cwd`, `hook_event_name`, `permission_mode`, `agent_id`, `agent_type` |
 | `tool_name` | `string` | Name of the tool that was called (e.g., `Bash`, `Edit`, `mcp__github__search_repositories`) |
 | `tool_use_id` | `string` | Unique identifier for this tool invocation |
 | `tool_input` | `json.RawMessage` | The input that was passed to the tool — shape varies per tool |
@@ -28,7 +28,7 @@ Written to stdout as `claudecode.PostToolUseOutput`.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| *(base fields)* | `claudecode.BaseOutput` | `continue`, `stopReason`, `suppressOutput`, `systemMessage` |
+| _(base fields)_ | `claudecode.BaseOutput` | `continue`, `stopReason`, `suppressOutput`, `systemMessage` |
 | `decision` | `*Decision` | Set to `"block"` to reject the tool result |
 | `reason` | `*string` | Explanation sent to Claude when blocking |
 | `additionalContext` | `*string` | Text injected into Claude's context |
@@ -85,7 +85,7 @@ Three layers, each independently testable:
 
 ## Code
 
-- **Command**: `internal/cmd/hook/claude/posttooluse.go`
-- **Go formatter**: `internal/cmd/hook/claude/format_go.go`
-- **Markdown formatter**: `internal/cmd/hook/claude/format_markdown.go`
+- **Command**: `internal/cmd/claude/hook/posttooluse.go`
+- **Go formatter**: `internal/cmd/claude/hook/format_go.go`
+- **Markdown formatter**: `internal/cmd/claude/hook/format_markdown.go`
 - **Types**: `hooks/claudecode/claudecode.go` — `PostToolUseInput`, `PostToolUseOutput`, `FilePath()`

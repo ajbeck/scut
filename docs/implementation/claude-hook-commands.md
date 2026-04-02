@@ -1,6 +1,6 @@
 # Claude Code Hook Commands
 
-`botctrl hook claude <event>` handles Claude Code hook events. Each event type is a separate subcommand that reads a JSON payload from stdin and writes a JSON response to stdout.
+`botctrl claude hook <event>` handles Claude Code hook events. Each event type is a separate subcommand that reads a JSON payload from stdin and writes a JSON response to stdout.
 
 ## How It Works
 
@@ -12,6 +12,7 @@ Claude Code invokes hooks as subprocesses. The flow is:
 4. Claude Code reads stdout and applies the response (inject context, allow/deny tool calls, block prompts, etc.).
 
 Exit codes control behavior:
+
 - **0** — success, stdout JSON is parsed as the response.
 - **2** — blocking error, stderr is shown as the error message.
 - **non-zero (not 2)** — non-blocking error, stderr is logged, execution continues.
@@ -31,7 +32,7 @@ All input and output types live in the **exported** package `hooks/claudecode`. 
 
 ## Command Structure
 
-Commands live in `internal/cmd/hook/claude/`. Each command is an unexported struct with a `Run(stdin io.Reader, stdout io.Writer) error` method. `io.Reader` and `io.Writer` are injected by Kong via `BindTo` (see [kong-base-setup.md](kong-base-setup.md)).
+Commands live in `internal/cmd/claude/hook/`. Each command is an unexported struct with a `Run(stdin io.Reader, stdout io.Writer) error` method. `io.Reader` and `io.Writer` are injected by Kong via `BindTo` (see [kong-base-setup.md](kong-base-setup.md)).
 
 ## Event Reference
 

@@ -22,8 +22,8 @@ Unstaged file count   Warning    400    #E9A512    lipgloss.Color("#E9A512")
 Ahead arrows          Mint       400    #00D97F    lipgloss.Color("#00D97F")
 Behind arrows         Warning    400    #E9A512    lipgloss.Color("#E9A512")
 Context bar <70%      Mint       400    #00D97F    lipgloss.Color("#00D97F")
-Context bar 70–89%    Warning    400    #E9A512    lipgloss.Color("#E9A512")
-Context bar 85%+      Error      400    #F03E3E    lipgloss.Color("#F03E3E")
+Context bar 70–82%    Warning    400    #E9A512    lipgloss.Color("#E9A512")
+Context bar 83%+      Error      400    #F03E3E    lipgloss.Color("#F03E3E")
 Context bar unfilled  Slate      400    #6C757D    lipgloss.Color("#6C757D")
 Compaction marker     Error      400    #F03E3E    lipgloss.Color("#F03E3E")
 ```
@@ -63,7 +63,7 @@ Error      #F03E3E
      └─ slate (separators) ───────────────┘
 ```
 
-- **Context bar** (first segment): 20-character progress bar (19 fill + 1 marker). Filled portion (`█`) in accent colour, half-block transition (`▌`) with FG=accent BG=slate, unfilled portion (`█`) in muted slate. A red `│` marker sits at position 12 (85% of 15), marking the auto-compaction threshold. Colour shifts by threshold. Always shown — displays `████████████│██ –` in muted slate before the first API call. Uses `used_percentage` from the session snapshot directly.
+- **Context bar** (first segment): 20-character progress bar (19 fill + 1 marker). Filled portion (`█`) in accent colour, half-block transition (`▌`) with FG=accent BG=slate, unfilled portion (`█`) in muted slate. A red `│` marker sits at position 16 (83% of 20), marking the auto-compaction threshold. Colour shifts by threshold. Always shown — displays `████████████████│███ –` in muted slate before the first API call. Uses `used_percentage` from the session snapshot directly.
 - **Path**: current working directory relative to the git repository root. Bold sky 300. The repo name is the first segment (e.g., `botctrl/internal/cmd`). If not in a git repo, the path is relative to `$HOME` prefixed with `~`.
 - **Branch**: the current git branch from HEAD. Bold violet 300. Omitted if not in a git repo or HEAD is detached.
 - **Git indicators**: `✓` (mint) when clean, otherwise `+N` (staged, mint) and `~N` (unstaged/untracked, warning amber). `↑N` (ahead, mint) and `↓N` (behind, warning) show divergence from `origin/<branch>` based on last-fetch state.
@@ -180,7 +180,7 @@ context_window.used_percentage       *float64   Context usage percentage — dri
 
 ### Context percentage
 
-The bar uses `used_percentage` from the session snapshot directly. This is the cumulative context usage metric that tracks auto-compaction (which triggers at 85%). Note: `total_input_tokens` and `total_output_tokens` are **per-call** values, not cumulative — they are not suitable for computing session-level context usage.
+The bar uses `used_percentage` from the session snapshot directly. This is the cumulative context usage metric that tracks auto-compaction (which triggers at 83%). Note: `total_input_tokens` and `total_output_tokens` are **per-call** values, not cumulative — they are not suitable for computing session-level context usage.
 
 Fields available for future segments:
 
@@ -204,11 +204,11 @@ exceeds_200k_tokens                       bool      Whether last response exceed
 
 ### Design
 
-The context bar is a 20-character progress bar that displays context window usage as a percentage. A red `│` marker sits at character position 17 (85% of 20), splitting the fill area into 17 pre-marker and 2 post-marker characters (19 fillable total). The fill area uses the left half-block character (`▌`) with foreground + background colours for sub-character resolution — **38 distinct fill levels** in 19 characters.
+The context bar is a 20-character progress bar that displays context window usage as a percentage. A red `│` marker sits at character position 16 (83% of 20), splitting the fill area into 16 pre-marker and 3 post-marker characters (19 fillable total). The fill area uses the left half-block character (`▌`) with foreground + background colours for sub-character resolution — **38 distinct fill levels** in 19 characters.
 
 The half-block technique (borrowed from [charmbracelet/bubbles](https://github.com/charmbracelet/bubbles) progress bar): `▌` fills the left half of the cell in the accent foreground colour while the right half shows the slate background — matching the solid `█` unfilled blocks.
 
-The bar is rendered by walking each position in the 15-character width. At the marker position, a red `│` is inserted; all other positions are fill characters: accent-coloured `█` for filled, optional `▌` half-block transition (FG=accent, BG=slate), and muted slate `█` for unfilled. The marker provides a fixed visual landmark so you can gauge proximity to auto-compaction at a glance.
+The bar is rendered by walking each position in the 20-character width. At the marker position, a red `│` is inserted; all other positions are fill characters: accent-coloured `█` for filled, optional `▌` half-block transition (FG=accent, BG=slate), and muted slate `█` for unfilled. The marker provides a fixed visual landmark so you can gauge proximity to auto-compaction at a glance.
 
 ### Runtime computation
 

@@ -22,7 +22,7 @@ import (
 
 // compactionThreshold is the context window percentage at which Claude Code
 // triggers auto-compaction. The red marker on the context bar sits here.
-const compactionThreshold = 85
+const compactionThreshold = 83
 
 // ---------------------------------------------------------------------------
 // Data Monocle palette — 400 stops for terminal accents
@@ -347,10 +347,10 @@ var (
 )
 
 // renderContextBar returns a styled 20-character progress bar with percentage.
-// The bar has 19 fillable characters split by a red │ marker at the 85%
-// auto-compaction threshold: 17 chars before the marker, 2 after.
+// The bar has 19 fillable characters split by a red │ marker at the 83%
+// auto-compaction threshold: 16 chars before the marker, 3 after.
 // Fill uses half-blocks for 2× resolution (38 levels across 19 chars).
-// Colour shifts by threshold: mint <70%, warning 70–89%, error 85%+.
+// Colour shifts by threshold: mint <70%, warning 70–82%, error 83%+.
 // When pct is nil (before first API call), returns a muted empty bar.
 func renderContextBar(pct *float64) string {
 	if pct == nil {

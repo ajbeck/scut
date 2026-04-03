@@ -32,6 +32,26 @@ func TestFormatMarkdown(t *testing.T) {
 			src:        "Just some text.\n",
 			wantChange: false,
 		},
+		{
+			name:       "table column alignment",
+			src:        "| Name | Age |\n| --- | --- |\n| Alice | 30 |\n| Bob | 7 |\n",
+			wantChange: true,
+		},
+		{
+			name:       "table preserved as table",
+			src:        "| Name  | Age |\n| ----- | --- |\n| Alice | 30  |\n| Bob   | 7   |\n",
+			wantChange: false,
+		},
+		{
+			name:       "strikethrough roundtrip",
+			src:        "Some ~~deleted~~ text.\n",
+			wantChange: false,
+		},
+		{
+			name:       "task checkbox roundtrip",
+			src:        "- [x] done\n- [ ] todo\n",
+			wantChange: false,
+		},
 	}
 
 	for _, tt := range tests {

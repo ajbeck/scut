@@ -20,9 +20,12 @@ import (
 	cc "github.com/ajbeck/botctrl/hooks/claudecode"
 )
 
-// compactionThreshold is the context window percentage at which Claude Code
-// triggers auto-compaction. The red marker on the context bar sits here.
-const compactionThreshold = 83
+// Context bar thresholds — control colour shifts and marker placement.
+const (
+	compactionThreshold = 83      // percentage at which Claude Code triggers auto-compaction; the red marker sits here
+	warningThreshold    = 70      // percentage at which the bar shifts from mint to warning amber
+	largeContextSize    = 200_000 // context window token count above which the model label gets a "-1M" suffix
+)
 
 // ---------------------------------------------------------------------------
 // Data Monocle palette — 400 stops for terminal accents
@@ -242,31 +245,28 @@ func (g gitInfo) aheadBehind() (ahead, behind int) {
 	}
 	baseHash := bases[0].Hash
 
-	// Count commits from local HEAD to merge base.
-	iter, err := g.repo.Log(&gogit.LogOptions{From: localHash})
-	if err != nil {
-		return 0, 0
-	}
-	iter.ForEach(func(c *object.Commit) error {
-		if c.Hash == baseHash {
-			return storer.ErrStop
+	// Count commits from each HEAD to merge base concurrently — the two
+	// log walks are independent and can overlap their I/O.
+	countTo := func(from plumbing.Hash) int {
+		iter, err := g.repo.Log(&gogit.LogOptions{From: from})
+		if err != nil {
+			return 0
 		}
-		ahead++
-		return nil
-	})
+		n := 0
+		iter.ForEach(func(c *object.Commit) error {
+			if c.Hash == baseHash {
+				return storer.ErrStop
+			}
+			n++
+			return nil
+		})
+		return n
+	}
 
-	// Count commits from remote HEAD to merge base.
-	iter, err = g.repo.Log(&gogit.LogOptions{From: remoteHash})
-	if err != nil {
-		return ahead, 0
-	}
-	iter.ForEach(func(c *object.Commit) error {
-		if c.Hash == baseHash {
-			return storer.ErrStop
-		}
-		behind++
-		return nil
-	})
+	var wg sync.WaitGroup
+	wg.Go(func() { ahead = countTo(localHash) })
+	wg.Go(func() { behind = countTo(remoteHash) })
+	wg.Wait()
 
 	return ahead, behind
 }
@@ -320,31 +320,35 @@ var nullBar = mutedStyle.Render(strings.Repeat("█", preFill)) +
 	mutedStyle.Render(strings.Repeat("█", postFill)) +
 	mutedStyle.Render(" –")
 
-// Compaction marker styles — red │ with a background that matches
-// the surrounding bar segment (accent when in filled territory, slate
-// when in unfilled territory).
+// barTheme groups the three accent-dependent styles used by the context bar:
+// the solid fill, the half-block transition (FG=accent, BG=slate), and the
+// compaction marker background (red │ over the accent colour).
+type barTheme struct {
+	accent lipgloss.Style // solid filled block █
+	half   lipgloss.Style // half-block transition ▌ (FG=accent, BG=slate)
+	marker lipgloss.Style // compaction marker │ when in filled territory
+}
+
 var (
-	markerOnSlate   = lipgloss.NewStyle().Foreground(colorError).Background(colorSlate)
-	markerOnMint    = lipgloss.NewStyle().Foreground(colorError).Background(colorMint)
-	markerOnWarning = lipgloss.NewStyle().Foreground(colorError).Background(colorWarning)
-	markerOnError   = lipgloss.NewStyle().Foreground(colorError).Background(colorError)
+	themeMint = barTheme{
+		accent: lipgloss.NewStyle().Foreground(colorMint),
+		half:   lipgloss.NewStyle().Foreground(colorMint).Background(colorSlate),
+		marker: lipgloss.NewStyle().Foreground(colorError).Background(colorMint),
+	}
+	themeWarning = barTheme{
+		accent: lipgloss.NewStyle().Foreground(colorWarning),
+		half:   lipgloss.NewStyle().Foreground(colorWarning).Background(colorSlate),
+		marker: lipgloss.NewStyle().Foreground(colorError).Background(colorWarning),
+	}
+	themeError = barTheme{
+		accent: lipgloss.NewStyle().Foreground(colorError),
+		half:   lipgloss.NewStyle().Foreground(colorError).Background(colorSlate),
+		marker: lipgloss.NewStyle().Foreground(colorError).Background(colorError),
+	}
 )
 
-// Context bar accent styles — one per threshold.
-var (
-	barStyleMint    = lipgloss.NewStyle().Foreground(colorMint)
-	barStyleWarning = lipgloss.NewStyle().Foreground(colorWarning)
-	barStyleError   = lipgloss.NewStyle().Foreground(colorError)
-)
-
-// Half-block transition styles — FG = accent, BG = slate.
-// The ▌ character fills the left half in the accent colour; the right half
-// shows slate background, matching the solid unfilled █ blocks.
-var (
-	halfStyleMint    = lipgloss.NewStyle().Foreground(colorMint).Background(colorSlate)
-	halfStyleWarning = lipgloss.NewStyle().Foreground(colorWarning).Background(colorSlate)
-	halfStyleError   = lipgloss.NewStyle().Foreground(colorError).Background(colorSlate)
-)
+// markerOnSlate styles the compaction marker │ when it sits in unfilled territory.
+var markerOnSlate = lipgloss.NewStyle().Foreground(colorError).Background(colorSlate)
 
 // renderContextBar returns a styled 20-character progress bar with percentage.
 // The bar has 19 fillable characters split by a red │ marker at the 83%
@@ -359,7 +363,7 @@ func renderContextBar(pct *float64) string {
 
 	p := min(max(int(math.Round(*pct)), 0), 100)
 
-	// Compute filled/half/empty across the full fill area (14 chars).
+	// Compute filled/half/empty across the full fill area (19 chars).
 	halves := p * fillArea * 2 / 100
 	full := halves / 2
 	half := halves % 2
@@ -368,22 +372,24 @@ func renderContextBar(pct *float64) string {
 		empty--
 	}
 
-	// Pick accent + half-block + marker styles by threshold.
-	var accent, halfAccent, markerFilled lipgloss.Style
+	// Pick theme by threshold.
+	var theme barTheme
 	switch {
 	case p >= compactionThreshold:
-		accent = barStyleError
-		halfAccent = halfStyleError
-		markerFilled = markerOnError
-	case p >= 70:
-		accent = barStyleWarning
-		halfAccent = halfStyleWarning
-		markerFilled = markerOnWarning
+		theme = themeError
+	case p >= warningThreshold:
+		theme = themeWarning
 	default:
-		accent = barStyleMint
-		halfAccent = halfStyleMint
-		markerFilled = markerOnMint
+		theme = themeMint
 	}
+
+	// Precompute styled blocks — avoids re-rendering the same ANSI
+	// escape sequence on every loop iteration.
+	filledBlock := theme.accent.Render("█")
+	halfBlock := theme.half.Render("▌")
+	emptyBlock := mutedStyle.Render("█")
+	filledMarker := theme.marker.Render("│")
+	unfilledMarker := markerOnSlate.Render("│")
 
 	// Build the bar by walking through each character position.
 	// At markerPos, insert the red │ with a background matching
@@ -393,25 +399,25 @@ func renderContextBar(pct *float64) string {
 	for pos := range barWidth {
 		if pos == markerPos {
 			if fillIdx < full {
-				b.WriteString(markerFilled.Render("│"))
+				b.WriteString(filledMarker)
 			} else {
-				b.WriteString(markerOnSlate.Render("│"))
+				b.WriteString(unfilledMarker)
 			}
 			continue
 		}
 		if fillIdx < full {
-			b.WriteString(accent.Render("█"))
+			b.WriteString(filledBlock)
 		} else if fillIdx == full && half > 0 {
-			b.WriteString(halfAccent.Render("▌"))
+			b.WriteString(halfBlock)
 		} else {
-			b.WriteString(mutedStyle.Render("█"))
+			b.WriteString(emptyBlock)
 		}
 		fillIdx++
 	}
 
 	// Percentage label in accent colour.
 	b.WriteByte(' ')
-	b.WriteString(accent.Render(strconv.Itoa(p) + "%"))
+	b.WriteString(theme.accent.Render(strconv.Itoa(p) + "%"))
 
 	return b.String()
 }
@@ -462,7 +468,7 @@ func shortModelName(id string, ctxSize int) string {
 	}
 
 	result := string(prefix) + strings.Join(verParts, ".")
-	if ctxSize > 200_000 {
+	if ctxSize > largeContextSize {
 		result += "-1M"
 	}
 	return result

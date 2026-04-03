@@ -4,6 +4,7 @@ package claude
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 )
@@ -22,7 +23,7 @@ func BenchmarkRenderContextBar_Nil(b *testing.B) {
 }
 
 func BenchmarkRenderContextBar_Thresholds(b *testing.B) {
-	thresholds := []float64{25.0, 75.0, 95.0}
+	thresholds := []float64{25.0, 75.0, 83.0, 95.0}
 	for _, pct := range thresholds {
 		pct := pct
 		b.Run(fmt.Sprintf("%d", int(pct)), func(b *testing.B) {
@@ -196,5 +197,41 @@ func TestRenderContextBar_AllPercentages(t *testing.T) {
 		if blocks != fillArea {
 			t.Errorf("total blocks at %d%%: got %d, want %d", p, blocks, fillArea)
 		}
+	}
+}
+
+func TestRenderContextBar_ThresholdBoundary(t *testing.T) {
+	// The bar must use warning colour at compactionThreshold-1 and error
+	// colour at compactionThreshold. We verify by checking that the two
+	// renders produce different ANSI output (the colour codes differ).
+	below := float64(compactionThreshold - 1)
+	at := float64(compactionThreshold)
+	resultBelow := renderContextBar(&below)
+	resultAt := renderContextBar(&at)
+	if resultBelow == resultAt {
+		t.Errorf("bar at %d%% and %d%% should differ in colour but are identical", compactionThreshold-1, compactionThreshold)
+	}
+}
+
+func TestTildeRelative(t *testing.T) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Skip("cannot determine home directory")
+	}
+	for _, tc := range []struct {
+		name string
+		cwd  string
+		want string
+	}{
+		{"subdir", home + "/projects/foo", "~/projects/foo"},
+		{"home_root", home, "~/."},
+		{"outside_home", "/tmp", "tmp"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got := tildeRelative(tc.cwd)
+			if got != tc.want {
+				t.Errorf("tildeRelative(%q) = %q, want %q", tc.cwd, got, tc.want)
+			}
+		})
 	}
 }

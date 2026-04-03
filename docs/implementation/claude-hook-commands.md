@@ -32,7 +32,7 @@ All input and output types live in the **exported** package `hooks/claudecode`. 
 
 ## Command Structure
 
-Commands live in `internal/cmd/claude/hook/`. Each command is an unexported struct with a `Run(stdin io.Reader, stdout io.Writer) error` method. `io.Reader` and `io.Writer` are injected by Kong via `BindTo` (see [kong-base-setup.md](kong-base-setup.md)).
+Commands live in `internal/cmd/claude/hook/`. Each command is an unexported struct with a `Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error` method. `io.Reader` and `io.Writer` are injected by Kong via `BindTo`; `*slog.Logger` is passed as a run-time binding via `ctx.Run(logger)` (see [kong-base-setup.md](kong-base-setup.md) and [logging.md](logging.md)).
 
 ## Event Reference
 

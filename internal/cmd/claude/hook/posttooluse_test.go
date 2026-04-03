@@ -10,6 +10,8 @@ import (
 
 	"github.com/spf13/afero"
 
+	"github.com/ajbeck/botctrl/internal/logging"
+
 	cc "github.com/ajbeck/botctrl/hooks/claudecode"
 )
 
@@ -109,7 +111,7 @@ func TestPostToolUseCmd_Dispatch(t *testing.T) {
 			var stdout bytes.Buffer
 			cmd := &postToolUseCmd{}
 
-			if err := cmd.Run(stdin, &stdout, fs); err != nil {
+			if err := cmd.Run(stdin, &stdout, fs, logging.Discard); err != nil {
 				t.Fatalf("Run() error: %v", err)
 			}
 

@@ -44,14 +44,26 @@ Current bindings registered at parse time:
 
 The `(*io.Reader)(nil)` syntax is a nil pointer used only for its type — Kong reflects on it to determine the interface. The concrete value (`os.Stdin`) is what gets injected at runtime.
 
-This makes commands testable without touching real stdio:
+#### Run-time bindings
+
+The `*slog.Logger` binding is created after parsing, based on `--log` / `--log-level` flags, and passed as an extra binding to `ctx.Run()`:
+
+```go
+logger, logCloser := c.Claude.OpenLogger(ctx.Command())
+if logCloser != nil {
+    defer logCloser.Close()
+}
+ctx.FatalIfErrorf(ctx.Run(logger))
+```
+
+This makes commands testable without touching real stdio — pass `logging.Discard` as the logger:
 
 ```go
 func TestPreToolUse(t *testing.T) {
     input := strings.NewReader(`{"session_id":"test",...}`)
     var output bytes.Buffer
     cmd := &preToolUseCmd{}
-    if err := cmd.Run(input, &output); err != nil {
+    if err := cmd.Run(input, &output, logging.Discard); err != nil {
         t.Fatal(err)
     }
     // assert on output.Bytes()
@@ -62,12 +74,15 @@ func TestPreToolUse(t *testing.T) {
 
 To add a new dependency available to all commands:
 
-1. Register it in `main()` with `kong.BindTo(impl, (*InterfaceType)(nil))` for interfaces, or `kong.Bind(value)` for concrete types.
+1. Register it in `main()` with `kong.BindTo(impl, (*InterfaceType)(nil))` for interfaces, `kong.Bind(value)` for concrete types, or pass as an extra binding to `ctx.Run(value)`.
 2. Add the type as a parameter to any command's `Run()` method. Kong resolves it automatically.
 
 ```go
-// In main():
+// In main() — static binding:
 kong.Bind(logger)
+
+// In main() — run-time binding:
+ctx.FatalIfErrorf(ctx.Run(logger))
 
 // In a command:
 func (c *myCmd) Run(stdin io.Reader, stdout io.Writer, log *slog.Logger) error {
@@ -89,8 +104,9 @@ Commands live under `internal/cmd/` organized by agent, then by capability:
 
 ```
 cmd/botctrl/main.go                    # Entrypoint, root cli struct, bindings
-internal/cmd/claude/claude.go          # "botctrl claude" agent group
+internal/cmd/claude/claude.go          # "botctrl claude" agent group (--log, --log-level flags)
 internal/cmd/claude/hook/hook.go       # "botctrl claude hook" subcommands
+internal/cmd/logging/logging.go        # "botctrl logging" group (clean command)
 ```
 
 Each level exports a `Cmd` struct that the parent embeds with a `cmd:""` tag.

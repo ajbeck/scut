@@ -6,23 +6,27 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"log/slog"
 	"strings"
 	"testing"
 
 	"github.com/spf13/afero"
+
+	"github.com/ajbeck/botctrl/internal/logging"
 )
 
-// runHandler normalizes the two handler signatures into one callable.
-// Stub handlers take (io.Reader, io.Writer); postToolUseCmd also takes afero.Fs.
+// runHandler normalizes the handler signatures into one callable.
 type runHandler func(io.Reader, io.Writer) error
 
-func stubHandler(fn func(io.Reader, io.Writer) error) runHandler {
-	return fn
+func stubHandler(fn func(io.Reader, io.Writer, *slog.Logger) error) runHandler {
+	return func(r io.Reader, w io.Writer) error {
+		return fn(r, w, logging.Discard)
+	}
 }
 
-func fsHandler(fn func(io.Reader, io.Writer, afero.Fs) error) runHandler {
+func fsHandler(fn func(io.Reader, io.Writer, afero.Fs, *slog.Logger) error) runHandler {
 	return func(r io.Reader, w io.Writer) error {
-		return fn(r, w, afero.NewMemMapFs())
+		return fn(r, w, afero.NewMemMapFs(), logging.Discard)
 	}
 }
 

@@ -10,12 +10,14 @@ import (
 	"github.com/spf13/afero"
 
 	"github.com/ajbeck/botctrl/internal/cmd/claude"
+	loggingcmd "github.com/ajbeck/botctrl/internal/cmd/logging"
 	"github.com/ajbeck/botctrl/internal/version"
 )
 
 type cli struct {
-	Version versionFlag `name:"version" help:"Print version and exit." short:"v"`
-	Claude  claude.Cmd  `cmd:"claude" help:"Claude Code agent commands — hooks, status line, and configuration."`
+	Version versionFlag    `name:"version" help:"Print version and exit." short:"v"`
+	Claude  claude.Cmd     `cmd:"claude" help:"Claude Code agent commands — hooks, status line, and configuration."`
+	Logging loggingcmd.Cmd `cmd:"logging" help:"Manage botctrl log files."`
 }
 
 // versionFlag is a kong flag type that prints the version and exits.
@@ -42,5 +44,11 @@ func main() {
 			Compact:             true,
 		},
 	)
-	ctx.FatalIfErrorf(ctx.Run())
+
+	logger, logCloser := c.Claude.OpenLogger(ctx.Command())
+	if logCloser != nil {
+		defer logCloser.Close()
+	}
+
+	ctx.FatalIfErrorf(ctx.Run(logger))
 }

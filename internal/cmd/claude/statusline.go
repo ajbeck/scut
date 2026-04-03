@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"math"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"charm.land/lipgloss/v2"
 	gogit "github.com/go-git/go-git/v5"
@@ -65,7 +67,9 @@ go-git for branch detection (no subprocess) and lipgloss for
 ANSI styling.`
 }
 
-func (c *statusLineCmd) Run(stdin io.Reader, stdout io.Writer) error {
+func (c *statusLineCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
+	start := time.Now()
+
 	var in cc.StatusLineInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding StatusLine input: %w", err)
@@ -131,6 +135,13 @@ func (c *statusLineCmd) Run(stdin io.Reader, stdout io.Writer) error {
 
 	b.WriteByte('\n')
 	io.WriteString(stdout, b.String())
+
+	var pct float64
+	if in.ContextWindow.UsedPercentage != nil {
+		pct = *in.ContextWindow.UsedPercentage
+	}
+	logger.Info("rendered", "hook", "status-line", "model", in.Model.ID, "path", displayPath, "branch", branch, "context_pct", pct, "duration_ms", time.Since(start).Milliseconds())
+
 	return nil
 }
 

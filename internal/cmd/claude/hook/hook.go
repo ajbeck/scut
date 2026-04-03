@@ -5,9 +5,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
+	"time"
 
 	cc "github.com/ajbeck/botctrl/hooks/claudecode"
 )
+
+// ms returns milliseconds elapsed since start as an int64 for log attributes.
+func ms(start time.Time) int64 {
+	return time.Since(start).Milliseconds()
+}
 
 // Cmd is the Kong command group for "botctrl claude hook".
 type Cmd struct {
@@ -51,11 +58,13 @@ func writeJSON(w io.Writer, v any) error {
 
 type sessionStartCmd struct{}
 
-func (c *sessionStartCmd) Run(stdin io.Reader, stdout io.Writer) error {
+func (c *sessionStartCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
+	start := time.Now()
 	var in cc.SessionStartInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding SessionStart input: %w", err)
 	}
+	logger.Info("handled", "hook", "session-start", "session_id", in.SessionID, "source", in.Source, "duration_ms", ms(start))
 	return writeJSON(stdout, cc.SessionStartOutput{
 		AdditionalContext: new("hello from botctrl session-start"),
 	})
@@ -67,11 +76,13 @@ func (c *sessionStartCmd) Run(stdin io.Reader, stdout io.Writer) error {
 
 type sessionEndCmd struct{}
 
-func (c *sessionEndCmd) Run(stdin io.Reader, stdout io.Writer) error {
+func (c *sessionEndCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
+	start := time.Now()
 	var in cc.SessionEndInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding SessionEnd input: %w", err)
 	}
+	logger.Info("handled", "hook", "session-end", "session_id", in.SessionID, "reason", in.Reason, "duration_ms", ms(start))
 	return writeJSON(stdout, cc.BaseOutput{})
 }
 
@@ -81,7 +92,7 @@ func (c *sessionEndCmd) Run(stdin io.Reader, stdout io.Writer) error {
 
 type instructionsLoadedCmd struct{}
 
-func (c *instructionsLoadedCmd) Run(stdin io.Reader, stdout io.Writer) error {
+func (c *instructionsLoadedCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.InstructionsLoadedInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding InstructionsLoaded input: %w", err)
@@ -95,7 +106,7 @@ func (c *instructionsLoadedCmd) Run(stdin io.Reader, stdout io.Writer) error {
 
 type userPromptSubmitCmd struct{}
 
-func (c *userPromptSubmitCmd) Run(stdin io.Reader, stdout io.Writer) error {
+func (c *userPromptSubmitCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.UserPromptSubmitInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding UserPromptSubmit input: %w", err)
@@ -111,11 +122,13 @@ func (c *userPromptSubmitCmd) Run(stdin io.Reader, stdout io.Writer) error {
 
 type preToolUseCmd struct{}
 
-func (c *preToolUseCmd) Run(stdin io.Reader, stdout io.Writer) error {
+func (c *preToolUseCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
+	start := time.Now()
 	var in cc.PreToolUseInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding PreToolUse input: %w", err)
 	}
+	logger.Info("handled", "hook", "pre-tool-use", "session_id", in.SessionID, "tool_name", in.ToolName, "duration_ms", ms(start))
 	return writeJSON(stdout, cc.PreToolUseOutput{
 		HookSpecificOutput: cc.PreToolUseHookOutput{
 			HookEventName:            cc.EventPreToolUse,
@@ -131,7 +144,7 @@ func (c *preToolUseCmd) Run(stdin io.Reader, stdout io.Writer) error {
 
 type postToolUseFailureCmd struct{}
 
-func (c *postToolUseFailureCmd) Run(stdin io.Reader, stdout io.Writer) error {
+func (c *postToolUseFailureCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.PostToolUseFailureInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding PostToolUseFailure input: %w", err)
@@ -147,7 +160,7 @@ func (c *postToolUseFailureCmd) Run(stdin io.Reader, stdout io.Writer) error {
 
 type permissionRequestCmd struct{}
 
-func (c *permissionRequestCmd) Run(stdin io.Reader, stdout io.Writer) error {
+func (c *permissionRequestCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.PermissionRequestInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding PermissionRequest input: %w", err)
@@ -169,7 +182,7 @@ func (c *permissionRequestCmd) Run(stdin io.Reader, stdout io.Writer) error {
 
 type notificationCmd struct{}
 
-func (c *notificationCmd) Run(stdin io.Reader, stdout io.Writer) error {
+func (c *notificationCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.NotificationInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding Notification input: %w", err)
@@ -185,7 +198,7 @@ func (c *notificationCmd) Run(stdin io.Reader, stdout io.Writer) error {
 
 type subagentStartCmd struct{}
 
-func (c *subagentStartCmd) Run(stdin io.Reader, stdout io.Writer) error {
+func (c *subagentStartCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.SubagentStartInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding SubagentStart input: %w", err)
@@ -201,7 +214,7 @@ func (c *subagentStartCmd) Run(stdin io.Reader, stdout io.Writer) error {
 
 type subagentStopCmd struct{}
 
-func (c *subagentStopCmd) Run(stdin io.Reader, stdout io.Writer) error {
+func (c *subagentStopCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.SubagentStopInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding SubagentStop input: %w", err)
@@ -217,7 +230,7 @@ func (c *subagentStopCmd) Run(stdin io.Reader, stdout io.Writer) error {
 
 type stopCmd struct{}
 
-func (c *stopCmd) Run(stdin io.Reader, stdout io.Writer) error {
+func (c *stopCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.StopInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding Stop input: %w", err)
@@ -233,11 +246,13 @@ func (c *stopCmd) Run(stdin io.Reader, stdout io.Writer) error {
 
 type stopFailureCmd struct{}
 
-func (c *stopFailureCmd) Run(stdin io.Reader, stdout io.Writer) error {
+func (c *stopFailureCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
+	start := time.Now()
 	var in cc.StopFailureInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding StopFailure input: %w", err)
 	}
+	logger.Warn("handled", "hook", "stop-failure", "session_id", in.SessionID, "error", in.Error, "duration_ms", ms(start))
 	return writeJSON(stdout, cc.BaseOutput{})
 }
 
@@ -247,7 +262,7 @@ func (c *stopFailureCmd) Run(stdin io.Reader, stdout io.Writer) error {
 
 type taskCreatedCmd struct{}
 
-func (c *taskCreatedCmd) Run(stdin io.Reader, stdout io.Writer) error {
+func (c *taskCreatedCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.TaskCreatedInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding TaskCreated input: %w", err)
@@ -261,7 +276,7 @@ func (c *taskCreatedCmd) Run(stdin io.Reader, stdout io.Writer) error {
 
 type taskCompletedCmd struct{}
 
-func (c *taskCompletedCmd) Run(stdin io.Reader, stdout io.Writer) error {
+func (c *taskCompletedCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.TaskCompletedInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding TaskCompleted input: %w", err)
@@ -275,7 +290,7 @@ func (c *taskCompletedCmd) Run(stdin io.Reader, stdout io.Writer) error {
 
 type teammateIdleCmd struct{}
 
-func (c *teammateIdleCmd) Run(stdin io.Reader, stdout io.Writer) error {
+func (c *teammateIdleCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.TeammateIdleInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding TeammateIdle input: %w", err)
@@ -289,7 +304,7 @@ func (c *teammateIdleCmd) Run(stdin io.Reader, stdout io.Writer) error {
 
 type configChangeCmd struct{}
 
-func (c *configChangeCmd) Run(stdin io.Reader, stdout io.Writer) error {
+func (c *configChangeCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.ConfigChangeInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding ConfigChange input: %w", err)
@@ -303,7 +318,7 @@ func (c *configChangeCmd) Run(stdin io.Reader, stdout io.Writer) error {
 
 type cwdChangedCmd struct{}
 
-func (c *cwdChangedCmd) Run(stdin io.Reader, stdout io.Writer) error {
+func (c *cwdChangedCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.CwdChangedInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding CwdChanged input: %w", err)
@@ -317,7 +332,7 @@ func (c *cwdChangedCmd) Run(stdin io.Reader, stdout io.Writer) error {
 
 type fileChangedCmd struct{}
 
-func (c *fileChangedCmd) Run(stdin io.Reader, stdout io.Writer) error {
+func (c *fileChangedCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.FileChangedInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding FileChanged input: %w", err)
@@ -331,7 +346,7 @@ func (c *fileChangedCmd) Run(stdin io.Reader, stdout io.Writer) error {
 
 type worktreeCreateCmd struct{}
 
-func (c *worktreeCreateCmd) Run(stdin io.Reader, stdout io.Writer) error {
+func (c *worktreeCreateCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.WorktreeCreateInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding WorktreeCreate input: %w", err)
@@ -349,7 +364,7 @@ func (c *worktreeCreateCmd) Run(stdin io.Reader, stdout io.Writer) error {
 
 type worktreeRemoveCmd struct{}
 
-func (c *worktreeRemoveCmd) Run(stdin io.Reader, stdout io.Writer) error {
+func (c *worktreeRemoveCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.WorktreeRemoveInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding WorktreeRemove input: %w", err)
@@ -363,11 +378,13 @@ func (c *worktreeRemoveCmd) Run(stdin io.Reader, stdout io.Writer) error {
 
 type preCompactCmd struct{}
 
-func (c *preCompactCmd) Run(stdin io.Reader, stdout io.Writer) error {
+func (c *preCompactCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
+	start := time.Now()
 	var in cc.PreCompactInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding PreCompact input: %w", err)
 	}
+	logger.Info("handled", "hook", "pre-compact", "session_id", in.SessionID, "trigger", in.Trigger, "duration_ms", ms(start))
 	return writeJSON(stdout, cc.BaseOutput{})
 }
 
@@ -377,11 +394,13 @@ func (c *preCompactCmd) Run(stdin io.Reader, stdout io.Writer) error {
 
 type postCompactCmd struct{}
 
-func (c *postCompactCmd) Run(stdin io.Reader, stdout io.Writer) error {
+func (c *postCompactCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
+	start := time.Now()
 	var in cc.PostCompactInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding PostCompact input: %w", err)
 	}
+	logger.Info("handled", "hook", "post-compact", "session_id", in.SessionID, "trigger", in.Trigger, "duration_ms", ms(start))
 	return writeJSON(stdout, cc.BaseOutput{})
 }
 
@@ -391,7 +410,7 @@ func (c *postCompactCmd) Run(stdin io.Reader, stdout io.Writer) error {
 
 type elicitationCmd struct{}
 
-func (c *elicitationCmd) Run(stdin io.Reader, stdout io.Writer) error {
+func (c *elicitationCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.ElicitationInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding Elicitation input: %w", err)
@@ -410,7 +429,7 @@ func (c *elicitationCmd) Run(stdin io.Reader, stdout io.Writer) error {
 
 type elicitationResultCmd struct{}
 
-func (c *elicitationResultCmd) Run(stdin io.Reader, stdout io.Writer) error {
+func (c *elicitationResultCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.ElicitationResultInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding ElicitationResult input: %w", err)

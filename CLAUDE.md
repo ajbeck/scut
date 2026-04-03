@@ -55,6 +55,7 @@ Implementation docs live in `docs/implementation/`. Each document covers a speci
 | [claude-hook-commands.md](docs/implementation/claude-hook-commands.md) | Claude Code hook subcommands, event types, input/output types, decision control per event, shared types package design |
 | [post-tool-use.md](docs/implementation/post-tool-use.md)               | PostToolUse hook deep-dive — input/output fields, decision control, MCP output replacement, code locations             |
 | [status-line.md](docs/implementation/status-line.md)                   | Status line command — colour palette, formatting, go-git integration, available input fields                           |
+| [logging.md](docs/implementation/logging.md)                           | Structured JSONL logging — flags, file layout, rotation, standardized fields, clean command                            |
 
 ### Commit-time documentation check
 
@@ -64,6 +65,7 @@ Implementation docs live in `docs/implementation/`. Each document covers a speci
 - `hooks/claudecode/**` or `internal/cmd/claude/hook/**` changes → review `claude-hook-commands.md`
 - `internal/cmd/claude/hook/posttooluse.go` or `PostToolUseInput`/`PostToolUseOutput` changes → review `post-tool-use.md`
 - `internal/cmd/claude/statusline.go` or `hooks/claudecode/statusline.go` changes → review `status-line.md`
+- `internal/logging/**` or `internal/cmd/logging/**` or `--log`/`--log-level` flag changes → review `logging.md`
 - Any new `docs/implementation/*.md` file → add it to the index table above
 
 If a matching document exists and the commit changes behavior it describes (new bindings, new command groups, changed struct tags, altered command tree layout), update the document to reflect the current state **in the same commit**.

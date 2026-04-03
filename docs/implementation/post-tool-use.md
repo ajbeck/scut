@@ -58,7 +58,7 @@ Formatters are pure functions with signature `func(src []byte) ([]byte, error)`:
 | Function | Extensions | Backend | Behavior on bad input |
 |----------|------------|---------|----------------------|
 | `formatGo` | `.go` | `go/format.Source` | Returns `nil, nil` (syntax error — let the compiler catch it) |
-| `formatMarkdown` | `.md`, `.mdx` | goldmark + `goldmark-prettier-markdown` with `ProseWrapPreserve` | Returns `nil, nil` (parse error) |
+| `formatMarkdown` | `.md`, `.mdx` | goldmark + `goldmark-prettier-markdown` with `ProseWrapPreserve`. Parser extensions enabled for GFM (tables, strikethrough, task checkboxes), footnotes, and definition lists — renderer-only, no HTML renderers added. | Returns `nil, nil` (parse error) |
 
 Returning `nil, nil` means "decline to format" — the command skips the write.
 

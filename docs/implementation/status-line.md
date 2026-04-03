@@ -132,7 +132,7 @@ Created once via `openGit(dir)`. If `dir` is not inside a repo, both fields are 
 Method           What                            go-git API
 resolve(cwd)     Relative path + branch name     wt.Filesystem.Root(), repo.Head().Name().Short()
 dirtyCount()     Staged and unstaged file counts  wt.Status() → iterate FileStatus.Staging / .Worktree
-aheadBehind()    Commits ahead/behind origin      repo.Reference() + Commit.MergeBase() + repo.Log()
+aheadBehind()    Commits ahead/behind origin      repo.Reference() + Commit.MergeBase() + concurrent repo.Log() walks
 ```
 
 ### StatusCode reference
@@ -222,6 +222,8 @@ empty  := fillArea - full
 if half > 0 { empty-- }
 ```
 
+A `barTheme` struct groups the three accent-dependent styles (solid fill, half-block transition, compaction marker background) so the threshold switch selects a single theme rather than three individual styles. Styled block strings (`filledBlock`, `halfBlock`, `emptyBlock`, marker variants) are precomputed once per render before the loop, avoiding repeated `lipgloss.Render()` allocations.
+
 The styled segments are assembled into a string: accent-coloured full blocks, optional half-block with FG+BG, muted empty blocks, and the red compaction marker. Benchmarks show ~4–6µs per render on Apple M4 Pro — negligible against the 300ms debounce interval, and the render runs in parallel with the git operations so it's effectively free.
 
 ### Render path
@@ -229,9 +231,10 @@ The styled segments are assembled into a string: accent-coloured full blocks, op
 `renderContextBar` returns the complete styled bar string:
 
 1. Clamp percentage to `[0, 100]` using `min(max(...))` builtins.
-2. Compute filled/half/empty character counts within the 14-char fill area.
-3. Walk positions 0–19: at `markerPos` (17) emit the red `│`; otherwise emit the next fill character — accent `█` for filled, `▌` (FG=accent, BG=slate) for the half-block transition, or muted `█` for unfilled.
-4. Append the integer percentage label in the accent colour.
+2. Compute filled/half/empty character counts within the 19-char fill area.
+3. Select a `barTheme` by threshold and precompute styled block strings.
+4. Walk positions 0–19: at `markerPos` (16) emit the red `│`; otherwise emit the next fill character — accent `█` for filled, `▌` (FG=accent, BG=slate) for the half-block transition, or muted `█` for unfilled.
+5. Append the integer percentage label in the accent colour.
 
 When the percentage is nil (before the first API call), a precomputed `nullBar` is returned — the muted empty bar with the red marker and an en-dash instead of a number.
 

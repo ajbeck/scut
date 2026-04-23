@@ -96,18 +96,19 @@ botctrl claude hook --help
 
 ## Status Line
 
-`botctrl claude status-line` renders a persistent status bar at the bottom of the Claude Code terminal. It displays the current path, git branch with dirty indicators, and a context window usage bar — all computed in-process with zero subprocess overhead.
+`botctrl claude status-line` renders a persistent status bar at the bottom of the Claude Code terminal. It displays context window usage, model label, current path, git branch with dirty/ahead-behind indicators — all computed in-process with zero subprocess overhead.
 
 ```
-botctrl/internal/cmd | getting-started +2 ~5 | ██░░░░░░░░ 25%
+████████████████│███ 50% | O4.6 | botctrl/internal/cmd | getting-started ✓ ↑1
 ```
 
 | Segment | Description |
 |---------|-------------|
-| Path | Current directory relative to the git repo root (or `~/relative` outside a repo) |
-| Branch | Current git branch from HEAD |
-| Dirty indicators | `+N` staged (green), `~N` unstaged/untracked (amber) |
-| Context bar | 10-character progress bar with percentage. Green <70%, amber 70–89%, red 90%+ |
+| Context bar | 20-character progress bar with half-block resolution (38 levels). A red `│` marker sits at 83% — the auto-compaction threshold. Mint <70%, amber 70–82%, red 83%+. |
+| Model | Abbreviated model label (e.g., `S4.5`, `O4.6-1M`) |
+| Path | Current directory relative to the git repo root (or `~/relative` outside a repo). Long paths are compacted by collapsing intermediate segments. |
+| Branch | Current git branch from HEAD, truncated to 20 characters |
+| Git indicators | `✓` when clean, `+N` staged (mint), `~N` unstaged/untracked (amber), `↑N` ahead (mint), `↓N` behind (amber) |
 
 ### Configuration
 
@@ -159,9 +160,46 @@ This can live alongside hooks in the same settings file. A complete configuratio
 
 ### Performance
 
-The status line runs after every assistant message (debounced at 300ms). botctrl is designed for this frequency:
+The status line fires after each assistant message (debounced at 300ms), when permission mode changes, or when vim mode toggles. botctrl is designed for this frequency:
 
 - **No subprocesses**: git branch and worktree status are computed via [go-git](https://github.com/go-git/go-git) (pure Go), not by forking `git`.
 - **Single repo open**: the `.git` directory is opened once per invocation and shared across all queries.
-- **Concurrent collection**: path resolution, git status, and context bar rendering run in parallel goroutines.
-- **Styled via lipgloss**: ANSI escape codes are generated in-process using [charmbracelet/lipgloss](https://github.com/charmbracelet/lipgloss) with automatic colour profile detection.
+- **Concurrent collection**: path resolution, git status, ahead/behind counts, and context bar rendering run in parallel goroutines.
+- **Styled via lipgloss**: ANSI escape codes are generated in-process using [charmbracelet/lipgloss](https://github.com/charmbracelet/lipgloss).
+
+## Logging
+
+Enable structured JSONL logging for hook commands and the status line with the `--log` flag:
+
+```bash
+botctrl claude --log hook post-tool-use        # warn level (default)
+botctrl claude --log-level=debug status-line   # debug level (implies --log)
+```
+
+Log files are written to `~/.botctrl/logging/` with date-partitioned filenames:
+
+```
+~/.botctrl/logging/
+  20260403_post-tool-use.jsonl
+  20260403_status-line.jsonl
+```
+
+Each line is a JSON object with standardized fields: `time`, `level`, `msg`, `hook`, `session_id`, `duration_ms`, plus hook-specific attributes.
+
+To enable logging in Claude Code hooks, add `--log` to the command in your `settings.json`:
+
+```json
+{
+  "command": "botctrl claude --log hook post-tool-use"
+}
+```
+
+### Cleanup
+
+Remove old log files with `botctrl logging clean`:
+
+```bash
+botctrl logging clean              # remove files older than 7 days (default)
+botctrl logging clean --days 30    # remove files older than 30 days
+botctrl logging clean --all        # remove all log files
+```

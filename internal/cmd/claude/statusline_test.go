@@ -119,21 +119,22 @@ func TestWriteGitIndicators_AheadBehind(t *testing.T) {
 
 func TestShortModelName(t *testing.T) {
 	for _, tc := range []struct {
-		id      string
-		ctxSize int
-		want    string
+		id   string
+		want string
 	}{
-		{"claude-sonnet-4-5-20250514", 200000, "S4.5"},
-		{"claude-opus-4-6-v1", 200000, "O4.6"},
-		{"eu.anthropic.claude-opus-4-6-v1", 200000, "O4.6"},
-		{"claude-haiku-4-5-20251001", 200000, "H4.5"},
-		{"claude-sonnet-4-5-20250514", 1000000, "S4.5-1M"},
-		{"claude-opus-4-6-v1", 1000000, "O4.6-1M"},
+		{"claude-sonnet-4-5-20250514", "S4.5"},
+		{"claude-opus-4-6-v1", "O4.6"},
+		{"eu.anthropic.claude-opus-4-6-v1", "O4.6"},
+		{"claude-haiku-4-5-20251001", "H4.5"},
+		{"eu.anthropic.claude-opus-4-7", "O4.7"},
+		{"claude-opus-4-7[1m]", "O4.7-1M"},
+		{"eu.anthropic.claude-opus-4-7[1m]", "O4.7-1M"},
+		{"anthropic.claude-opus-4-7[1m]", "O4.7-1M"},
 	} {
 		t.Run(tc.want, func(t *testing.T) {
-			got := shortModelName(tc.id, tc.ctxSize)
+			got := shortModelName(tc.id)
 			if got != tc.want {
-				t.Errorf("shortModelName(%q, %d) = %q, want %q", tc.id, tc.ctxSize, got, tc.want)
+				t.Errorf("shortModelName(%q) = %q, want %q", tc.id, got, tc.want)
 			}
 		})
 	}

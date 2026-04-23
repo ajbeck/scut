@@ -57,15 +57,16 @@ Error      #F03E3E
 ### Output format
 
 ```
-██████████████│ 50% | botctrl/internal/cmd | getting-started ✓ ↑1
-└mint─┘└slate┘│      └── sky (bold) ──────┘   └─ violet (bold) ─┘
-               └error┘                         └mint┘ └mint┘
-     └─ slate (separators) ───────────────┘
+██████████████│ 50% | O4.6 | botctrl/internal/cmd | getting-started ✓ ↑1
+└mint─┘└slate┘│      └muted┘ └── sky (bold) ──────┘   └─ violet (bold) ─┘
+               └error┘                                  └mint┘ └mint┘
+     └─ slate (separators) ─────────────────────────┘
 ```
 
 - **Context bar** (first segment): 20-character progress bar (19 fill + 1 marker). Filled portion (`█`) in accent colour, half-block transition (`▌`) with FG=accent BG=slate, unfilled portion (`█`) in muted slate. A red `│` marker sits at position 16 (83% of 20), marking the auto-compaction threshold. Colour shifts by threshold. Always shown — displays `████████████████│███ –` in muted slate before the first API call. Uses `used_percentage` from the session snapshot directly.
-- **Path**: current working directory relative to the git repository root. Bold sky 300. The repo name is the first segment (e.g., `botctrl/internal/cmd`). If not in a git repo, the path is relative to `$HOME` prefixed with `~`.
-- **Branch**: the current git branch from HEAD. Bold violet 300. Omitted if not in a git repo or HEAD is detached.
+- **Model**: abbreviated model label in muted slate (e.g., `S4.5`, `O4.6-1M`). Parsed from `model.id` — strips domain prefixes, extracts family initial and version segments. Appends `-1M` when the ID carries the `[1m]` marker (e.g. `claude-opus-4-7[1m]`). The `context_window_size` field is not used: on Bedrock it does not reliably distinguish the 1M variant from the default.
+- **Path**: current working directory relative to the git repository root. Bold sky 300. The repo name is the first segment (e.g., `botctrl/internal/cmd`). Long paths are compacted by collapsing intermediate segments to their first character; falls back to `first/…/last` with truncation. Max 25 characters. If not in a git repo, the path is relative to `$HOME` prefixed with `~`.
+- **Branch**: the current git branch from HEAD. Bold violet 300. Truncated to 20 characters. Omitted if not in a git repo or HEAD is detached.
 - **Git indicators**: `✓` (mint) when clean, otherwise `+N` (staged, mint) and `~N` (unstaged/untracked, warning amber). `↑N` (ahead, mint) and `↓N` (behind, warning) show divergence from `origin/<branch>` based on last-fetch state.
 - **Separators**: `|` in muted slate between each segment.
 

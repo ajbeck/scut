@@ -16,6 +16,12 @@ func ms(start time.Time) int64 {
 	return time.Since(start).Milliseconds()
 }
 
+// trailingArgs absorbs unexpected trailing positional arguments so hook
+// commands remain forward-compatible when Claude Code adds new arguments.
+type trailingArgs struct {
+	Args []string `arg:"" optional:"" hidden:""`
+}
+
 // Cmd is the Kong command group for "botctrl claude hook".
 type Cmd struct {
 	SessionStart       sessionStartCmd       `cmd:"session-start" help:"Inject context when a session begins or resumes."`
@@ -56,7 +62,7 @@ func writeJSON(w io.Writer, v any) error {
 // SessionStart
 // ---------------------------------------------------------------------------
 
-type sessionStartCmd struct{}
+type sessionStartCmd struct{ trailingArgs }
 
 func (c *sessionStartCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	start := time.Now()
@@ -74,7 +80,7 @@ func (c *sessionStartCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Lo
 // SessionEnd
 // ---------------------------------------------------------------------------
 
-type sessionEndCmd struct{}
+type sessionEndCmd struct{ trailingArgs }
 
 func (c *sessionEndCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	start := time.Now()
@@ -90,7 +96,7 @@ func (c *sessionEndCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logg
 // InstructionsLoaded
 // ---------------------------------------------------------------------------
 
-type instructionsLoadedCmd struct{}
+type instructionsLoadedCmd struct{ trailingArgs }
 
 func (c *instructionsLoadedCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.InstructionsLoadedInput
@@ -104,7 +110,7 @@ func (c *instructionsLoadedCmd) Run(stdin io.Reader, stdout io.Writer, logger *s
 // UserPromptSubmit
 // ---------------------------------------------------------------------------
 
-type userPromptSubmitCmd struct{}
+type userPromptSubmitCmd struct{ trailingArgs }
 
 func (c *userPromptSubmitCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.UserPromptSubmitInput
@@ -120,7 +126,7 @@ func (c *userPromptSubmitCmd) Run(stdin io.Reader, stdout io.Writer, logger *slo
 // PreToolUse
 // ---------------------------------------------------------------------------
 
-type preToolUseCmd struct{}
+type preToolUseCmd struct{ trailingArgs }
 
 func (c *preToolUseCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	start := time.Now()
@@ -142,7 +148,7 @@ func (c *preToolUseCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logg
 // PostToolUseFailure
 // ---------------------------------------------------------------------------
 
-type postToolUseFailureCmd struct{}
+type postToolUseFailureCmd struct{ trailingArgs }
 
 func (c *postToolUseFailureCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.PostToolUseFailureInput
@@ -158,7 +164,7 @@ func (c *postToolUseFailureCmd) Run(stdin io.Reader, stdout io.Writer, logger *s
 // PermissionRequest
 // ---------------------------------------------------------------------------
 
-type permissionRequestCmd struct{}
+type permissionRequestCmd struct{ trailingArgs }
 
 func (c *permissionRequestCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.PermissionRequestInput
@@ -180,7 +186,7 @@ func (c *permissionRequestCmd) Run(stdin io.Reader, stdout io.Writer, logger *sl
 // Notification
 // ---------------------------------------------------------------------------
 
-type notificationCmd struct{}
+type notificationCmd struct{ trailingArgs }
 
 func (c *notificationCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.NotificationInput
@@ -196,7 +202,7 @@ func (c *notificationCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Lo
 // SubagentStart
 // ---------------------------------------------------------------------------
 
-type subagentStartCmd struct{}
+type subagentStartCmd struct{ trailingArgs }
 
 func (c *subagentStartCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.SubagentStartInput
@@ -212,7 +218,7 @@ func (c *subagentStartCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.L
 // SubagentStop
 // ---------------------------------------------------------------------------
 
-type subagentStopCmd struct{}
+type subagentStopCmd struct{ trailingArgs }
 
 func (c *subagentStopCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.SubagentStopInput
@@ -228,7 +234,7 @@ func (c *subagentStopCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Lo
 // Stop
 // ---------------------------------------------------------------------------
 
-type stopCmd struct{}
+type stopCmd struct{ trailingArgs }
 
 func (c *stopCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.StopInput
@@ -244,7 +250,7 @@ func (c *stopCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) er
 // StopFailure
 // ---------------------------------------------------------------------------
 
-type stopFailureCmd struct{}
+type stopFailureCmd struct{ trailingArgs }
 
 func (c *stopFailureCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	start := time.Now()
@@ -260,7 +266,7 @@ func (c *stopFailureCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Log
 // TaskCreated
 // ---------------------------------------------------------------------------
 
-type taskCreatedCmd struct{}
+type taskCreatedCmd struct{ trailingArgs }
 
 func (c *taskCreatedCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.TaskCreatedInput
@@ -274,7 +280,7 @@ func (c *taskCreatedCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Log
 // TaskCompleted
 // ---------------------------------------------------------------------------
 
-type taskCompletedCmd struct{}
+type taskCompletedCmd struct{ trailingArgs }
 
 func (c *taskCompletedCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.TaskCompletedInput
@@ -288,7 +294,7 @@ func (c *taskCompletedCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.L
 // TeammateIdle
 // ---------------------------------------------------------------------------
 
-type teammateIdleCmd struct{}
+type teammateIdleCmd struct{ trailingArgs }
 
 func (c *teammateIdleCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.TeammateIdleInput
@@ -302,7 +308,7 @@ func (c *teammateIdleCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Lo
 // ConfigChange
 // ---------------------------------------------------------------------------
 
-type configChangeCmd struct{}
+type configChangeCmd struct{ trailingArgs }
 
 func (c *configChangeCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.ConfigChangeInput
@@ -316,7 +322,7 @@ func (c *configChangeCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Lo
 // CwdChanged
 // ---------------------------------------------------------------------------
 
-type cwdChangedCmd struct{}
+type cwdChangedCmd struct{ trailingArgs }
 
 func (c *cwdChangedCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.CwdChangedInput
@@ -330,7 +336,7 @@ func (c *cwdChangedCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logg
 // FileChanged
 // ---------------------------------------------------------------------------
 
-type fileChangedCmd struct{}
+type fileChangedCmd struct{ trailingArgs }
 
 func (c *fileChangedCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.FileChangedInput
@@ -344,7 +350,7 @@ func (c *fileChangedCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Log
 // WorktreeCreate
 // ---------------------------------------------------------------------------
 
-type worktreeCreateCmd struct{}
+type worktreeCreateCmd struct{ trailingArgs }
 
 func (c *worktreeCreateCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.WorktreeCreateInput
@@ -362,7 +368,7 @@ func (c *worktreeCreateCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.
 // WorktreeRemove
 // ---------------------------------------------------------------------------
 
-type worktreeRemoveCmd struct{}
+type worktreeRemoveCmd struct{ trailingArgs }
 
 func (c *worktreeRemoveCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.WorktreeRemoveInput
@@ -376,7 +382,7 @@ func (c *worktreeRemoveCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.
 // PreCompact
 // ---------------------------------------------------------------------------
 
-type preCompactCmd struct{}
+type preCompactCmd struct{ trailingArgs }
 
 func (c *preCompactCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	start := time.Now()
@@ -392,7 +398,7 @@ func (c *preCompactCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logg
 // PostCompact
 // ---------------------------------------------------------------------------
 
-type postCompactCmd struct{}
+type postCompactCmd struct{ trailingArgs }
 
 func (c *postCompactCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	start := time.Now()
@@ -408,7 +414,7 @@ func (c *postCompactCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Log
 // Elicitation
 // ---------------------------------------------------------------------------
 
-type elicitationCmd struct{}
+type elicitationCmd struct{ trailingArgs }
 
 func (c *elicitationCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.ElicitationInput
@@ -427,7 +433,7 @@ func (c *elicitationCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Log
 // ElicitationResult
 // ---------------------------------------------------------------------------
 
-type elicitationResultCmd struct{}
+type elicitationResultCmd struct{ trailingArgs }
 
 func (c *elicitationResultCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	var in cc.ElicitationResultInput

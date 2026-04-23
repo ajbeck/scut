@@ -14,7 +14,7 @@ import (
 	cc "github.com/ajbeck/botctrl/hooks/claudecode"
 )
 
-type postToolUseCmd struct{}
+type postToolUseCmd struct{ trailingArgs }
 
 func (c *postToolUseCmd) Help() string {
 	return `Formats files in place after successful Write or Edit tool calls.

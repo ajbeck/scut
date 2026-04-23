@@ -12,7 +12,7 @@ import (
 
 // Cmd is the Kong command group for "botctrl claude".
 type Cmd struct {
-	Log      bool   `help:"Enable logging to ~/.botctrl/logging/ at warn level."`
+	Log      bool   `help:"Enable logging to ~/.botctrl/logging/ at info level."`
 	LogLevel string `help:"Set log level: debug, info, warn, error (implies --log)." placeholder:"LEVEL"`
 
 	Hook       hook.Cmd      `cmd:"hook" help:"Hook event handlers. Called by Claude Code as subprocesses during lifecycle events."`
@@ -35,17 +35,19 @@ func (c *Cmd) OpenLogger(command string) (*slog.Logger, io.Closer) {
 }
 
 // resolveLevel converts the --log-level string to a slog.Level.
-// Defaults to warn when --log is set without --log-level.
+// Defaults to info when --log is set without --log-level — successful
+// hook runs and status-line renders emit at info, so warn would
+// produce empty files in the common case.
 func (c *Cmd) resolveLevel() slog.Level {
 	switch strings.ToLower(c.LogLevel) {
 	case "debug":
 		return slog.LevelDebug
-	case "info":
-		return slog.LevelInfo
+	case "warn":
+		return slog.LevelWarn
 	case "error":
 		return slog.LevelError
 	default:
-		return slog.LevelWarn
+		return slog.LevelInfo
 	}
 }
 

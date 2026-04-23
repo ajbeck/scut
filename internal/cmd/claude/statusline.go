@@ -24,10 +24,15 @@ import (
 
 // Context bar thresholds — control colour shifts and marker placement.
 const (
-	compactionThreshold = 83      // percentage at which Claude Code triggers auto-compaction; the red marker sits here
-	warningThreshold    = 70      // percentage at which the bar shifts from mint to warning amber
-	largeContextSize    = 200_000 // context window token count above which the model label gets a "-1M" suffix
+	compactionThreshold = 83 // percentage at which Claude Code triggers auto-compaction; the red marker sits here
+	warningThreshold    = 70 // percentage at which the bar shifts from mint to warning amber
 )
+
+// largeContextMarker is the substring in a model ID that identifies the 1M
+// context variant (e.g. "claude-opus-4-7[1m]"). Claude Code on Bedrock
+// encodes the variant in the ID itself; the reported context_window_size
+// is not a reliable signal.
+const largeContextMarker = "[1m]"
 
 // ---------------------------------------------------------------------------
 // Data Monocle palette — 400 stops for terminal accents
@@ -118,7 +123,18 @@ func (c *statusLineCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logg
 	// Assemble output: context bar | model | path | git status
 	sep := sepStyle.Render(" | ")
 
-	model := shortModelName(in.Model.ID, in.ContextWindow.ContextWindowSize)
+	model := shortModelName(in.Model.ID)
+
+	logger.Debug("input",
+		"hook", "status-line",
+		"session_id", in.SessionID,
+		"model_id", in.Model.ID,
+		"model_display_name", in.Model.DisplayName,
+		"context_window_size", in.ContextWindow.ContextWindowSize,
+		"exceeds_200k_tokens", in.Exceeds200K,
+		"cwd", in.CWD,
+		"workspace_current_dir", in.Workspace.CurrentDir,
+	)
 
 	var b strings.Builder
 	b.WriteString(contextBar)
@@ -439,12 +455,18 @@ func renderContextBar(pct *float64) string {
 
 // shortModelName returns an abbreviated model label like "S4.5", "O4.6-1M".
 // Parses the model family and version from the ID string, prefixes with the
-// family initial, and appends "-1M" when the context window exceeds 200k.
-func shortModelName(id string, ctxSize int) string {
+// family initial, and appends "-1M" when the ID carries the 1M-context
+// marker (e.g. "claude-opus-4-7[1m]").
+func shortModelName(id string) string {
+	hasLargeCtx := strings.Contains(id, largeContextMarker)
+
 	// Strip domain prefixes like "eu.anthropic."
 	if i := strings.LastIndex(id, "claude-"); i >= 0 {
 		id = id[i:]
 	}
+
+	// Strip the [1m] suffix so it doesn't pollute version parsing.
+	id = strings.ReplaceAll(id, largeContextMarker, "")
 
 	parts := strings.Split(id, "-")
 
@@ -479,7 +501,7 @@ func shortModelName(id string, ctxSize int) string {
 	}
 
 	result := string(prefix) + strings.Join(verParts, ".")
-	if ctxSize > largeContextSize {
+	if hasLargeCtx {
 		result += "-1M"
 	}
 	return result

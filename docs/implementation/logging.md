@@ -10,10 +10,12 @@ Structured JSONL logging for all hook commands and the status line. When enabled
 
 Flags live on `claude.Cmd` so they propagate to both `hook` subcommands and `status-line`.
 
-| Flag | Type | Default | Behavior |
-|------|------|---------|----------|
-| `--log` | `bool` | `false` | Enable logging at warn level |
-| `--log-level` | `string` | — | Set log level (`debug`, `info`, `warn`, `error`); implies `--log` |
+| Flag          | Type     | Default | Behavior                                                          |
+| ------------- | -------- | ------- | ----------------------------------------------------------------- |
+| `--log`       | `bool`   | `false` | Enable logging at info level                                      |
+| `--log-level` | `string` | —     | Set log level (`debug`, `info`, `warn`, `error`); implies `--log` |
+
+Info is the default because the hook/status-line "happy path" logs at info; a warn default would produce empty files in normal operation. Use `--log-level=debug` to capture full status-line input payloads (model ID, context window size, workspace dir).
 
 When neither flag is set, all `Run()` methods receive `logging.Discard` — a no-op logger backed by `io.Discard`. No file is opened, no disk I/O occurs.
 
@@ -86,35 +88,35 @@ err := cmd.Run(stdin, &stdout, fs, logging.Discard)
 
 Every log line includes these fields (via `slog.JSONHandler`):
 
-| Field | Source | Description |
-|-------|--------|-------------|
-| `time` | slog | ISO 8601 timestamp |
-| `level` | slog | INFO, WARN, ERROR, DEBUG |
-| `msg` | handler | Action taken: `"handled"`, `"formatted"`, `"rendered"`, `"skipped"` |
-| `hook` | handler | Hook/command name: `"post-tool-use"`, `"status-line"`, etc. |
-| `session_id` | input | Claude Code session identifier |
-| `duration_ms` | handler | Wall-clock milliseconds for the handler |
+| Field         | Source  | Description                                                         |
+| ------------- | ------- | ------------------------------------------------------------------- |
+| `time`        | slog    | ISO 8601 timestamp                                                  |
+| `level`       | slog    | INFO, WARN, ERROR, DEBUG                                            |
+| `msg`         | handler | Action taken: `"handled"`, `"formatted"`, `"rendered"`, `"skipped"` |
+| `hook`        | handler | Hook/command name: `"post-tool-use"`, `"status-line"`, etc.         |
+| `session_id`  | input   | Claude Code session identifier                                      |
+| `duration_ms` | handler | Wall-clock milliseconds for the handler                             |
 
 ### Hook-specific fields
 
-| Hook | Extra Fields |
-|------|-------------|
-| `session-start` | `source` (startup, resume, clear, compact) |
-| `session-end` | `reason` (clear, resume, logout, etc.) |
-| `pre-tool-use` | `tool_name` |
-| `post-tool-use` | `tool_name`, `file_path`, `formatter`, `reason` (when skipped) |
-| `stop-failure` | `error` (rate_limit, server_error, etc.) |
-| `pre-compact`, `post-compact` | `trigger` (manual, auto) |
-| `status-line` | `model`, `path`, `branch`, `context_pct` |
+| Hook                          | Extra Fields                                                                                                                                                    |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `session-start`               | `source` (startup, resume, clear, compact)                                                                                                                      |
+| `session-end`                 | `reason` (clear, resume, logout, etc.)                                                                                                                          |
+| `pre-tool-use`                | `tool_name`                                                                                                                                                     |
+| `post-tool-use`               | `tool_name`, `file_path`, `formatter`, `reason` (when skipped)                                                                                                  |
+| `stop-failure`                | `error` (rate_limit, server_error, etc.)                                                                                                                        |
+| `pre-compact`, `post-compact` | `trigger` (manual, auto)                                                                                                                                        |
+| `status-line`                 | `model` (raw ID), `path`, `branch`, `context_pct`; at debug: `model_display_name`, `context_window_size`, `exceeds_200k_tokens`, `cwd`, `workspace_current_dir` |
 
 ## Cleanup
 
 `botctrl logging clean` removes old log files.
 
-| Flag | Default | Behavior |
-|------|---------|----------|
-| `--all` | `false` | Remove all `.jsonl` files regardless of age |
-| `--days N` | `7` | Remove files with mtime older than N days |
+| Flag       | Default | Behavior                                    |
+| ---------- | ------- | ------------------------------------------- |
+| `--all`    | `false` | Remove all `.jsonl` files regardless of age |
+| `--days N` | `7`     | Remove files with mtime older than N days   |
 
 The command scans `~/.botctrl/logging/` and removes files with a `.jsonl` extension (including rotated files like `.jsonl.1712345678`). Non-`.jsonl` files are left untouched.
 

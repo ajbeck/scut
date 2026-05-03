@@ -72,6 +72,24 @@ func fileName(name string) string {
 	return time.Now().Format("20060102") + "_" + name + ".jsonl"
 }
 
+// LogParseError appends a JSONL record describing a kong parse failure
+// to ~/.botctrl/logging/YYYYMMDD_parse-errors.jsonl. It is unconditional —
+// parse errors are always bugs worth capturing, so no flag gates them.
+// Failure to write is swallowed: losing the record must not prevent the
+// parent process from seeing the original kong error on stderr.
+func LogParseError(args []string, parseErr error) {
+	logger, closer, err := Open("parse-errors", slog.LevelError)
+	if err != nil {
+		return
+	}
+	defer closer.Close()
+	logger.Error("parse failed",
+		"args", args,
+		"argc", len(args),
+		"error", parseErr.Error(),
+	)
+}
+
 // rotateIfNeeded renames path to path.<unix-seconds> if it exists and
 // exceeds maxFileSize. Does nothing if the file is small or missing.
 func rotateIfNeeded(path string) error {

@@ -11,6 +11,7 @@ import (
 
 	"github.com/ajbeck/botctrl/internal/cmd/claude"
 	loggingcmd "github.com/ajbeck/botctrl/internal/cmd/logging"
+	"github.com/ajbeck/botctrl/internal/logging"
 	"github.com/ajbeck/botctrl/internal/version"
 )
 
@@ -31,7 +32,7 @@ func (v versionFlag) BeforeReset(app *kong.Kong, vars kong.Vars) error {
 
 func main() {
 	var c cli
-	ctx := kong.Parse(&c,
+	parser := kong.Must(&c,
 		kong.Name("botctrl"),
 		kong.Description("CLI tool for managing AI coding agents. Called as a subprocess by agent hooks — reads JSON from stdin, writes JSON to stdout."),
 		kong.Vars{"version": version.String()},
@@ -45,10 +46,18 @@ func main() {
 		},
 	)
 
+	ctx, err := parser.Parse(os.Args[1:])
+	if err != nil {
+		logging.LogParseError(os.Args, err)
+		parser.FatalIfErrorf(err)
+	}
+
 	logger, logCloser := c.Claude.OpenLogger(ctx.Command())
 	if logCloser != nil {
 		defer logCloser.Close()
 	}
+
+	logger.Debug("invoked", "args", os.Args, "command", ctx.Command())
 
 	ctx.FatalIfErrorf(ctx.Run(logger))
 }

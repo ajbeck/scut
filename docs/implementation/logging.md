@@ -19,12 +19,19 @@ Info is the default because the hook/status-line "happy path" logs at info; a wa
 
 When neither flag is set, all `Run()` methods receive `logging.Discard` — a no-op logger backed by `io.Discard`. No file is opened, no disk I/O occurs.
 
+### Parse-error logging (unconditional)
+
+`main()` wraps kong parsing in two steps — `kong.Must()` then `parser.Parse(os.Args[1:])` — so we can intercept parse failures before kong calls `os.Exit`. When parsing fails, `logging.LogParseError(os.Args, err)` appends a record to `~/.botctrl/logging/YYYYMMDD_parse-errors.jsonl` capturing the full `os.Args` (including argv[0]) and the kong error message. This happens regardless of flags — parse errors are always bugs worth recording, and they occur before the `--log` / `--log-level` flags have been parsed out of the args anyway.
+
+When parsing succeeds, `main()` emits a `logger.Debug("invoked", "args", os.Args, "command", ctx.Command())` record so the success path can be compared against failures.
+
 ## File Layout
 
 ```
 ~/.botctrl/logging/
   20260403_post-tool-use.jsonl     ← today's post-tool-use log
   20260403_status-line.jsonl       ← today's status-line log
+  20260403_parse-errors.jsonl      ← kong parse failures (written unconditionally)
   20260402_post-tool-use.jsonl     ← yesterday's log
   20260401_session-start.jsonl.1712000000  ← rotated file
 ```
@@ -41,10 +48,19 @@ When neither flag is set, all `Run()` methods receive `logging.Discard` — a no
 The logger is created in `main()` after parsing but before `Run()`:
 
 ```go
+ctx, err := parser.Parse(os.Args[1:])
+if err != nil {
+    logging.LogParseError(os.Args, err)
+    parser.FatalIfErrorf(err)
+}
+
 logger, logCloser := c.Claude.OpenLogger(ctx.Command())
 if logCloser != nil {
     defer logCloser.Close()
 }
+
+logger.Debug("invoked", "args", os.Args, "command", ctx.Command())
+
 ctx.FatalIfErrorf(ctx.Run(logger))
 ```
 
@@ -108,6 +124,8 @@ Every log line includes these fields (via `slog.JSONHandler`):
 | `stop-failure`                | `error` (rate_limit, server_error, etc.)                                                                                                                        |
 | `pre-compact`, `post-compact` | `trigger` (manual, auto)                                                                                                                                        |
 | `status-line`                 | `model` (raw ID), `path`, `branch`, `context_pct`; at debug: `model_display_name`, `context_window_size`, `exceeds_200k_tokens`, `cwd`, `workspace_current_dir` |
+| `parse-errors`                | `args` (full `os.Args`), `argc`, `error` (kong error message); written unconditionally on parse failure regardless of `--log` flag                              |
+| (every command, at debug)     | `"invoked"` record with `args` (full `os.Args`) and `command` (resolved kong command path); emitted from `main()` before dispatch                               |
 
 ## Cleanup
 

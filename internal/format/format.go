@@ -1,7 +1,10 @@
-package hook
+// Package format provides code formatting utilities.
+package format
 
 import (
 	"bytes"
+
+	"go/format"
 
 	prettier "github.com/ajbeck/goldmark-prettier-markdown"
 	"github.com/yuin/goldmark"
@@ -11,12 +14,20 @@ import (
 	"github.com/yuin/goldmark/util"
 )
 
-// formatMarkdown formats markdown source using goldmark-prettier-markdown.
+// FormatGo formats Go source using gofmt rules.
+// Returns nil, nil if src has syntax errors (decline to format).
+func FormatGo(src []byte) ([]byte, error) {
+	formatted, err := format.Source(src)
+	if err != nil {
+		return nil, nil
+	}
+	return formatted, nil
+}
+
+// FormatMarkdown formats markdown source using goldmark-prettier-markdown.
 // Returns nil, nil if the source cannot be parsed (decline to format).
-func formatMarkdown(src []byte) ([]byte, error) {
+func FormatMarkdown(src []byte) ([]byte, error) {
 	md := goldmark.New(
-		// Parser extensions only — the prettier renderer handles rendering
-		// for all these node types; we just need the parser to recognise them.
 		goldmark.WithParserOptions(
 			parser.WithParagraphTransformers(
 				util.Prioritized(extension.NewTableParagraphTransformer(), 200),
@@ -48,7 +59,7 @@ func formatMarkdown(src []byte) ([]byte, error) {
 
 	var buf bytes.Buffer
 	if err := md.Convert(src, &buf); err != nil {
-		return nil, nil //nolint:nilerr // parse errors are not our problem
+		return nil, nil
 	}
 	return buf.Bytes(), nil
 }

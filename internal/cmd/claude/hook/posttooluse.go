@@ -11,6 +11,7 @@ import (
 
 	"github.com/spf13/afero"
 
+	"github.com/ajbeck/botctrl/internal/format"
 	cc "github.com/ajbeck/botctrl/hooks/claudecode"
 )
 
@@ -49,10 +50,10 @@ func (c *postToolUseCmd) Run(stdin io.Reader, stdout io.Writer, fs afero.Fs, log
 	var formatterName string
 	switch filepath.Ext(fp) {
 	case ".go":
-		formatter = formatGo
+		formatter = format.FormatGo
 		formatterName = "gofmt"
 	case ".md", ".mdx":
-		formatter = formatMarkdown
+		formatter = format.FormatMarkdown
 		formatterName = "markdown"
 	default:
 		logger.Debug("skipped", "reason", "unsupported extension", "file_path", fp, "duration_ms", ms(start))

@@ -1,4 +1,4 @@
-package hook
+package format
 
 import (
 	"bytes"
@@ -57,7 +57,7 @@ func TestFormatMarkdown(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			src := []byte(tt.src)
-			got, err := formatMarkdown(src)
+			got, err := FormatMarkdown(src)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}

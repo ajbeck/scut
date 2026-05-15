@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PostToolUse Hook — botctrl</title>
+<link rel="stylesheet" href="botctrl-docs.css">
+<script src="botctrl-docs.js"></script>
+</head>
+<body>
+
+<div class="layout">
+
+  <aside class="rail">
+    <p class="rail-title">// botctrl · hooks</p>
+    <p class="rail-product"><span class="live-dot" aria-hidden="true"></span>PostToolUse</p>
+
+    <nav class="toc">
+      <div class="toc-section">
+        <p class="toc-section-label">Start</p>
+        <a class="toc-link" href="#overview"><span class="toc-num">01</span><span>Overview</span></a>
+        <a class="toc-link" href="#input"><span class="toc-num">02</span><span>Input</span></a>
+        <a class="toc-link" href="#output"><span class="toc-num">03</span><span>Output</span></a>
+      </div>
+
+      <div class="toc-section">
+        <p class="toc-section-label">Implementation</p>
+        <a class="toc-link" href="#dispatch-flow"><span class="toc-num">04</span><span>Dispatch Flow</span></a>
+        <a class="toc-link" href="#byte-formatters"><span class="toc-num">05</span><span>Byte Formatters</span></a>
+        <a class="toc-link" href="#file-io"><span class="toc-num">06</span><span>File I/O via afero.Fs</span></a>
+        <a class="toc-link" href="#adding-formatter"><span class="toc-num">07</span><span>Adding a New Formatter</span></a>
+      </div>
+
+      <div class="toc-section">
+        <p class="toc-section-label">Notes</p>
+        <a class="toc-link" href="#testing"><span class="toc-num">08</span><span>Testing</span></a>
+        <a class="toc-link" href="#code"><span class="toc-num">09</span><span>Code</span></a>
+      </div>
+    </nav>
+
+    <div class="theme-switcher">
+      <span class="theme-switcher__label">Theme</span>
+      <button class="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle color theme"><span class="toggle-glyph toggle-glyph--sun" aria-hidden="true">☀︎</span><span class="toggle-glyph toggle-glyph--moon" aria-hidden="true">☾</span></button>
+    </div>
+  </aside>
+
+  <main>
+
+    <header class="hero">
+      <div class="hero-meta">
+        <span class="badge primary">v1 docs</span>
+        <span class="badge tests">hooks</span>
+        <span class="badge swift">go 1.26</span>
+      </div>
+      <h1><span class="moniker-bracket">[</span><span class="moniker">PostToolUse</span><span class="moniker-bracket">]</span></h1>
+      <p class="lede"><code>botctrl claude hook post-tool-use</code> — fires after a Claude Code tool call succeeds. Silently formats files written by Claude, applying <code>gofmt</code> for Go source and goldmark-prettier-markdown for Markdown. Formatting is in-place; the hook never blocks tool results or injects context.</p>
+
+      <div class="hero-stats">
+        <div class="stat"><span class="num">2</span><span class="label">formatters</span></div>
+        <div class="stat"><span class="num">8</span><span class="label">dispatch steps</span></div>
+        <div class="stat"><span class="num">3</span><span class="label">testing layers</span></div>
+        <div class="stat"><span class="num">3</span><span class="label">extensions handled</span></div>
+      </div>
+    </header>
+
+    <section id="overview">
+      <h2><span class="section-anchor">// 01</span>Overview</h2>
+
+      <p>Fires after a Claude Code tool call succeeds. The hook silently formats files written by Claude — applying <code>gofmt</code> for Go source and goldmark-prettier-markdown for Markdown. Formatting happens in-place; the hook never blocks tool results or injects context.</p>
+    </section>
+
+    <section id="input">
+      <h2><span class="section-anchor">// 02</span>Input</h2>
+
+      <p>Deserialized from stdin as <code>claudecode.PostToolUseInput</code>.</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field"><em>(base fields)</em></td>
+            <td class="type">claudecode.Input</td>
+            <td class="note"><code>session_id</code>, <code>transcript_path</code>, <code>cwd</code>, <code>hook_event_name</code>, <code>permission_mode</code>, <code>agent_id</code>, <code>agent_type</code></td>
+          </tr>
+          <tr>
+            <td class="field">tool_name</td>
+            <td class="type">string</td>
+            <td class="note">Name of the tool that was called (e.g., <code>Bash</code>, <code>Edit</code>, <code>mcp__github__search_repositories</code>)</td>
+          </tr>
+          <tr>
+            <td class="field">tool_use_id</td>
+            <td class="type">string</td>
+            <td class="note">Unique identifier for this tool invocation</td>
+          </tr>
+          <tr>
+            <td class="field">tool_input</td>
+            <td class="type">json.RawMessage</td>
+            <td class="note">The input that was passed to the tool — shape varies per tool</td>
+          </tr>
+          <tr>
+            <td class="field">tool_response</td>
+            <td class="type">json.RawMessage</td>
+            <td class="note">The tool's response — shape varies per tool</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>FilePath extraction</h3>
+
+      <p><code>PostToolUseInput.FilePath()</code> extracts <code>tool_input.file_path</code> from the raw JSON. Returns <code>""</code> if the field is absent, empty, or not a string. This method lives in the shared <code>hooks/claudecode</code> package.</p>
+    </section>
+
+    <section id="output">
+      <h2><span class="section-anchor">// 03</span>Output</h2>
+
+      <p>Written to stdout as <code>claudecode.PostToolUseOutput</code>.</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field"><em>(base fields)</em></td>
+            <td class="type">claudecode.BaseOutput</td>
+            <td class="note"><code>continue</code>, <code>stopReason</code>, <code>suppressOutput</code>, <code>systemMessage</code></td>
+          </tr>
+          <tr>
+            <td class="field">decision</td>
+            <td class="type">*Decision</td>
+            <td class="note">Set to <code>"block"</code> to reject the tool result</td>
+          </tr>
+          <tr>
+            <td class="field">reason</td>
+            <td class="type">*string</td>
+            <td class="note">Explanation sent to Claude when blocking</td>
+          </tr>
+          <tr>
+            <td class="field">additionalContext</td>
+            <td class="type">*string</td>
+            <td class="note">Text injected into Claude's context</td>
+          </tr>
+          <tr>
+            <td class="field">updatedMCPToolOutput</td>
+            <td class="type">json.RawMessage</td>
+            <td class="note">Replacement output for MCP tools — Claude sees this instead of the original response</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>The current implementation always returns an empty <code>PostToolUseOutput{}</code>. Formatting is silent — Claude never knows it happened.</p>
+    </section>
+
+    <section id="dispatch-flow">
+      <h2><span class="section-anchor">// 04</span>Dispatch Flow</h2>
+
+      <ol class="steps">
+        <li>Decode <code>PostToolUseInput</code> from stdin</li>
+        <li>Extract <code>file_path</code> via <code>in.FilePath()</code> — bail if empty</li>
+        <li><code>fs.Stat(fp)</code> — bail if file doesn't exist</li>
+        <li>Switch on <code>filepath.Ext(fp)</code> to select a formatter — bail if no match</li>
+        <li><code>afero.ReadFile(fs, fp)</code> — bail on error</li>
+        <li>Call formatter — bail if result is <code>nil</code> (declined) or unchanged</li>
+        <li><code>afero.WriteFile(fs, fp, formatted, info.Mode())</code> — preserves original file permissions</li>
+        <li>Write empty <code>PostToolUseOutput{}</code> to stdout</li>
+      </ol>
+
+      <div class="callout note"><strong>note</strong>Every bail path writes an empty output and returns nil. The hook never errors on formatting failures — it silently skips.</div>
+    </section>
+
+    <section id="byte-formatters">
+      <h2><span class="section-anchor">// 05</span>Byte Formatters</h2>
+
+      <p>Formatters live in the <code>internal/format</code> package and are pure functions with signature <code>func(src []byte) ([]byte, error)</code>:</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Function</th><th>Extensions</th><th>Backend</th><th>Behavior on bad input</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">format.FormatGo</td>
+            <td class="type">.go</td>
+            <td class="note"><code>go/format.Source</code></td>
+            <td class="note">Returns <code>nil, nil</code> (syntax error — let the compiler catch it)</td>
+          </tr>
+          <tr>
+            <td class="field">format.FormatMarkdown</td>
+            <td class="type">.md, .mdx</td>
+            <td class="note">goldmark + <code>goldmark-prettier-markdown</code> with <code>ProseWrapPreserve</code>. Parser extensions enabled for GFM (tables, strikethrough, task checkboxes), footnotes, and definition lists — renderer-only, no HTML renderers added.</td>
+            <td class="note">Returns <code>nil, nil</code> (parse error)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>Returning <code>nil, nil</code> means "decline to format" — the command skips the write.</p>
+    </section>
+
+    <section id="file-io">
+      <h2><span class="section-anchor">// 06</span>File I/O via afero.Fs</h2>
+
+      <p>The command receives <code>afero.Fs</code> via Kong dependency injection (see <a href="kong-base-setup.html">kong-base-setup</a>). In production this is <code>afero.OsFs</code> (real filesystem). In tests it's <code>afero.MemMapFs</code> (in-memory), which allows seeding files and verifying writes without touching disk.</p>
+    </section>
+
+    <section id="adding-formatter">
+      <h2><span class="section-anchor">// 07</span>Adding a New Formatter</h2>
+
+      <ol class="steps">
+        <li>Add a <code>func Format&lt;Name&gt;(src []byte) ([]byte, error)</code> function to <code>internal/format/format.go</code> (or a sibling file in the same package)</li>
+        <li>Add test cases under <code>internal/format/</code> — pure bytes in, bytes out</li>
+        <li>Add a <code>case</code> to the extension switch in <code>internal/cmd/claude/hook/posttooluse.go</code> that selects <code>format.Format&lt;Name&gt;</code></li>
+        <li>Add a dispatch test case in <code>internal/cmd/claude/hook/posttooluse_test.go</code></li>
+      </ol>
+    </section>
+
+    <section id="testing">
+      <h2><span class="section-anchor">// 08</span>Testing</h2>
+
+      <p>Three layers, each independently testable:</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Layer</th><th>File</th><th>What it tests</th><th>Mocks</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">FilePath extraction</td>
+            <td class="type">hooks/claudecode/claudecode_test.go</td>
+            <td class="note">JSON parsing of <code>tool_input.file_path</code></td>
+            <td class="note">None — pure JSON</td>
+          </tr>
+          <tr>
+            <td class="field">Byte formatters</td>
+            <td class="type">internal/format/format_go_test.go, internal/format/format_markdown_test.go</td>
+            <td class="note">Formatting correctness, edge cases</td>
+            <td class="note">None — pure bytes</td>
+          </tr>
+          <tr>
+            <td class="field">Command dispatch</td>
+            <td class="type">internal/cmd/claude/hook/posttooluse_test.go</td>
+            <td class="note">Extension routing, file I/O, end-to-end</td>
+            <td class="note"><code>afero.MemMapFs</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="code">
+      <h2><span class="section-anchor">// 09</span>Code</h2>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Role</th><th>Path</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="note">Command</td>
+            <td class="field">internal/cmd/claude/hook/posttooluse.go</td>
+          </tr>
+          <tr>
+            <td class="note">Formatters (<code>FormatGo</code>, <code>FormatMarkdown</code>)</td>
+            <td class="field">internal/format/format.go</td>
+          </tr>
+          <tr>
+            <td class="note">Types (<code>PostToolUseInput</code>, <code>PostToolUseOutput</code>, <code>FilePath()</code>)</td>
+            <td class="field">hooks/claudecode/claudecode.go</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>See also: <a href="kong-base-setup.html">kong-base-setup</a> for how <code>afero.Fs</code> is wired via <code>BindTo</code>, and <a href="claude-hook-commands.html">claude-hook-commands</a> for the full hook command inventory.</p>
+    </section>
+
+    <footer>
+      <span class="blink">botctrl</span>
+      <span>post-tool-use · hooks</span>
+    </footer>
+
+  </main>
+
+</div>
+
+</body>
+</html>

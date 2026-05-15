@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude Code Hook Commands — botctrl</title>
+<link rel="stylesheet" href="botctrl-docs.css">
+<script src="botctrl-docs.js"></script>
+</head>
+<body>
+
+<div class="layout">
+
+  <aside class="rail">
+    <p class="rail-title">// botctrl · hooks</p>
+    <p class="rail-product"><span class="live-dot" aria-hidden="true"></span>Hook Commands</p>
+
+    <nav class="toc">
+      <div class="toc-section">
+        <p class="toc-section-label">Start</p>
+        <a class="toc-link" href="#how-it-works"><span class="toc-num">01</span><span>How It Works</span></a>
+        <a class="toc-link" href="#shared-types"><span class="toc-num">02</span><span>Shared Types Package</span></a>
+        <a class="toc-link" href="#command-structure"><span class="toc-num">03</span><span>Command Structure</span></a>
+      </div>
+
+      <div class="toc-section">
+        <p class="toc-section-label">Events</p>
+        <a class="toc-link" href="#session-lifecycle"><span class="toc-num">04</span><span>Session Lifecycle</span></a>
+        <a class="toc-link" href="#instructions"><span class="toc-num">05</span><span>Instructions</span></a>
+        <a class="toc-link" href="#user-input"><span class="toc-num">06</span><span>User Input</span></a>
+        <a class="toc-link" href="#tool-use"><span class="toc-num">07</span><span>Tool Use</span></a>
+        <a class="toc-link" href="#permissions"><span class="toc-num">08</span><span>Permissions</span></a>
+        <a class="toc-link" href="#notifications"><span class="toc-num">09</span><span>Notifications</span></a>
+        <a class="toc-link" href="#subagents"><span class="toc-num">10</span><span>Subagents</span></a>
+        <a class="toc-link" href="#stop"><span class="toc-num">11</span><span>Stop</span></a>
+        <a class="toc-link" href="#tasks-and-teams"><span class="toc-num">12</span><span>Tasks and Teams</span></a>
+        <a class="toc-link" href="#configuration"><span class="toc-num">13</span><span>Configuration</span></a>
+        <a class="toc-link" href="#file-system"><span class="toc-num">14</span><span>File System</span></a>
+        <a class="toc-link" href="#worktrees"><span class="toc-num">15</span><span>Worktrees</span></a>
+        <a class="toc-link" href="#context-compaction"><span class="toc-num">16</span><span>Context Compaction</span></a>
+        <a class="toc-link" href="#mcp-elicitation"><span class="toc-num">17</span><span>MCP Elicitation</span></a>
+      </div>
+
+      <div class="toc-section">
+        <p class="toc-section-label">Status</p>
+        <a class="toc-link" href="#current-status"><span class="toc-num">18</span><span>Current Status</span></a>
+      </div>
+    </nav>
+
+    <div class="theme-switcher">
+      <span class="theme-switcher__label">Theme</span>
+      <button class="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle color theme"><span class="toggle-glyph toggle-glyph--sun" aria-hidden="true">☀︎</span><span class="toggle-glyph toggle-glyph--moon" aria-hidden="true">☾</span></button>
+    </div>
+  </aside>
+
+  <main>
+
+    <header class="hero">
+      <div class="hero-meta">
+        <span class="badge primary">v1 docs</span>
+        <span class="badge tests">hooks api</span>
+        <span class="badge swift">go 1.26</span>
+      </div>
+      <h1><span class="moniker-bracket">[</span><span class="moniker">ClaudeHookCommands</span><span class="moniker-bracket">]</span></h1>
+      <p class="lede"><code>botctrl claude hook &lt;event&gt;</code> handles Claude Code hook events. Each event type is a separate subcommand that reads a JSON payload from stdin and writes a JSON response to stdout.</p>
+
+      <div class="hero-stats">
+        <div class="stat"><span class="num">25</span><span class="label">hook commands</span></div>
+        <div class="stat"><span class="num">14</span><span class="label">event categories</span></div>
+        <div class="stat"><span class="num">2</span><span class="label">exported packages</span></div>
+        <div class="stat"><span class="num">4</span><span class="label">exit-code paths</span></div>
+      </div>
+    </header>
+
+    <section id="how-it-works">
+      <h2><span class="section-anchor">// 01</span>How It Works</h2>
+
+      <p>Claude Code invokes hooks as subprocesses. The flow is:</p>
+
+      <ol class="steps">
+        <li>Claude Code pipes a JSON payload to the hook process's stdin.</li>
+        <li>The hook reads stdin, deserializes into the event-specific input type.</li>
+        <li>The hook writes a JSON response to stdout.</li>
+        <li>Claude Code reads stdout and applies the response (inject context, allow/deny tool calls, block prompts, etc.).</li>
+      </ol>
+
+      <p>Exit codes control behavior:</p>
+
+      <ul>
+        <li><strong>0</strong> — success, stdout JSON is parsed as the response.</li>
+        <li><strong>2</strong> — blocking error, stderr is shown as the error message.</li>
+        <li><strong>non-zero (not 2)</strong> — non-blocking error, stderr is logged, execution continues.</li>
+      </ul>
+    </section>
+
+    <section id="shared-types">
+      <h2><span class="section-anchor">// 02</span>Shared Types Package</h2>
+
+      <p>All input and output types live in the <strong>exported</strong> package <code>hooks/claudecode</code>. This is intentionally not under <code>internal/</code> — it is a public API so external tools can also model Claude Code hook payloads.</p>
+
+      <h3>Type Design</h3>
+
+      <ul>
+        <li>Every input type embeds <code>claudecode.Input</code> which carries the common fields (<code>session_id</code>, <code>transcript_path</code>, <code>cwd</code>, <code>hook_event_name</code>, <code>permission_mode</code>, <code>agent_id</code>, <code>agent_type</code>).</li>
+        <li>Every output type embeds <code>claudecode.BaseOutput</code> which carries universal response fields (<code>continue</code>, <code>stopReason</code>, <code>suppressOutput</code>, <code>systemMessage</code>).</li>
+        <li>Enum-like values use typed string types with constants (e.g., <code>EventName</code>, <code>PermissionDecision</code>, <code>StopError</code>). This gives compile-time discoverability without sacrificing JSON compatibility.</li>
+        <li>Output fields use pointer types for base types (<code>*string</code>, <code>*bool</code>, <code>*Decision</code>) so unset fields are omitted from JSON via <code>omitempty</code>. Use <code>new(expr)</code> to set them inline.</li>
+        <li>Input <code>bool</code> fields use <code>*bool</code> to distinguish <code>false</code> from absent. Input string fields remain values since empty string and absent are functionally equivalent.</li>
+        <li><code>json.RawMessage</code> is used for polymorphic fields (<code>tool_input</code>, <code>tool_response</code>, <code>form_schema</code>, <code>user_response</code>) that vary by tool or MCP server.</li>
+      </ul>
+    </section>
+
+    <section id="command-structure">
+      <h2><span class="section-anchor">// 03</span>Command Structure</h2>
+
+      <p>Commands live in <code>internal/cmd/claude/hook/</code>. Each command is an unexported struct with a <code>Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error</code> method. <code>io.Reader</code> and <code>io.Writer</code> are injected by Kong via <code>BindTo</code>; <code>*slog.Logger</code> is passed as a run-time binding via <code>ctx.Run(logger)</code> (see <a href="kong-base-setup.html">kong-base-setup</a> and <a href="logging.html">logging</a>).</p>
+    </section>
+
+    <section id="event-reference">
+      <h2><span class="section-anchor">// 04</span>Event Reference</h2>
+
+      <h3 id="session-lifecycle">Session Lifecycle</h3>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Command</th><th>Event</th><th>Input Type</th><th>Output Type</th><th>Decision Control</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">session-start</td>
+            <td class="note">SessionStart</td>
+            <td class="type">SessionStartInput</td>
+            <td class="type">SessionStartOutput</td>
+            <td class="note">Can inject context via <code>additionalContext</code></td>
+          </tr>
+          <tr>
+            <td class="field">session-end</td>
+            <td class="note">SessionEnd</td>
+            <td class="type">SessionEndInput</td>
+            <td class="type">BaseOutput</td>
+            <td class="note">Observability only</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p><strong>session-start</strong> fires when a session begins or resumes. The <code>source</code> field indicates the trigger (<code>startup</code>, <code>resume</code>, <code>clear</code>, <code>compact</code>). The response can inject text into Claude's context via <code>additionalContext</code>.</p>
+
+      <p><strong>session-end</strong> fires when a session terminates. The <code>reason</code> field indicates why (<code>clear</code>, <code>resume</code>, <code>logout</code>, <code>prompt_input_exit</code>, <code>bypass_permissions_disabled</code>, <code>other</code>). No decision control — observability only.</p>
+
+      <h3 id="instructions">Instructions</h3>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Command</th><th>Event</th><th>Input Type</th><th>Output Type</th><th>Decision Control</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">instructions-loaded</td>
+            <td class="note">InstructionsLoaded</td>
+            <td class="type">InstructionsLoadedInput</td>
+            <td class="type">BaseOutput</td>
+            <td class="note">Observability only</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p><strong>instructions-loaded</strong> fires when a CLAUDE.md or rules file is loaded. Provides <code>file_path</code>, <code>memory_type</code> (<code>User</code>/<code>Project</code>/<code>Local</code>/<code>Managed</code>), <code>load_reason</code>, and optional glob/trigger/parent paths. Observability only.</p>
+
+      <h3 id="user-input">User Input</h3>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Command</th><th>Event</th><th>Input Type</th><th>Output Type</th><th>Decision Control</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">user-prompt-submit</td>
+            <td class="note">UserPromptSubmit</td>
+            <td class="type">UserPromptSubmitInput</td>
+            <td class="type">UserPromptSubmitOutput</td>
+            <td class="note">Can block prompt or inject context</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p><strong>user-prompt-submit</strong> fires when the user submits a prompt, before Claude processes it. The response can set <code>decision</code> to <code>"block"</code> with a <code>reason</code> to reject the prompt, or inject <code>additionalContext</code>.</p>
+
+      <h3 id="tool-use">Tool Use</h3>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Command</th><th>Event</th><th>Input Type</th><th>Output Type</th><th>Decision Control</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">pre-tool-use</td>
+            <td class="note">PreToolUse</td>
+            <td class="type">PreToolUseInput</td>
+            <td class="type">PreToolUseOutput</td>
+            <td class="note">Can allow/deny/ask, modify input, inject context</td>
+          </tr>
+          <tr>
+            <td class="field">post-tool-use</td>
+            <td class="note">PostToolUse</td>
+            <td class="type">PostToolUseInput</td>
+            <td class="type">PostToolUseOutput</td>
+            <td class="note">Can block result, inject context, modify MCP output</td>
+          </tr>
+          <tr>
+            <td class="field">post-tool-use-failure</td>
+            <td class="note">PostToolUseFailure</td>
+            <td class="type">PostToolUseFailureInput</td>
+            <td class="type">PostToolUseFailureOutput</td>
+            <td class="note">Can inject context</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p><strong>pre-tool-use</strong> fires before a tool call executes. The response wraps decisions in <code>hookSpecificOutput</code> with <code>permissionDecision</code> (<code>allow</code>, <code>deny</code>, <code>ask</code>), an optional <code>permissionDecisionReason</code>, <code>updatedInput</code> to modify the tool input, and <code>additionalContext</code>.</p>
+
+      <p><strong>post-tool-use</strong> fires after a tool call succeeds. Can set <code>decision</code> to <code>"block"</code> to reject the result, inject <code>additionalContext</code>, or provide <code>updatedMCPToolOutput</code> for MCP tools.</p>
+
+      <p><strong>post-tool-use-failure</strong> fires after a tool call fails. Provides <code>error</code> and <code>is_interrupt</code>. Can inject <code>additionalContext</code>.</p>
+
+      <h3 id="permissions">Permissions</h3>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Command</th><th>Event</th><th>Input Type</th><th>Output Type</th><th>Decision Control</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">permission-request</td>
+            <td class="note">PermissionRequest</td>
+            <td class="type">PermissionRequestInput</td>
+            <td class="type">PermissionRequestOutput</td>
+            <td class="note">Can auto-approve/deny, modify input, update permissions</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p><strong>permission-request</strong> fires when a permission dialog is about to appear. Input includes <code>permission_suggestions</code> — proposed rule changes. The response wraps decisions in <code>hookSpecificOutput</code> with a <code>decision</code> containing <code>behavior</code> (<code>allow</code>/<code>deny</code>), optional <code>updatedInput</code>, <code>updatedPermissions</code>, <code>message</code>, and <code>interrupt</code> flag.</p>
+
+      <h3 id="notifications">Notifications</h3>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Command</th><th>Event</th><th>Input Type</th><th>Output Type</th><th>Decision Control</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">notification</td>
+            <td class="note">Notification</td>
+            <td class="type">NotificationInput</td>
+            <td class="type">NotificationOutput</td>
+            <td class="note">Can inject context</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p><strong>notification</strong> fires when Claude Code sends a notification. The <code>notification_type</code> field categorizes it (<code>permission_prompt</code>, <code>idle_prompt</code>, <code>auth_success</code>, <code>elicitation_dialog</code>). Can inject <code>additionalContext</code>.</p>
+
+      <h3 id="subagents">Subagents</h3>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Command</th><th>Event</th><th>Input Type</th><th>Output Type</th><th>Decision Control</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">subagent-start</td>
+            <td class="note">SubagentStart</td>
+            <td class="type">SubagentStartInput</td>
+            <td class="type">SubagentStartOutput</td>
+            <td class="note">Can inject context</td>
+          </tr>
+          <tr>
+            <td class="field">subagent-stop</td>
+            <td class="note">SubagentStop</td>
+            <td class="type">SubagentStopInput</td>
+            <td class="type">SubagentStopOutput</td>
+            <td class="note">Can block stop</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p><strong>subagent-start</strong> fires when a subagent is spawned. <code>agent_id</code> and <code>agent_type</code> are in the base <code>Input</code> fields. Can inject <code>additionalContext</code>.</p>
+
+      <p><strong>subagent-stop</strong> fires when a subagent finishes. Includes <code>stop_hook_active</code>, <code>agent_transcript_path</code>, and <code>last_assistant_message</code>. Can set <code>decision</code> to <code>"block"</code> with a <code>reason</code> to prevent the subagent from stopping.</p>
+
+      <h3 id="stop">Stop</h3>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Command</th><th>Event</th><th>Input Type</th><th>Output Type</th><th>Decision Control</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">stop</td>
+            <td class="note">Stop</td>
+            <td class="type">StopInput</td>
+            <td class="type">StopOutput</td>
+            <td class="note">Can block stop</td>
+          </tr>
+          <tr>
+            <td class="field">stop-failure</td>
+            <td class="note">StopFailure</td>
+            <td class="type">StopFailureInput</td>
+            <td class="type">BaseOutput</td>
+            <td class="note">Observability only</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p><strong>stop</strong> fires when Claude finishes responding. Includes <code>stop_hook_active</code> and <code>last_assistant_message</code>. Can set <code>decision</code> to <code>"block"</code> with a <code>reason</code> to force Claude to continue.</p>
+
+      <p><strong>stop-failure</strong> fires when a turn ends due to an API error. The <code>error</code> field categorizes the failure (<code>rate_limit</code>, <code>authentication_failed</code>, <code>billing_error</code>, <code>invalid_request</code>, <code>server_error</code>, <code>max_output_tokens</code>, <code>unknown</code>). Output and exit code are ignored — observability only.</p>
+
+      <h3 id="tasks-and-teams">Tasks and Teams</h3>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Command</th><th>Event</th><th>Input Type</th><th>Output Type</th><th>Decision Control</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">task-created</td>
+            <td class="note">TaskCreated</td>
+            <td class="type">TaskCreatedInput</td>
+            <td class="type">TaskOutput</td>
+            <td class="note">Exit 2 blocks creation</td>
+          </tr>
+          <tr>
+            <td class="field">task-completed</td>
+            <td class="note">TaskCompleted</td>
+            <td class="type">TaskCompletedInput</td>
+            <td class="type">TaskOutput</td>
+            <td class="note">Exit 2 blocks completion</td>
+          </tr>
+          <tr>
+            <td class="field">teammate-idle</td>
+            <td class="note">TeammateIdle</td>
+            <td class="type">TeammateIdleInput</td>
+            <td class="type">TeammateIdleOutput</td>
+            <td class="note">Exit 2 continues teammate</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p><strong>task-created</strong> and <strong>task-completed</strong> fire on task lifecycle events in agent teams. Include <code>task_id</code>, <code>task_subject</code>, <code>task_description</code>, <code>teammate_name</code>, <code>team_name</code>. Exit code 2 blocks the action.</p>
+
+      <p><strong>teammate-idle</strong> fires when a teammate is about to go idle. Exit code 2 forces the teammate to continue.</p>
+
+      <h3 id="configuration">Configuration</h3>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Command</th><th>Event</th><th>Input Type</th><th>Output Type</th><th>Decision Control</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">config-change</td>
+            <td class="note">ConfigChange</td>
+            <td class="type">ConfigChangeInput</td>
+            <td class="type">ConfigChangeOutput</td>
+            <td class="note">Can block change</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p><strong>config-change</strong> fires when a configuration file changes. The <code>source</code> field identifies the layer (<code>user_settings</code>, <code>project_settings</code>, <code>local_settings</code>, <code>policy_settings</code>, <code>skills</code>). Can set <code>decision</code> to <code>"block"</code> to prevent the change from applying.</p>
+
+      <h3 id="file-system">File System</h3>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Command</th><th>Event</th><th>Input Type</th><th>Output Type</th><th>Decision Control</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">cwd-changed</td>
+            <td class="note">CwdChanged</td>
+            <td class="type">CwdChangedInput</td>
+            <td class="type">BaseOutput</td>
+            <td class="note">Can write to CLAUDE_ENV_FILE</td>
+          </tr>
+          <tr>
+            <td class="field">file-changed</td>
+            <td class="note">FileChanged</td>
+            <td class="type">FileChangedInput</td>
+            <td class="type">BaseOutput</td>
+            <td class="note">Can write to CLAUDE_ENV_FILE</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p><strong>cwd-changed</strong> fires when the working directory changes. Provides <code>new_cwd</code> and <code>previous_cwd</code>. Can write to <code>CLAUDE_ENV_FILE</code> to reload environment variables.</p>
+
+      <p><strong>file-changed</strong> fires when a watched file changes on disk. Provides <code>file_path</code> and <code>changed_type</code> (<code>create</code>, <code>modify</code>, <code>delete</code>). Can write to <code>CLAUDE_ENV_FILE</code>.</p>
+
+      <h3 id="worktrees">Worktrees</h3>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Command</th><th>Event</th><th>Input Type</th><th>Output Type</th><th>Decision Control</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">worktree-create</td>
+            <td class="note">WorktreeCreate</td>
+            <td class="type">WorktreeCreateInput</td>
+            <td class="type">WorktreeCreateOutput</td>
+            <td class="note">Replaces default git worktree behavior</td>
+          </tr>
+          <tr>
+            <td class="field">worktree-remove</td>
+            <td class="note">WorktreeRemove</td>
+            <td class="type">WorktreeRemoveInput</td>
+            <td class="type">BaseOutput</td>
+            <td class="note">Observability only</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p><strong>worktree-create</strong> fires when a worktree is being created. The response provides a <code>worktreePath</code> in <code>hookSpecificOutput</code> — this replaces the default git worktree creation behavior.</p>
+
+      <p><strong>worktree-remove</strong> fires when a worktree is being removed. Observability only.</p>
+
+      <h3 id="context-compaction">Context Compaction</h3>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Command</th><th>Event</th><th>Input Type</th><th>Output Type</th><th>Decision Control</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">pre-compact</td>
+            <td class="note">PreCompact</td>
+            <td class="type">PreCompactInput</td>
+            <td class="type">BaseOutput</td>
+            <td class="note">Observability only</td>
+          </tr>
+          <tr>
+            <td class="field">post-compact</td>
+            <td class="note">PostCompact</td>
+            <td class="type">PostCompactInput</td>
+            <td class="type">BaseOutput</td>
+            <td class="note">Observability only</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p><strong>pre-compact</strong> and <strong>post-compact</strong> fire before and after context compaction. The <code>trigger</code> field is <code>manual</code> or <code>auto</code>. Observability only.</p>
+
+      <h3 id="mcp-elicitation">MCP Elicitation</h3>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Command</th><th>Event</th><th>Input Type</th><th>Output Type</th><th>Decision Control</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">elicitation</td>
+            <td class="note">Elicitation</td>
+            <td class="type">ElicitationInput</td>
+            <td class="type">ElicitationOutput</td>
+            <td class="note">Can accept/decline/cancel</td>
+          </tr>
+          <tr>
+            <td class="field">elicitation-result</td>
+            <td class="note">ElicitationResult</td>
+            <td class="type">ElicitationResultInput</td>
+            <td class="type">ElicitationResultOutput</td>
+            <td class="note">Can accept/decline/cancel, modify content</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p><strong>elicitation</strong> fires when an MCP server requests user input. Includes <code>mcp_server_name</code> and <code>form_schema</code>. The response wraps decisions in <code>hookSpecificOutput</code> with <code>action</code> (<code>accept</code>, <code>decline</code>, <code>cancel</code>) and optional <code>content</code>.</p>
+
+      <p><strong>elicitation-result</strong> fires after the user responds to an MCP elicitation, before the response is sent to the server. Includes <code>mcp_server_name</code> and <code>user_response</code>. Unlike <code>elicitation</code>, the response is <em>not</em> wrapped in <code>hookSpecificOutput</code> — <code>action</code> and <code>content</code> are top-level fields on <code>ElicitationResultOutput</code>.</p>
+    </section>
+
+    <section id="current-status">
+      <h2><span class="section-anchor">// 05</span>Current Status</h2>
+
+      <p>All 25 commands are wired up and deserialize their stdin payloads into the typed input structs. Implementation maturity varies by command:</p>
+
+      <ul>
+        <li><strong><code>post-tool-use</code></strong> has a full implementation — formats <code>.go</code>, <code>.md</code>, and <code>.mdx</code> files via the shared <code>internal/format</code> package (see <a href="post-tool-use.html">post-tool-use</a>).</li>
+        <li><strong><code>session-start</code>, <code>session-end</code>, <code>pre-tool-use</code>, <code>stop-failure</code>, <code>pre-compact</code>, <code>post-compact</code></strong> emit structured logs at Info/Warn level with hook-specific fields (<code>source</code>, <code>reason</code>, <code>tool_name</code>, <code>error</code>, <code>trigger</code>, etc.) on each invocation and return either a <code>BaseOutput{}</code> or a minimal allow/inject response.</li>
+        <li>The remaining commands deserialize input and return mock output values that exercise their output type's shape (e.g., <code>permission-request</code> returns <code>BehaviorAllow</code>, <code>worktree-create</code> returns <code>/tmp/mock-worktree</code>). These are placeholders to be replaced with real hook logic.</li>
+      </ul>
+
+      <div class="callout note"><strong>note</strong>Every leaf command struct embeds a <code>trailingArgs</code> field that absorbs unexpected positional arguments via an <code>arg:"" optional:"" hidden:""</code> tag, so the binary stays forward-compatible when Claude Code adds new arguments to a hook invocation.</div>
+    </section>
+
+    <footer>
+      <span class="blink">botctrl</span>
+      <span>claude-hook-commands · hooks</span>
+    </footer>
+
+  </main>
+
+</div>
+
+</body>
+</html>

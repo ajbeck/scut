@@ -2,6 +2,14 @@
 
 CLI tool to be used by LLM agents via hooks, rules and instructions. Provides a consistent interface for agent authors to interact with tools, the environment, and each other.
 
+## Development Rules and Process
+
+- Always use conventional commit syntax, for details see https://www.conventionalcommits.org/en/v1.0.0/. This is required for clean commit history and automated changelog generation.
+- The allowed conventional commit types are `feat`, `patch`, `docs`, `refactor`, `test`, and `chore`. Never use other types.
+- Never push a branch to a remote without explicit approval from a user.
+- Never add a new direct dependency without explicit approval from a user.
+- Always use the current latest version of a dependency, unless you have explicit approval from a user.
+
 ## Architecture
 
 - **CLI framework**: [github.com/alecthomas/kong](https://github.com/alecthomas/kong) — struct-based CLI parsing with dependency injection via `ctx.Run(binds...)`.
@@ -47,25 +55,25 @@ We use `encoding/json/v2` (the new JSON package). This requires:
 
 ## Implementation Documentation
 
-Implementation docs live in `docs/implementation/`. Each document covers a specific subsystem or design decision.
+Implementation docs live in `docs/` as standalone HTML files styled by the shared `botctrl-docs.css` / `botctrl-docs.js` design system. **The HTML is the single source of truth** — there are no Markdown counterparts. Edit the HTML directly when behaviour changes; preserve the existing structure (`<section id>` blocks, `table.fields`, `.code-frame` code samples, `.callout` callouts, `<ol class="steps">` procedures, syntax-token spans).
 
-| Document                                                               | Covers                                                                                                                 |
-| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| [kong-base-setup.md](docs/implementation/kong-base-setup.md)           | Kong CLI framework setup, BindTo dependency injection, command tree structure, how to add commands and groups          |
-| [claude-hook-commands.md](docs/implementation/claude-hook-commands.md) | Claude Code hook subcommands, event types, input/output types, decision control per event, shared types package design |
-| [post-tool-use.md](docs/implementation/post-tool-use.md)               | PostToolUse hook deep-dive — input/output fields, decision control, MCP output replacement, code locations             |
-| [status-line.md](docs/implementation/status-line.md)                   | Status line command — colour palette, formatting, go-git integration, available input fields                           |
-| [logging.md](docs/implementation/logging.md)                           | Structured JSONL logging — flags, file layout, rotation, standardized fields, clean command                            |
+| Document                                                       | Covers                                                                                                                 |
+| -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| [kong-base-setup.html](docs/kong-base-setup.html)             | Kong CLI framework setup, BindTo dependency injection, command tree structure, how to add commands and groups          |
+| [claude-hook-commands.html](docs/claude-hook-commands.html)   | Claude Code hook subcommands, event types, input/output types, decision control per event, shared types package design |
+| [post-tool-use.html](docs/post-tool-use.html)                 | PostToolUse hook deep-dive — input/output fields, decision control, MCP output replacement, code locations             |
+| [status-line.html](docs/status-line.html)                     | Status line command — colour palette, formatting, go-git integration, available input fields                           |
+| [logging.html](docs/logging.html)                             | Structured JSONL logging — flags, file layout, rotation, standardized fields, clean command                            |
 
 ### Commit-time documentation check
 
 **Before every commit**, check whether any changed files are covered by a document in the index above. Matching rules:
 
-- `cmd/botctrl/main.go` or `internal/cmd/**` changes → review `kong-base-setup.md`
-- `hooks/claudecode/**` or `internal/cmd/claude/hook/**` changes → review `claude-hook-commands.md`
-- `internal/cmd/claude/hook/posttooluse.go` or `PostToolUseInput`/`PostToolUseOutput` changes → review `post-tool-use.md`
-- `internal/cmd/claude/statusline.go` or `hooks/claudecode/statusline.go` changes → review `status-line.md`
-- `internal/logging/**` or `internal/cmd/logging/**` or `--log`/`--log-level` flag changes → review `logging.md`
-- Any new `docs/implementation/*.md` file → add it to the index table above
+- `cmd/botctrl/main.go` or `internal/cmd/**` changes → review `kong-base-setup.html`
+- `hooks/claudecode/**` or `internal/cmd/claude/hook/**` changes → review `claude-hook-commands.html`
+- `internal/cmd/claude/hook/posttooluse.go` or `PostToolUseInput`/`PostToolUseOutput` changes → review `post-tool-use.html`
+- `internal/cmd/claude/statusline.go` or `hooks/claudecode/statusline.go` changes → review `status-line.html`
+- `internal/logging/**` or `internal/cmd/logging/**` or `--log`/`--log-level` flag changes → review `logging.html`
+- Any new `docs/*.html` documentation file → add it to the index table above
 
-If a matching document exists and the commit changes behavior it describes (new bindings, new command groups, changed struct tags, altered command tree layout), update the document to reflect the current state **in the same commit**.
+If a matching document exists and the commit changes behavior it describes (new bindings, new command groups, changed struct tags, altered command tree layout), update the HTML to reflect the current state **in the same commit**.

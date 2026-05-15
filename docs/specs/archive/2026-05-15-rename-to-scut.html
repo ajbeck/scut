@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Spec — Rename botctrl → scut</title>
-<link rel="stylesheet" href="../botctrl-docs.css">
-<script src="../botctrl-docs.js"></script>
+<link rel="stylesheet" href="../../scut-docs.css">
+<script src="../../scut-docs.js"></script>
 </head>
 <body>
 
@@ -49,9 +49,9 @@
 
     <header class="hero">
       <div class="hero-meta">
-        <span class="badge primary">v0.1 spec</span>
-        <span class="badge tests">2026-05-15</span>
-        <span class="badge swift">go 1.26</span>
+        <span class="badge tests">✓ complete</span>
+        <span class="badge primary">executed 2026-05-15</span>
+        <span class="badge swift">archived</span>
       </div>
       <h1><span class="moniker-bracket">[</span><span class="moniker">RenameToScut</span><span class="moniker-bracket">]</span></h1>
       <p class="lede">Migrate the project from <code>botctrl</code> to <code>scut</code> — module path, binary name, GitHub repo, local directory, log directory, Claude Code memory directory, and every textual reference across code and docs. Two atomic commits on <code>getting-started</code>, then a coordinated GitHub-side rename. No behavior changes; the diff is mechanical.</p>
@@ -67,11 +67,13 @@
     <section id="purpose">
       <h2><span class="section-anchor">// 01</span>Purpose</h2>
 
+      <div class="callout success"><strong>done</strong>This rename was executed and verified on 2026-05-15. All 17 plan tasks completed: the Go module path, binary, GitHub repo (<code>ajbeck/botctrl</code> → <code>ajbeck/scut</code>, permanent redirect in place), local working directory, log directory, and Claude Code memory directory were migrated; two commits landed on <code>getting-started</code>; tests green; <code>bin/scut</code> builds. This spec is retained as a historical record and archived under <code>docs/specs/archive/</code>. The PR/merge of <code>getting-started</code> → <code>main</code> remains a separate decision tracked outside this spec.</div>
+
       <p>The product is being renamed from <code>botctrl</code> to <code>scut</code>. The new name is a deliberate triple-reference: in the Bobiverse universe (Dennis E. Taylor) <strong>SCUT</strong> is the <em>Subspace Communications Universal Transceiver</em> — the FTL protocol layer that links every Bob across light-years; in everyday English <strong>scut work</strong> is the unglamorous grinding labor an assistant does on behalf of someone else; and the four-letter lowercase token reads as a Unix tool of the same family as <code>grep</code>, <code>awk</code>, <code>sed</code>. All three meanings describe what this product is: the protocol-layer assistant that does the grunt work on behalf of LLM agents.</p>
 
       <p>This spec covers the mechanics of the move. There is no scope creep — no API changes, no new features, no behavior changes. The diff is large but textual.</p>
 
-      <div class="callout note"><strong>note</strong>This spec assumes the just-completed <code>internal/cmd/claude/config/</code> package work (see <a href="2026-05-14-config-command.html">2026-05-14-config-command</a>) is currently uncommitted on <code>getting-started</code>. Phase 0 commits that work under the old name before the rename starts. If state has drifted, re-read Phase 0 carefully.</div>
+      <div class="callout note"><strong>note</strong>This spec assumes the just-completed <code>internal/cmd/claude/config/</code> package work (see <a href="../2026-05-14-config-command.html">2026-05-14-config-command</a>) is currently uncommitted on <code>getting-started</code>. Phase 0 commits that work under the old name before the rename starts. If state has drifted, re-read Phase 0 carefully.</div>
     </section>
 
     <section id="decisions">
@@ -132,13 +134,13 @@
       <ul>
         <li><code>README.md</code> — every CLI example, the <code>go install</code> URL, repo references.</li>
         <li><code>CLAUDE.md</code> — H1, Module line, every CLI example, the conventional-commit reference.</li>
-        <li>Every <code>docs/*.html</code> — CLI examples, repo URLs, the <code>botctrl-docs.css</code> / <code>botctrl-docs.js</code> filenames stay the same (they are filenames inside the repo, not project identifiers — out of scope to rename).</li>
+        <li>Every <code>docs/*.html</code> — CLI examples, repo URLs, the <code>scut-docs.css</code> / <code>scut-docs.js</code> filenames stay the same (they are filenames inside the repo, not project identifiers — out of scope to rename).</li>
         <li><code>docs/specs/2026-05-14-config-command.html</code> — examples and prose.</li>
         <li><code>docs/specs/2026-05-15-github-pages-research.html</code> — also updates <code>ajbeck.github.io/botctrl/</code> → <code>ajbeck.github.io/scut/</code> throughout.</li>
         <li>This spec itself (it lives under the same tree and gets renamed-in-place along with everything else; the filename keeps the dated prefix).</li>
       </ul>
 
-      <div class="callout note"><strong>note</strong>The asset filenames <code>botctrl-docs.css</code> and <code>botctrl-docs.js</code> are deliberately <strong>not</strong> renamed in this spec. They are internal asset names referenced only from within the docs tree; renaming them would add ~10 file references with no user-visible benefit. They can be renamed in a future cleanup commit if desired.</div>
+      <div class="callout note"><strong>note</strong>The asset filenames <code>scut-docs.css</code> and <code>scut-docs.js</code> are deliberately <strong>not</strong> renamed in this spec. They are internal asset names referenced only from within the docs tree; renaming them would add ~10 file references with no user-visible benefit. They can be renamed in a future cleanup commit if desired.</div>
     </section>
 
     <section id="phase-0">
@@ -237,7 +239,7 @@ grep -rn <span class="tok-string">'botctrl'</span> . --exclude-dir=.git --exclud
           <tr><td class="field">Log dir paths</td><td class="type"><code>~/.botctrl/logging/</code></td><td class="note">Replace with <code>~/.scut/logging/</code>.</td></tr>
           <tr><td class="field">Binary refs in Magefile</td><td class="type"><code>bin/botctrl</code>, <code>botctrl</code> as binary name</td><td class="note">Replace with <code>scut</code> / <code>bin/scut</code>.</td></tr>
           <tr><td class="field">Project name in docs</td><td class="type"><code># botctrl</code> H1 in CLAUDE.md / README</td><td class="note">Replace with <code># scut</code>.</td></tr>
-          <tr><td class="field">CSS / JS asset filenames</td><td class="type"><code>botctrl-docs.css</code>, <code>botctrl-docs.js</code></td><td class="note"><strong>Leave alone</strong> — out of scope per <a href="#scope">§03</a>.</td></tr>
+          <tr><td class="field">CSS / JS asset filenames</td><td class="type"><code>scut-docs.css</code>, <code>scut-docs.js</code></td><td class="note"><strong>Leave alone</strong> — out of scope per <a href="#scope">§03</a>.</td></tr>
           <tr><td class="field">References to the rename itself</td><td class="type">This spec, the eventual commit message</td><td class="note">Keep — historical reference is intended.</td></tr>
         </tbody>
       </table>
@@ -249,7 +251,7 @@ grep -rn <span class="tok-string">'botctrl'</span> . --exclude-dir=.git --exclud
         <li><code>mage vet</code> — clean.</li>
         <li><code>mage test</code> — clean, including the config-command tests whose fixtures were updated.</li>
         <li><code>mage build</code> — produces <code>bin/scut</code>.</li>
-        <li>Re-run the grep from Step 3: <code>grep -rn 'botctrl' . --exclude-dir=.git --exclude-dir=bin</code>. Expected output: only the asset filenames <code>botctrl-docs.css</code> / <code>botctrl-docs.js</code> (intentionally preserved) and the rename spec's prose discussing the rename.</li>
+        <li>Re-run the grep from Step 3: <code>grep -rn 'botctrl' . --exclude-dir=.git --exclude-dir=bin</code>. Expected output: only the asset filenames <code>scut-docs.css</code> / <code>scut-docs.js</code> (intentionally preserved) and the rename spec's prose discussing the rename.</li>
       </ol>
 
       <div class="callout warn"><strong>halt</strong>If <code>mage test</code> fails at this point, STOP. Do not commit. The most likely cause is a test fixture string that was missed by the bulk replace. Diagnose, fix, retry.</div>
@@ -451,7 +453,7 @@ ls bin/scut              <span class="tok-comment"># new binary name</span></pre
       <h2><span class="section-anchor">// 10</span>Out of Scope</h2>
 
       <ul>
-        <li><strong>Renaming <code>botctrl-docs.css</code> / <code>botctrl-docs.js</code>.</strong> They are internal asset filenames referenced only from within <code>docs/</code>. A separate cleanup commit can do this later if desired.</li>
+        <li><strong>Renaming <code>scut-docs.css</code> / <code>scut-docs.js</code>.</strong> They are internal asset filenames referenced only from within <code>docs/</code>. A separate cleanup commit can do this later if desired.</li>
         <li><strong>Backward-compatible <code>owns()</code> recognising old <code>botctrl</code> entries in <code>settings.json</code>.</strong> Single-user tool — unnecessary.</li>
         <li><strong>Merging <code>getting-started</code> to <code>main</code>.</strong> Separate decision after the rename lands.</li>
         <li><strong>GitHub Pages workflow + custom domain.</strong> Picks up after this rename. Domain candidates change with the new name (<code>scut.dev</code>, <code>getscut.dev</code>, etc.) — to be decided in that session.</li>

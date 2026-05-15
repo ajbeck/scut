@@ -33,7 +33,17 @@ Files with other extensions are passed through unchanged.
 
 ### Configuration
 
-Add the following to your Claude Code `settings.json` (project-level at `.claude/settings.json` or user-level at `~/.claude/settings.json`):
+Wire everything up with a single command:
+
+```bash
+botctrl claude config install              # project scope: .claude/settings.json
+botctrl claude config install --scope=user # user scope: ~/.claude/settings.json
+botctrl claude config install --dry-run    # preview without writing
+```
+
+This installs entries for all 25 hook events plus the status line, merging non-destructively with any existing `settings.json`. See [docs/config-command.html](docs/config-command.html) for flags, merge semantics, and the `uninstall` / `status` subcommands.
+
+For reference, this is the PostToolUse entry the command writes:
 
 ```json
 {
@@ -56,7 +66,7 @@ Add the following to your Claude Code `settings.json` (project-level at `.claude
 
 **Fields:**
 
-- **`matcher`** — filters which tool calls trigger the hook. Set to `"Write"` or `"Edit"` to match the corresponding Claude Code tool.
+- **`matcher`** — filters which tool calls trigger the hook. `"Write|Edit"` matches either tool.
 - **`type`** — handler type. Currently only `"command"` is supported.
 - **`command`** — the CLI command Claude Code executes as a subprocess. Claude Code pipes the tool use event as JSON to stdin and reads the hook's JSON response from stdout.
 - **`statusMessage`** — optional label shown in Claude Code's status line while the hook runs.
@@ -102,7 +112,7 @@ botctrl claude hook --help
 
 ### Configuration
 
-Add a `statusLine` entry to your Claude Code `settings.json`:
+The status line is wired by `botctrl claude config install` alongside the hooks. The entry it writes:
 
 ```json
 {
@@ -113,40 +123,13 @@ Add a `statusLine` entry to your Claude Code `settings.json`:
 }
 ```
 
-This can live alongside hooks in the same settings file. A complete configuration with both the status line and the post-tool-use formatting hook:
+To install only the status line without the hooks, pass `--only=status-line`:
 
-```json
-{
-  "statusLine": {
-    "type": "command",
-    "command": "botctrl claude status-line"
-  },
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "botctrl claude hook post-tool-use",
-            "statusMessage": "Formatting..."
-          }
-        ]
-      },
-      {
-        "matcher": "Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "botctrl claude hook post-tool-use",
-            "statusMessage": "Formatting..."
-          }
-        ]
-      }
-    ]
-  }
-}
+```bash
+botctrl claude config install --only=status-line
 ```
+
+See [docs/config-command.html](docs/config-command.html) for the full surface.
 
 ### Performance
 
@@ -176,13 +159,14 @@ Log files are written to `~/.botctrl/logging/` with date-partitioned filenames:
 
 Each line is a JSON object with standardized fields: `time`, `level`, `msg`, `hook`, `session_id`, `duration_ms`, plus hook-specific attributes.
 
-To enable logging in Claude Code hooks, add `--log` to the command in your `settings.json`:
+To bake logging into the installed hook commands, pass `--log` (or `--log-level=LEVEL`) when installing:
 
-```json
-{
-  "command": "botctrl claude --log hook post-tool-use"
-}
+```bash
+botctrl claude config install --log
+botctrl claude config install --log-level=debug
 ```
+
+The generated command in `settings.json` becomes `botctrl claude --log hook post-tool-use` (or `--log-level=debug`).
 
 ### Cleanup
 

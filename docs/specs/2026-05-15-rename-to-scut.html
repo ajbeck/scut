@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec — Rename botctrl → scut</title>
+<link rel="stylesheet" href="../botctrl-docs.css">
+<script src="../botctrl-docs.js"></script>
+</head>
+<body>
+
+<div class="layout">
+
+  <aside class="rail">
+    <p class="rail-title">// botctrl · spec</p>
+    <p class="rail-product"><span class="live-dot" aria-hidden="true"></span>rename → scut</p>
+
+    <nav class="toc">
+      <div class="toc-section">
+        <p class="toc-section-label">Overview</p>
+        <a class="toc-link" href="#purpose"><span class="toc-num">01</span><span>Purpose</span></a>
+        <a class="toc-link" href="#decisions"><span class="toc-num">02</span><span>Decisions Locked</span></a>
+        <a class="toc-link" href="#scope"><span class="toc-num">03</span><span>What Changes</span></a>
+      </div>
+
+      <div class="toc-section">
+        <p class="toc-section-label">Phases</p>
+        <a class="toc-link" href="#phase-0"><span class="toc-num">04</span><span>Phase 0 — Commit config-command</span></a>
+        <a class="toc-link" href="#phase-1"><span class="toc-num">05</span><span>Phase 1 — Local rename</span></a>
+        <a class="toc-link" href="#phase-2"><span class="toc-num">06</span><span>Phase 2 — Commit rename</span></a>
+        <a class="toc-link" href="#phase-3"><span class="toc-num">07</span><span>Phase 3 — GitHub + filesystem</span></a>
+      </div>
+
+      <div class="toc-section">
+        <p class="toc-section-label">Quality</p>
+        <a class="toc-link" href="#verification"><span class="toc-num">08</span><span>Verification Gates</span></a>
+        <a class="toc-link" href="#risks"><span class="toc-num">09</span><span>Risks &amp; Mitigations</span></a>
+        <a class="toc-link" href="#out-of-scope"><span class="toc-num">10</span><span>Out of Scope</span></a>
+      </div>
+    </nav>
+
+    <div class="theme-switcher">
+      <span class="theme-switcher__label">Theme</span>
+      <button class="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle color theme"><span class="toggle-glyph toggle-glyph--sun" aria-hidden="true">☀︎</span><span class="toggle-glyph toggle-glyph--moon" aria-hidden="true">☾</span></button>
+    </div>
+  </aside>
+
+  <main>
+
+    <header class="hero">
+      <div class="hero-meta">
+        <span class="badge primary">v0.1 spec</span>
+        <span class="badge tests">2026-05-15</span>
+        <span class="badge swift">go 1.26</span>
+      </div>
+      <h1><span class="moniker-bracket">[</span><span class="moniker">RenameToScut</span><span class="moniker-bracket">]</span></h1>
+      <p class="lede">Migrate the project from <code>botctrl</code> to <code>scut</code> — module path, binary name, GitHub repo, local directory, log directory, Claude Code memory directory, and every textual reference across code and docs. Two atomic commits on <code>getting-started</code>, then a coordinated GitHub-side rename. No behavior changes; the diff is mechanical.</p>
+
+      <div class="hero-stats">
+        <div class="stat"><span class="num">4</span><span class="label">phases</span></div>
+        <div class="stat"><span class="num">2</span><span class="label">atomic commits</span></div>
+        <div class="stat"><span class="num">1</span><span class="label">permanent GH redirect</span></div>
+        <div class="stat"><span class="num">0</span><span class="label">behavior changes</span></div>
+      </div>
+    </header>
+
+    <section id="purpose">
+      <h2><span class="section-anchor">// 01</span>Purpose</h2>
+
+      <p>The product is being renamed from <code>botctrl</code> to <code>scut</code>. The new name is a deliberate triple-reference: in the Bobiverse universe (Dennis E. Taylor) <strong>SCUT</strong> is the <em>Subspace Communications Universal Transceiver</em> — the FTL protocol layer that links every Bob across light-years; in everyday English <strong>scut work</strong> is the unglamorous grinding labor an assistant does on behalf of someone else; and the four-letter lowercase token reads as a Unix tool of the same family as <code>grep</code>, <code>awk</code>, <code>sed</code>. All three meanings describe what this product is: the protocol-layer assistant that does the grunt work on behalf of LLM agents.</p>
+
+      <p>This spec covers the mechanics of the move. There is no scope creep — no API changes, no new features, no behavior changes. The diff is large but textual.</p>
+
+      <div class="callout note"><strong>note</strong>This spec assumes the just-completed <code>internal/cmd/claude/config/</code> package work (see <a href="2026-05-14-config-command.html">2026-05-14-config-command</a>) is currently uncommitted on <code>getting-started</code>. Phase 0 commits that work under the old name before the rename starts. If state has drifted, re-read Phase 0 carefully.</div>
+    </section>
+
+    <section id="decisions">
+      <h2><span class="section-anchor">// 02</span>Decisions Locked</h2>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Decision</th><th>Locked Choice</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="field">Sequencing</td><td class="note">Commit config-command first as <code>botctrl</code>; rename happens as a separate commit immediately after.</td></tr>
+          <tr><td class="field">Branch strategy</td><td class="note">Both commits on <code>getting-started</code>. No new branch for the rename. Merge to <code>main</code> is a separate later decision.</td></tr>
+          <tr><td class="field">GitHub repo rename</td><td class="note">Yes — <code>gh repo rename scut --repo ajbeck/botctrl</code>. GitHub maintains a permanent HTTP redirect from the old URL.</td></tr>
+          <tr><td class="field">Origin remote URL</td><td class="note">Yes — updated locally via <code>git remote set-url origin</code> after the GH rename, even though the redirect would also work.</td></tr>
+          <tr><td class="field">Local directory rename</td><td class="note">Yes — <code>~/Developer/repos/ajbeck/botctrl</code> → <code>.../scut</code>.</td></tr>
+          <tr><td class="field">Claude Code memory dir</td><td class="note">Migrated — <code>/Users/aj/.claude/projects/-Users-aj-Developer-repos-ajbeck-botctrl/</code> → <code>.../-Users-aj-Developer-repos-ajbeck-scut/</code> so this conversation's memory survives. <code>cp -r</code> first, verify new path works, then remove the old.</td></tr>
+          <tr><td class="field">Log directory</td><td class="note"><code>~/.botctrl/logging/</code> → <code>~/.scut/logging/</code> in source. No migration code needed — <code>~/.botctrl/</code> does not exist on the user's machine (verified).</td></tr>
+          <tr><td class="field">Backward compatibility in <code>owns()</code></td><td class="note">None. The function checks for <code>scut</code> prefix only. Single-user tool; preserving the old prefix is unnecessary maintenance.</td></tr>
+          <tr><td class="field">Pre-existing <code>mage fmt</code> artifacts</td><td class="note">Fold into the Phase 0 config-command commit. Five files, one trailing-newline change each. Not worth their own commit.</td></tr>
+          <tr><td class="field">Push policy</td><td class="note">Every <code>git push</code> and every remote-affecting <code>gh</code> command requires explicit confirmation at the time. Spec marks these points as <strong>STOP &amp; CONFIRM</strong>.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="scope">
+      <h2><span class="section-anchor">// 03</span>What Changes</h2>
+
+      <h3>Identifiers</h3>
+
+      <table class="fields">
+        <thead>
+          <tr><th>What</th><th>From</th><th>To</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="field">Module path</td><td class="type"><code>github.com/ajbeck/botctrl</code></td><td class="type"><code>github.com/ajbeck/scut</code></td></tr>
+          <tr><td class="field">Binary name</td><td class="type"><code>botctrl</code></td><td class="type"><code>scut</code></td></tr>
+          <tr><td class="field">GitHub repo</td><td class="type"><code>ajbeck/botctrl</code></td><td class="type"><code>ajbeck/scut</code></td></tr>
+          <tr><td class="field">Local working dir</td><td class="type"><code>~/Developer/repos/ajbeck/botctrl</code></td><td class="type"><code>~/Developer/repos/ajbeck/scut</code></td></tr>
+          <tr><td class="field">Log dir (source ref)</td><td class="type"><code>~/.botctrl/logging/</code></td><td class="type"><code>~/.scut/logging/</code></td></tr>
+          <tr><td class="field"><code>cmd/</code> package dir</td><td class="type"><code>cmd/botctrl/</code></td><td class="type"><code>cmd/scut/</code></td></tr>
+          <tr><td class="field">Claude memory dir</td><td class="type"><code>-Users-aj-Developer-repos-ajbeck-botctrl</code></td><td class="type"><code>-Users-aj-Developer-repos-ajbeck-scut</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3>Code (textual replacement)</h3>
+
+      <ul>
+        <li>Every Go file importing <code>github.com/ajbeck/botctrl/...</code>.</li>
+        <li><code>internal/cmd/claude/config/ownership.go</code> — the three <code>owns()</code> prefix checks: <code>"botctrl"</code>, <code>"botctrl "</code>, <code>"botctrl\t"</code>.</li>
+        <li><code>internal/cmd/claude/config/registry.go</code> and any command-string builder that emits literal <code>"botctrl claude hook &lt;slug&gt;"</code> or <code>"botctrl claude status-line"</code>.</li>
+        <li><code>internal/cmd/claude/config/*_test.go</code> fixtures that assert on those literal strings.</li>
+        <li><code>internal/logging/</code> — log directory path resolution.</li>
+        <li><code>magefiles/</code> — binary name in <code>build</code>/<code>localDeploy</code> targets, any module-path interpolation.</li>
+      </ul>
+
+      <h3>Docs (prose + code blocks)</h3>
+
+      <ul>
+        <li><code>README.md</code> — every CLI example, the <code>go install</code> URL, repo references.</li>
+        <li><code>CLAUDE.md</code> — H1, Module line, every CLI example, the conventional-commit reference.</li>
+        <li>Every <code>docs/*.html</code> — CLI examples, repo URLs, the <code>botctrl-docs.css</code> / <code>botctrl-docs.js</code> filenames stay the same (they are filenames inside the repo, not project identifiers — out of scope to rename).</li>
+        <li><code>docs/specs/2026-05-14-config-command.html</code> — examples and prose.</li>
+        <li><code>docs/specs/2026-05-15-github-pages-research.html</code> — also updates <code>ajbeck.github.io/botctrl/</code> → <code>ajbeck.github.io/scut/</code> throughout.</li>
+        <li>This spec itself (it lives under the same tree and gets renamed-in-place along with everything else; the filename keeps the dated prefix).</li>
+      </ul>
+
+      <div class="callout note"><strong>note</strong>The asset filenames <code>botctrl-docs.css</code> and <code>botctrl-docs.js</code> are deliberately <strong>not</strong> renamed in this spec. They are internal asset names referenced only from within the docs tree; renaming them would add ~10 file references with no user-visible benefit. They can be renamed in a future cleanup commit if desired.</div>
+    </section>
+
+    <section id="phase-0">
+      <h2><span class="section-anchor">// 04</span>Phase 0 — Commit config-command as botctrl</h2>
+
+      <p>Lands the just-completed work as a clean atomic feature commit under the old name. The rename's diff later is then easier to read because it touches only rename-related text.</p>
+
+      <ol class="steps">
+        <li>Verify working tree state: <code>git status</code> shows the new <code>internal/cmd/claude/config/</code> directory, the CLAUDE.md / README.md / kong-base-setup.html / config-command.html updates, the new <code>2026-05-15-github-pages-research.html</code> spec, and the five pre-existing <code>mage fmt</code> artifacts.</li>
+        <li>Run <code>mage fmt &amp;&amp; mage vet &amp;&amp; mage test</code>. All must be clean.</li>
+        <li>Stage everything: prefer explicit <code>git add</code> by file/path over <code>git add -A</code> to avoid sweeping in untracked surprises.</li>
+        <li>Commit with a conventional message:
+          <div class="code-frame">
+            <div class="code-titlebar">
+              <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+              <span class="filename">commit-message<span class="ext">.txt</span></span>
+              <span class="langtag">CONV</span>
+            </div>
+<pre>feat(claude): add config command for managing settings.json
+
+Adds botctrl claude config install/uninstall/status. The command
+group manages Claude Code's settings.json on behalf of the user —
+install writes (or merges) every hook handler and the status line
+into the chosen scope, uninstall reverses, status reports.
+
+Settings are modeled with encoding/json/v2 and an inlined Foreign
+fallback map so non-botctrl top-level keys round-trip verbatim.
+Output is deterministic via json.Deterministic + a single
+marshalSettings helper, making install idempotent under cmp.
+
+Also includes docs/config-command.html, the CLAUDE.md index and
+commit-time check rule entries, kong-base-setup diagram update,
+and README rewrites that defer to the new command.</pre>
+          </div>
+        </li>
+        <li>Verify the commit: <code>git log -1 --stat</code> should show the expected file set.</li>
+        <li><strong>STOP &amp; CONFIRM</strong> before any <code>git push</code>. Push is not required to proceed to Phase 1 — local commit is sufficient.</li>
+      </ol>
+    </section>
+
+    <section id="phase-1">
+      <h2><span class="section-anchor">// 05</span>Phase 1 — Local rename</h2>
+
+      <p>All textual edits happen on the still-named local directory. Nothing on disk moves yet, nothing on GitHub changes yet. This is the largest diff but the most reversible state: a single <code>git reset --hard HEAD</code> backs everything out.</p>
+
+      <h3>Step 1 — Bulk replacement of unambiguous tokens</h3>
+
+      <p>The module path is the most precise token in the codebase. Replace it first because it has zero false-positive risk:</p>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">module-path-replace<span class="ext">.sh</span></span>
+          <span class="langtag">SHELL</span>
+        </div>
+<pre><span class="tok-comment"># Replace the full module path in every text file</span>
+grep -rl <span class="tok-string">'github.com/ajbeck/botctrl'</span> --include=<span class="tok-string">'*.go'</span> --include=<span class="tok-string">'*.mod'</span> --include=<span class="tok-string">'*.sum'</span> --include=<span class="tok-string">'*.html'</span> --include=<span class="tok-string">'*.md'</span> . \
+  | xargs sed -i <span class="tok-string">''</span> <span class="tok-string">'s|github.com/ajbeck/botctrl|github.com/ajbeck/scut|g'</span></pre>
+      </div>
+
+      <h3>Step 2 — Rename the cmd directory</h3>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">cmd-rename<span class="ext">.sh</span></span>
+          <span class="langtag">SHELL</span>
+        </div>
+<pre>git mv cmd/botctrl cmd/scut</pre>
+      </div>
+
+      <h3>Step 3 — Replace remaining standalone <code>botctrl</code> tokens</h3>
+
+      <p>Now do a broader replacement for the bare token. This is less surgical — some matches will be inside prose, code blocks, or filenames. Mitigation: review each match before committing the replacement.</p>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">survey-remaining<span class="ext">.sh</span></span>
+          <span class="langtag">SHELL</span>
+        </div>
+<pre><span class="tok-comment"># Survey what's left first — do not blindly sed</span>
+grep -rn <span class="tok-string">'botctrl'</span> . --exclude-dir=.git --exclude-dir=bin</pre>
+      </div>
+
+      <p>Categories of matches to expect, and how to treat each:</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Category</th><th>Example</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="field">CLI invocation in prose / code blocks</td><td class="type"><code>botctrl claude config install</code></td><td class="note">Replace with <code>scut claude config install</code>.</td></tr>
+          <tr><td class="field"><code>owns()</code> prefix string literals</td><td class="type"><code>"botctrl"</code>, <code>"botctrl "</code>, <code>"botctrl\t"</code></td><td class="note">Replace tokens with <code>scut</code> equivalents.</td></tr>
+          <tr><td class="field">Test fixture command strings</td><td class="type"><code>"botctrl claude hook post-tool-use"</code></td><td class="note">Replace with <code>scut</code> equivalent.</td></tr>
+          <tr><td class="field">Log dir paths</td><td class="type"><code>~/.botctrl/logging/</code></td><td class="note">Replace with <code>~/.scut/logging/</code>.</td></tr>
+          <tr><td class="field">Binary refs in Magefile</td><td class="type"><code>bin/botctrl</code>, <code>botctrl</code> as binary name</td><td class="note">Replace with <code>scut</code> / <code>bin/scut</code>.</td></tr>
+          <tr><td class="field">Project name in docs</td><td class="type"><code># botctrl</code> H1 in CLAUDE.md / README</td><td class="note">Replace with <code># scut</code>.</td></tr>
+          <tr><td class="field">CSS / JS asset filenames</td><td class="type"><code>botctrl-docs.css</code>, <code>botctrl-docs.js</code></td><td class="note"><strong>Leave alone</strong> — out of scope per <a href="#scope">§03</a>.</td></tr>
+          <tr><td class="field">References to the rename itself</td><td class="type">This spec, the eventual commit message</td><td class="note">Keep — historical reference is intended.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Step 4 — Verify before committing</h3>
+
+      <ol class="steps">
+        <li><code>mage fmt</code> — should produce no diff if Step 1 / Step 3 left files in shape.</li>
+        <li><code>mage vet</code> — clean.</li>
+        <li><code>mage test</code> — clean, including the config-command tests whose fixtures were updated.</li>
+        <li><code>mage build</code> — produces <code>bin/scut</code>.</li>
+        <li>Re-run the grep from Step 3: <code>grep -rn 'botctrl' . --exclude-dir=.git --exclude-dir=bin</code>. Expected output: only the asset filenames <code>botctrl-docs.css</code> / <code>botctrl-docs.js</code> (intentionally preserved) and the rename spec's prose discussing the rename.</li>
+      </ol>
+
+      <div class="callout warn"><strong>halt</strong>If <code>mage test</code> fails at this point, STOP. Do not commit. The most likely cause is a test fixture string that was missed by the bulk replace. Diagnose, fix, retry.</div>
+    </section>
+
+    <section id="phase-2">
+      <h2><span class="section-anchor">// 06</span>Phase 2 — Commit the rename</h2>
+
+      <p>Single atomic commit. Massive diff, no behavior change. Lives on <code>getting-started</code> on top of the Phase 0 commit.</p>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">commit-message<span class="ext">.txt</span></span>
+          <span class="langtag">CONV</span>
+        </div>
+<pre>chore: rename botctrl to scut
+
+Renames the project from botctrl to scut. Touches the Go module
+path, the cmd/ directory, the binary name, the owns() prefix
+check in the config package, the install registry's emitted
+command strings, the log directory path, magefile targets, and
+every doc and spec page.
+
+No behavior change. The diff is mechanical.
+
+The new name is a Bobiverse reference (SCUT = Subspace
+Communications Universal Transceiver — Bob's FTL comms layer)
+that also reads as everyday English (scut work) and as a Unix
+tool name.
+
+The GitHub repo rename (ajbeck/botctrl -> ajbeck/scut) and the
+local directory rename are coordinated separately after this
+commit lands.</pre>
+      </div>
+
+      <p>Verify with <code>git log -2 --stat</code>. The two commits should be: <code>chore: rename ...</code> on top of <code>feat(claude): add config command ...</code>.</p>
+    </section>
+
+    <section id="phase-3">
+      <h2><span class="section-anchor">// 07</span>Phase 3 — Coordinated GitHub + filesystem rename</h2>
+
+      <p>The irreversible-ish bit. Each step is small and verifiable. Order matters.</p>
+
+      <div class="callout warn"><strong>session handoff</strong>Step 5 renames the local working directory. Any Claude Code session whose tool-call cwd points at the old path becomes useless after that point — every <code>Bash</code> tool call fails with "directory does not exist." Plan: complete Phase 3 Steps 1–4 in the current session, close it, run Steps 5–6 from a fresh terminal, then open a new Claude Code session in the renamed directory to continue with Step 7+. The Step 4 memory backup is what makes the handoff safe.</div>
+
+      <ol class="steps">
+        <li>
+          <p><strong>STOP &amp; CONFIRM</strong> — push the two commits to <code>origin/getting-started</code> under the still-<code>botctrl</code> name. The push works fine even though the code now references <code>github.com/ajbeck/scut</code>; Git does not validate module-path-to-remote-URL coherence. After push: <code>gh pr list</code> / <code>gh repo view</code> should still show the <code>botctrl</code> name.</p>
+        </li>
+        <li>
+          <p><strong>STOP &amp; CONFIRM</strong> — rename the GitHub repository:</p>
+          <div class="code-frame">
+            <div class="code-titlebar">
+              <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+              <span class="filename">gh-rename<span class="ext">.sh</span></span>
+              <span class="langtag">SHELL</span>
+            </div>
+<pre>gh repo rename scut --repo ajbeck/botctrl --yes</pre>
+          </div>
+          <p>GitHub maintains a permanent HTTP redirect from <code>github.com/ajbeck/botctrl</code> to <code>github.com/ajbeck/scut</code>. Existing clones, links, and bookmarks continue to work.</p>
+        </li>
+        <li>
+          <p>Update the local remote URL so future <code>git push</code> / <code>git fetch</code> go to the new URL directly rather than redirecting:</p>
+          <div class="code-frame">
+            <div class="code-titlebar">
+              <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+              <span class="filename">remote-rename<span class="ext">.sh</span></span>
+              <span class="langtag">SHELL</span>
+            </div>
+<pre>git remote set-url origin git@github.com:ajbeck/scut.git
+git remote -v       <span class="tok-comment"># verify both fetch and push lines</span>
+git fetch origin    <span class="tok-comment"># verify connectivity</span></pre>
+          </div>
+        </li>
+        <li>
+          <p>Back up the Claude Code memory directory before moving it. The memory dir holds <code>MEMORY.md</code> plus the feedback memories built up across sessions. If anything goes wrong with the <code>mv</code> in the next step, the backup is the recovery path.</p>
+          <div class="code-frame">
+            <div class="code-titlebar">
+              <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+              <span class="filename">memory-backup<span class="ext">.sh</span></span>
+              <span class="langtag">SHELL</span>
+            </div>
+<pre>cp -r /Users/aj/.claude/projects/-Users-aj-Developer-repos-ajbeck-botctrl \
+      /tmp/claude-memory-botctrl-backup-$(date +%Y%m%d-%H%M)</pre>
+          </div>
+        </li>
+        <li>
+          <p>Rename the local working directory:</p>
+          <div class="code-frame">
+            <div class="code-titlebar">
+              <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+              <span class="filename">dir-rename<span class="ext">.sh</span></span>
+              <span class="langtag">SHELL</span>
+            </div>
+<pre>mv ~/Developer/repos/ajbeck/botctrl ~/Developer/repos/ajbeck/scut</pre>
+          </div>
+        </li>
+        <li>
+          <p>Migrate the Claude Code memory dir to its new path-encoded name:</p>
+          <div class="code-frame">
+            <div class="code-titlebar">
+              <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+              <span class="filename">memory-migrate<span class="ext">.sh</span></span>
+              <span class="langtag">SHELL</span>
+            </div>
+<pre>mv /Users/aj/.claude/projects/-Users-aj-Developer-repos-ajbeck-botctrl \
+   /Users/aj/.claude/projects/-Users-aj-Developer-repos-ajbeck-scut</pre>
+          </div>
+        </li>
+        <li>
+          <p><code>cd</code> into the new path. Verify everything still works:</p>
+          <div class="code-frame">
+            <div class="code-titlebar">
+              <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+              <span class="filename">final-verify<span class="ext">.sh</span></span>
+              <span class="langtag">SHELL</span>
+            </div>
+<pre>cd ~/Developer/repos/ajbeck/scut
+git status               <span class="tok-comment"># clean</span>
+git remote -v            <span class="tok-comment"># points to ajbeck/scut</span>
+mage fmt &amp;&amp; mage vet &amp;&amp; mage test &amp;&amp; mage build
+ls bin/scut              <span class="tok-comment"># new binary name</span></pre>
+          </div>
+        </li>
+        <li>
+          <p>Confirm Claude Code memory survived the migration by starting a new session in the renamed directory and verifying it sees the existing <code>MEMORY.md</code> entries. Once confirmed, the <code>/tmp/</code> backup from Step 4 can be deleted at leisure.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section id="verification">
+      <h2><span class="section-anchor">// 08</span>Verification Gates</h2>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Gate</th><th>Check</th><th>Pass condition</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="field">After Phase 0</td><td class="note"><code>mage test</code> green; <code>git log -1 --stat</code> shows config-command files only</td><td class="note">Clean test suite + expected file set staged</td></tr>
+          <tr><td class="field">After Phase 1</td><td class="note"><code>mage fmt &amp;&amp; mage vet &amp;&amp; mage test &amp;&amp; mage build</code>; grep for residual <code>botctrl</code></td><td class="note">All targets clean; <code>bin/scut</code> exists; grep finds only intentional preservations (asset filenames + rename references)</td></tr>
+          <tr><td class="field">After Phase 2</td><td class="note"><code>git log -2 --stat</code></td><td class="note">Two-commit history: rename on top of feat(claude)</td></tr>
+          <tr><td class="field">After Phase 3 step 2</td><td class="note"><code>gh repo view ajbeck/scut</code> succeeds; old name redirects</td><td class="note">GH repo accessible at new URL</td></tr>
+          <tr><td class="field">After Phase 3 step 3</td><td class="note"><code>git fetch origin</code></td><td class="note">Connectivity to new remote works</td></tr>
+          <tr><td class="field">After Phase 3 step 7</td><td class="note"><code>mage test</code> from new path</td><td class="note">Test suite green in renamed working directory</td></tr>
+          <tr><td class="field">After Phase 3 step 8</td><td class="note">Fresh Claude Code session in new dir</td><td class="note">Session sees existing <code>MEMORY.md</code></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="risks">
+      <h2><span class="section-anchor">// 09</span>Risks &amp; Mitigations</h2>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Risk</th><th>Likelihood</th><th>Mitigation</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">Bulk <code>sed</code> over-matches and replaces <code>botctrl</code> inside a context where it should be preserved (e.g., asset filenames, historical rename references)</td>
+            <td class="type">medium</td>
+            <td class="note">Phase 1 splits the replacement into two passes: Step 1 replaces only the unambiguous full module path; Step 3 surveys remaining matches before changing them. The CSS/JS filenames and the rename references are explicitly preserved per <a href="#scope">§03</a>.</td>
+          </tr>
+          <tr>
+            <td class="field">Test fixture string mismatch missed by the replace, surfaced as a runtime test failure</td>
+            <td class="type">low</td>
+            <td class="note">Phase 1 Step 4 runs <code>mage test</code> before commit. A failing test halts Phase 1; Phase 2 does not start.</td>
+          </tr>
+          <tr>
+            <td class="field">Claude Code memory dir migration fails or corrupts during <code>mv</code></td>
+            <td class="type">low</td>
+            <td class="note">Phase 3 Step 4 copies the memory dir to <code>/tmp/</code> before moving the live dir. Recovery: <code>cp -r</code> from the backup to the new path-encoded location.</td>
+          </tr>
+          <tr>
+            <td class="field">Stale Git remotes on other machines</td>
+            <td class="type">medium</td>
+            <td class="note">Other clones will continue to work via GitHub's permanent redirect. Update them lazily — next time you <code>cd</code> into one of them, run <code>git remote set-url origin</code>.</td>
+          </tr>
+          <tr>
+            <td class="field">A push to <code>origin/getting-started</code> happens between Phase 2 and Phase 3, e.g. from an editor's auto-sync</td>
+            <td class="type">low</td>
+            <td class="note">Push still works under either repo name thanks to the redirect. No corrective action required even if it happens.</td>
+          </tr>
+          <tr>
+            <td class="field">Existing <code>~/.botctrl/</code> log dir on the user's machine becomes orphaned</td>
+            <td class="type">n/a</td>
+            <td class="note">Verified absent — the user has never run with logging enabled. No migration code or backward-compat path needed.</td>
+          </tr>
+          <tr>
+            <td class="field">The <code>getting-started</code> branch name becomes stale after the rename</td>
+            <td class="type">cosmetic</td>
+            <td class="note">Out of scope. Branch is short-lived and gets merged to <code>main</code> soon — separate decision.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="out-of-scope">
+      <h2><span class="section-anchor">// 10</span>Out of Scope</h2>
+
+      <ul>
+        <li><strong>Renaming <code>botctrl-docs.css</code> / <code>botctrl-docs.js</code>.</strong> They are internal asset filenames referenced only from within <code>docs/</code>. A separate cleanup commit can do this later if desired.</li>
+        <li><strong>Backward-compatible <code>owns()</code> recognising old <code>botctrl</code> entries in <code>settings.json</code>.</strong> Single-user tool — unnecessary.</li>
+        <li><strong>Merging <code>getting-started</code> to <code>main</code>.</strong> Separate decision after the rename lands.</li>
+        <li><strong>GitHub Pages workflow + custom domain.</strong> Picks up after this rename. Domain candidates change with the new name (<code>scut.dev</code>, <code>getscut.dev</code>, etc.) — to be decided in that session.</li>
+        <li><strong>Rewriting git history.</strong> Every historical commit still references <code>botctrl</code>. That's correct history; do not rebase or filter-branch.</li>
+        <li><strong>Renaming the project on any external service</strong> (pkg.go.dev, etc.). The module path change handles propagation automatically once the rename ships.</li>
+      </ul>
+    </section>
+
+    <footer>
+      <span class="blink">botctrl</span>
+      <span>spec · 2026-05-15 · rename → scut</span>
+    </footer>
+
+  </main>
+
+</div>
+
+</body>
+</html>

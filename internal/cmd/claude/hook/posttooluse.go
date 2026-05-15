@@ -11,8 +11,8 @@ import (
 
 	"github.com/spf13/afero"
 
-	"github.com/ajbeck/botctrl/internal/format"
 	cc "github.com/ajbeck/botctrl/hooks/claudecode"
+	"github.com/ajbeck/botctrl/internal/format"
 )
 
 type postToolUseCmd struct{ trailingArgs }

@@ -55,7 +55,7 @@
 
       <div class="hero-stats">
         <div class="stat"><span class="num">3</span><span class="label">parse-time bindings</span></div>
-        <div class="stat"><span class="num">4</span><span class="label">command groups</span></div>
+        <div class="stat"><span class="num">5</span><span class="label">command groups</span></div>
         <div class="stat"><span class="num">10</span><span class="label">struct tags documented</span></div>
         <div class="stat"><span class="num">1</span><span class="label">entrypoint</span></div>
       </div>
@@ -247,6 +247,7 @@ ctx.FatalIfErrorf(ctx.Run(logger))
 <pre>cmd/botctrl/main.go                    <span class="tok-comment"># Entrypoint, root cli struct, bindings</span>
 internal/cmd/claude/claude.go          <span class="tok-comment"># "botctrl claude" agent group (--log, --log-level flags)</span>
 internal/cmd/claude/hook/hook.go       <span class="tok-comment"># "botctrl claude hook" subcommands</span>
+internal/cmd/claude/config/config.go   <span class="tok-comment"># "botctrl claude config" subcommands (install, uninstall, status)</span>
 internal/cmd/format/format.go          <span class="tok-comment"># "botctrl format" group (formatter commands)</span>
 internal/cmd/logging/logging.go        <span class="tok-comment"># "botctrl logging" group (clean command)</span></pre>
       </div>

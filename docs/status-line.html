@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Status Line — botctrl</title>
+<title>Status Line — scut</title>
 <link rel="stylesheet" href="botctrl-docs.css">
 <script src="botctrl-docs.js"></script>
 </head>
@@ -12,7 +12,7 @@
 <div class="layout">
 
   <aside class="rail">
-    <p class="rail-title">// botctrl · statusline</p>
+    <p class="rail-title">// scut · statusline</p>
     <p class="rail-product"><span class="live-dot" aria-hidden="true"></span>Status Line</p>
 
     <nav class="toc">
@@ -142,7 +142,7 @@ Error      #F03E3E</pre>
           <span class="filename">output-format<span class="ext">.txt</span></span>
           <span class="langtag">ASCII</span>
         </div>
-<pre>██████████████│ 50% | O4.6 | botctrl/internal/cmd | getting-started ✓ ↑1
+<pre>██████████████│ 50% | O4.6 | scut/internal/cmd | getting-started ✓ ↑1
 └mint─┘└slate┘│      └muted┘ └── sky (bold) ──────┘   └─ violet (bold) ─┘
                └error┘                                  └mint┘ └mint┘
      └─ slate (separators) ─────────────────────────┘</pre>
@@ -151,7 +151,7 @@ Error      #F03E3E</pre>
       <ul>
         <li><strong>Context bar</strong> (first segment): 20-character progress bar (19 fill + 1 marker). Filled portion (<code>█</code>) in accent colour, half-block transition (<code>▌</code>) with FG=accent BG=slate, unfilled portion (<code>█</code>) in muted slate. A red <code>│</code> marker sits at position 16 (83% of 20), marking the auto-compaction threshold. Colour shifts by threshold. Always shown — displays <code>████████████████│███ –</code> in muted slate before the first API call. Uses <code>used_percentage</code> from the session snapshot directly.</li>
         <li><strong>Model</strong>: abbreviated model label in muted slate (e.g., <code>S4.5</code>, <code>O4.6-1M</code>). Parsed from <code>model.id</code> — strips domain prefixes, extracts family initial and version segments. Appends <code>-1M</code> when the ID carries the <code>[1m]</code> marker (e.g. <code>claude-opus-4-7[1m]</code>). The <code>context_window_size</code> field is not used: on Bedrock it does not reliably distinguish the 1M variant from the default.</li>
-        <li><strong>Path</strong>: current working directory relative to the git repository root. Bold sky 300. The repo name is the first segment (e.g., <code>botctrl/internal/cmd</code>). Long paths are compacted by collapsing intermediate segments to their first character; falls back to <code>first/…/last</code> with truncation. Max 25 characters. If not in a git repo, the path is relative to <code>$HOME</code> prefixed with <code>~</code>.</li>
+        <li><strong>Path</strong>: current working directory relative to the git repository root. Bold sky 300. The repo name is the first segment (e.g., <code>scut/internal/cmd</code>). Long paths are compacted by collapsing intermediate segments to their first character; falls back to <code>first/…/last</code> with truncation. Max 25 characters. If not in a git repo, the path is relative to <code>$HOME</code> prefixed with <code>~</code>.</li>
         <li><strong>Branch</strong>: the current git branch from HEAD. Bold violet 300. Truncated to 20 characters. Omitted if not in a git repo or HEAD is detached.</li>
         <li><strong>Git indicators</strong>: <code>✓</code> (mint) when clean, otherwise <code>+N</code> (staged, mint) and <code>~N</code> (unstaged/untracked, warning amber). <code>↑N</code> (ahead, mint) and <code>↓N</code> (behind, warning) show divergence from <code>origin/&lt;branch&gt;</code> based on last-fetch state.</li>
         <li><strong>Separators</strong>: <code>|</code> in muted slate between each segment.</li>
@@ -478,7 +478,7 @@ empty  := fillArea - full
     </section>
 
     <footer>
-      <span class="blink">botctrl</span>
+      <span class="blink">scut</span>
       <span>status-line · statusline</span>
     </footer>
 

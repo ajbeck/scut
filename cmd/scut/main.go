@@ -1,4 +1,4 @@
-// The botctrl command is a CLI tool for managing AI coding assistants.
+// The scut command is a CLI tool for managing AI coding assistants.
 package main
 
 import (
@@ -9,18 +9,18 @@ import (
 	"github.com/alecthomas/kong"
 	"github.com/spf13/afero"
 
-	"github.com/ajbeck/botctrl/internal/cmd/claude"
-	formatcmd "github.com/ajbeck/botctrl/internal/cmd/format"
-	loggingcmd "github.com/ajbeck/botctrl/internal/cmd/logging"
-	"github.com/ajbeck/botctrl/internal/logging"
-	"github.com/ajbeck/botctrl/internal/version"
+	"github.com/ajbeck/scut/internal/cmd/claude"
+	formatcmd "github.com/ajbeck/scut/internal/cmd/format"
+	loggingcmd "github.com/ajbeck/scut/internal/cmd/logging"
+	"github.com/ajbeck/scut/internal/logging"
+	"github.com/ajbeck/scut/internal/version"
 )
 
 type cli struct {
 	Version versionFlag    `name:"version" help:"Print version and exit." short:"v"`
 	Claude  claude.Cmd     `cmd:"claude" help:"Claude Code agent commands — hooks, status line, and configuration."`
 	Format  formatcmd.Cmd  `cmd:"format" help:"Format source code files."`
-	Logging loggingcmd.Cmd `cmd:"logging" help:"Manage botctrl log files."`
+	Logging loggingcmd.Cmd `cmd:"logging" help:"Manage scut log files."`
 }
 
 // versionFlag is a kong flag type that prints the version and exits.
@@ -35,7 +35,7 @@ func (v versionFlag) BeforeReset(app *kong.Kong, vars kong.Vars) error {
 func main() {
 	var c cli
 	parser := kong.Must(&c,
-		kong.Name("botctrl"),
+		kong.Name("scut"),
 		kong.Description("CLI tool for managing AI coding agents. Called as a subprocess by agent hooks — reads JSON from stdin, writes JSON to stdout."),
 		kong.Vars{"version": version.String()},
 		kong.BindTo(os.Stdin, (*io.Reader)(nil)),

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Structured JSONL Logging — botctrl</title>
+<title>Structured JSONL Logging — scut</title>
 <link rel="stylesheet" href="botctrl-docs.css">
 <script src="botctrl-docs.js"></script>
 </head>
@@ -12,7 +12,7 @@
 <div class="layout">
 
   <aside class="rail">
-    <p class="rail-title">// botctrl · observability</p>
+    <p class="rail-title">// scut · observability</p>
     <p class="rail-product"><span class="live-dot" aria-hidden="true"></span>Logging</p>
 
     <nav class="toc">
@@ -64,9 +64,9 @@
     <section id="overview">
       <h2><span class="section-anchor">// 01</span>Overview</h2>
 
-      <p>When enabled, log lines are appended to date-partitioned files at <code>~/.botctrl/logging/</code>. Logging is off by default — hooks run silently unless a flag is set.</p>
+      <p>When enabled, log lines are appended to date-partitioned files at <code>~/.scut/logging/</code>. Logging is off by default — hooks run silently unless a flag is set.</p>
 
-      <p>The command surface is <code>botctrl claude --log</code> and <code>botctrl claude --log-level=LEVEL</code>. Both flags live on <code>claude.Cmd</code> so they propagate uniformly to all <code>hook</code> subcommands and to <code>status-line</code>.</p>
+      <p>The command surface is <code>scut claude --log</code> and <code>scut claude --log-level=LEVEL</code>. Both flags live on <code>claude.Cmd</code> so they propagate uniformly to all <code>hook</code> subcommands and to <code>status-line</code>.</p>
 
       <p>When neither flag is set, all <code>Run()</code> methods receive <code>logging.Discard</code> — a no-op logger backed by <code>io.Discard</code>. No file is opened, no disk I/O occurs.</p>
     </section>
@@ -100,7 +100,7 @@
 
       <h3>Parse-error logging (unconditional)</h3>
 
-      <p><code>main()</code> wraps kong parsing in two steps — <code>kong.Must()</code> then <code>parser.Parse(os.Args[1:])</code> — so we can intercept parse failures before kong calls <code>os.Exit</code>. When parsing fails, <code>logging.LogParseError(os.Args, err)</code> appends a record to <code>~/.botctrl/logging/YYYYMMDD_parse-errors.jsonl</code> capturing the full <code>os.Args</code> (including argv[0]) and the kong error message.</p>
+      <p><code>main()</code> wraps kong parsing in two steps — <code>kong.Must()</code> then <code>parser.Parse(os.Args[1:])</code> — so we can intercept parse failures before kong calls <code>os.Exit</code>. When parsing fails, <code>logging.LogParseError(os.Args, err)</code> appends a record to <code>~/.scut/logging/YYYYMMDD_parse-errors.jsonl</code> capturing the full <code>os.Args</code> (including argv[0]) and the kong error message.</p>
 
       <div class="callout note"><strong>note</strong>Parse-error logging happens regardless of flags — parse errors are always bugs worth recording, and they occur before the <code>--log</code> / <code>--log-level</code> flags have been parsed out of the args anyway.</div>
 
@@ -113,10 +113,10 @@
       <div class="code-frame">
         <div class="code-titlebar">
           <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
-          <span class="filename">~/.botctrl/logging<span class="ext">/</span></span>
+          <span class="filename">~/.scut/logging<span class="ext">/</span></span>
           <span class="langtag">LAYOUT</span>
         </div>
-<pre>~/.botctrl/logging/
+<pre>~/.scut/logging/
   20260403_post-tool-use.jsonl     <span class="tok-comment">← today's post-tool-use log</span>
   20260403_status-line.jsonl       <span class="tok-comment">← today's status-line log</span>
   20260403_parse-errors.jsonl      <span class="tok-comment">← kong parse failures (written unconditionally)</span>
@@ -142,7 +142,7 @@
       <div class="code-frame">
         <div class="code-titlebar">
           <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
-          <span class="filename">cmd/botctrl/main<span class="ext">.go</span></span>
+          <span class="filename">cmd/scut/main<span class="ext">.go</span></span>
           <span class="langtag">GO</span>
         </div>
 <pre>ctx, err := parser.Parse(os.Args[<span class="tok-number">1</span>:])
@@ -168,7 +168,7 @@ ctx.FatalIfErrorf(ctx.Run(logger))</pre>
       <p><code>claude.Cmd.OpenLogger(command string)</code> checks the <code>--log</code> and <code>--log-level</code> flags. If logging is disabled, it returns <code>logging.Discard</code> and a nil closer. If enabled, it calls <code>logging.Open(name, level)</code> which:</p>
 
       <ol class="steps">
-        <li>Resolves <code>~/.botctrl/logging/</code> (creating it if needed)</li>
+        <li>Resolves <code>~/.scut/logging/</code> (creating it if needed)</li>
         <li>Computes the filename from today's date and the command name</li>
         <li>Rotates the existing file if it exceeds 10 MB</li>
         <li>Opens the file in append mode</li>
@@ -305,7 +305,7 @@ err := cmd.Run(stdin, &amp;stdout, fs, logging.Discard)</pre>
     <section id="cleanup">
       <h2><span class="section-anchor">// 06</span>Cleanup</h2>
 
-      <p><code>botctrl logging clean</code> removes old log files.</p>
+      <p><code>scut logging clean</code> removes old log files.</p>
 
       <table class="fields">
         <thead>
@@ -325,7 +325,7 @@ err := cmd.Run(stdin, &amp;stdout, fs, logging.Discard)</pre>
         </tbody>
       </table>
 
-      <p>The command scans <code>~/.botctrl/logging/</code> and removes files with a <code>.jsonl</code> extension (including rotated files like <code>.jsonl.1712345678</code>). Non-<code>.jsonl</code> files are left untouched.</p>
+      <p>The command scans <code>~/.scut/logging/</code> and removes files with a <code>.jsonl</code> extension (including rotated files like <code>.jsonl.1712345678</code>). Non-<code>.jsonl</code> files are left untouched.</p>
 
       <div class="callout danger"><strong>danger</strong><code>--all</code> removes every <code>.jsonl</code> file in the log directory with no age filter — this is irreversible.</div>
     </section>
@@ -356,7 +356,7 @@ err := cmd.Run(stdin, &amp;stdout, fs, logging.Discard)</pre>
           </tr>
           <tr>
             <td class="note">Main wiring</td>
-            <td class="field">cmd/botctrl/main.go</td>
+            <td class="field">cmd/scut/main.go</td>
           </tr>
         </tbody>
       </table>
@@ -365,7 +365,7 @@ err := cmd.Run(stdin, &amp;stdout, fs, logging.Discard)</pre>
     </section>
 
     <footer>
-      <span class="blink">botctrl</span>
+      <span class="blink">scut</span>
       <span>logging · observability</span>
     </footer>
 

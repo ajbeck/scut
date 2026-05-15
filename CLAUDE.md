@@ -1,4 +1,4 @@
-# botctrl
+# scut
 
 CLI tool to be used by LLM agents via hooks, rules and instructions. Provides a consistent interface for agent authors to interact with tools, the environment, and each other.
 
@@ -14,7 +14,7 @@ CLI tool to be used by LLM agents via hooks, rules and instructions. Provides a 
 
 - **CLI framework**: [github.com/alecthomas/kong](https://github.com/alecthomas/kong) — struct-based CLI parsing with dependency injection via `ctx.Run(binds...)`.
 - **Package layout**: All packages go under `internal/` by default. Only expose a public package when explicitly directed.
-- **Module**: `github.com/ajbeck/botctrl`
+- **Module**: `github.com/ajbeck/scut`
 
 ## Go 1.26
 
@@ -73,7 +73,7 @@ Implementation docs live in `docs/` as standalone HTML files styled by the share
 
 **Before every commit**, check whether any changed files are covered by a document in the index above. Matching rules:
 
-- `cmd/botctrl/main.go` or `internal/cmd/**` changes → review `kong-base-setup.html`
+- `cmd/scut/main.go` or `internal/cmd/**` changes → review `kong-base-setup.html`
 - `hooks/claudecode/**` or `internal/cmd/claude/hook/**` changes → review `claude-hook-commands.html`
 - `internal/cmd/claude/hook/posttooluse.go` or `PostToolUseInput`/`PostToolUseOutput` changes → review `post-tool-use.html`
 - `internal/cmd/claude/statusline.go` or `hooks/claudecode/statusline.go` changes → review `status-line.html`

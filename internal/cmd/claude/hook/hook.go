@@ -8,7 +8,7 @@ import (
 	"log/slog"
 	"time"
 
-	cc "github.com/ajbeck/botctrl/hooks/claudecode"
+	cc "github.com/ajbeck/scut/hooks/claudecode"
 )
 
 // ms returns milliseconds elapsed since start as an int64 for log attributes.
@@ -22,7 +22,7 @@ type trailingArgs struct {
 	Args []string `arg:"" optional:"" hidden:""`
 }
 
-// Cmd is the Kong command group for "botctrl claude hook".
+// Cmd is the Kong command group for "scut claude hook".
 type Cmd struct {
 	SessionStart       sessionStartCmd       `cmd:"session-start" help:"Inject context when a session begins or resumes."`
 	SessionEnd         sessionEndCmd         `cmd:"session-end" help:"Record session termination."`
@@ -72,7 +72,7 @@ func (c *sessionStartCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Lo
 	}
 	logger.Info("handled", "hook", "session-start", "session_id", in.SessionID, "source", in.Source, "duration_ms", ms(start))
 	return writeJSON(stdout, cc.SessionStartOutput{
-		AdditionalContext: new("hello from botctrl session-start"),
+		AdditionalContext: new("hello from scut session-start"),
 	})
 }
 
@@ -118,7 +118,7 @@ func (c *userPromptSubmitCmd) Run(stdin io.Reader, stdout io.Writer, logger *slo
 		return fmt.Errorf("decoding UserPromptSubmit input: %w", err)
 	}
 	return writeJSON(stdout, cc.UserPromptSubmitOutput{
-		AdditionalContext: new("hello from botctrl user-prompt-submit"),
+		AdditionalContext: new("hello from scut user-prompt-submit"),
 	})
 }
 
@@ -139,7 +139,7 @@ func (c *preToolUseCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logg
 		HookSpecificOutput: cc.PreToolUseHookOutput{
 			HookEventName:            cc.EventPreToolUse,
 			PermissionDecision:       cc.PermissionAllow,
-			PermissionDecisionReason: new("hello from botctrl pre-tool-use"),
+			PermissionDecisionReason: new("hello from scut pre-tool-use"),
 		},
 	})
 }
@@ -156,7 +156,7 @@ func (c *postToolUseFailureCmd) Run(stdin io.Reader, stdout io.Writer, logger *s
 		return fmt.Errorf("decoding PostToolUseFailure input: %w", err)
 	}
 	return writeJSON(stdout, cc.PostToolUseFailureOutput{
-		AdditionalContext: new("hello from botctrl post-tool-use-failure"),
+		AdditionalContext: new("hello from scut post-tool-use-failure"),
 	})
 }
 
@@ -176,7 +176,7 @@ func (c *permissionRequestCmd) Run(stdin io.Reader, stdout io.Writer, logger *sl
 			HookEventName: cc.EventPermissionRequest,
 			Decision: cc.PermissionRequestDecision{
 				Behavior: cc.BehaviorAllow,
-				Message:  new("hello from botctrl permission-request"),
+				Message:  new("hello from scut permission-request"),
 			},
 		},
 	})
@@ -194,7 +194,7 @@ func (c *notificationCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Lo
 		return fmt.Errorf("decoding Notification input: %w", err)
 	}
 	return writeJSON(stdout, cc.NotificationOutput{
-		AdditionalContext: new("hello from botctrl notification"),
+		AdditionalContext: new("hello from scut notification"),
 	})
 }
 
@@ -210,7 +210,7 @@ func (c *subagentStartCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.L
 		return fmt.Errorf("decoding SubagentStart input: %w", err)
 	}
 	return writeJSON(stdout, cc.SubagentStartOutput{
-		AdditionalContext: new("hello from botctrl subagent-start"),
+		AdditionalContext: new("hello from scut subagent-start"),
 	})
 }
 
@@ -226,7 +226,7 @@ func (c *subagentStopCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Lo
 		return fmt.Errorf("decoding SubagentStop input: %w", err)
 	}
 	return writeJSON(stdout, cc.SubagentStopOutput{
-		Reason: new("hello from botctrl subagent-stop"),
+		Reason: new("hello from scut subagent-stop"),
 	})
 }
 
@@ -242,7 +242,7 @@ func (c *stopCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) er
 		return fmt.Errorf("decoding Stop input: %w", err)
 	}
 	return writeJSON(stdout, cc.StopOutput{
-		Reason: new("hello from botctrl stop"),
+		Reason: new("hello from scut stop"),
 	})
 }
 

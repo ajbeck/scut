@@ -12,13 +12,13 @@ import (
 	"github.com/spf13/afero"
 )
 
-// statusCmd is the kong leaf for "botctrl claude config status".
+// statusCmd is the kong leaf for "scut claude config status".
 type statusCmd struct {
 	Scope string `help:"Which scope(s) to inspect." default:"both" enum:"project,user,both"`
 	JSON  bool   `help:"Emit a structured JSON object instead of the human-readable table." name:"json"`
 }
 
-// statusEntry is one botctrl-owned entry found in settings.json.
+// statusEntry is one scut-owned entry found in settings.json.
 type statusEntry struct {
 	Kind    string `json:"kind"`             // "statusLine" or "hook"
 	Event   string `json:"event,omitzero"`   // hook event name; empty for statusLine
@@ -39,7 +39,7 @@ type statusOutput struct {
 	Scopes []scopeResult `json:"scopes"`
 }
 
-// Run executes the status command: reports botctrl entries across configured scopes.
+// Run executes the status command: reports scut entries across configured scopes.
 func (c *statusCmd) Run(stdout io.Writer, fs afero.Fs, logger *slog.Logger) error {
 	paths, err := resolveScopePaths(c.Scope)
 	if err != nil {
@@ -78,7 +78,7 @@ func scopeNamesForPaths(scope string, count int) []string {
 	}
 }
 
-// inspectScope reads settings.json at path and returns all botctrl-owned entries.
+// inspectScope reads settings.json at path and returns all scut-owned entries.
 func inspectScope(fs afero.Fs, scope, path string) (scopeResult, error) {
 	exists := !isNotExist(fs, path)
 	sr := scopeResult{
@@ -111,7 +111,7 @@ func inspectScope(fs afero.Fs, scope, path string) (scopeResult, error) {
 			continue
 		}
 		for _, g := range groups {
-			if !isBotctrlGroup(g) {
+			if !isScutGroup(g) {
 				continue
 			}
 			for _, h := range g.Hooks {
@@ -148,7 +148,7 @@ func writeStatusHuman(w io.Writer, results []scopeResult) error {
 			continue
 		}
 		if len(r.Entries) == 0 {
-			fmt.Fprintf(w, "  (no botctrl entries)\n")
+			fmt.Fprintf(w, "  (no scut entries)\n")
 			continue
 		}
 		for _, e := range r.Entries {

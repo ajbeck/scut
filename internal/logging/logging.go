@@ -1,5 +1,5 @@
-// Package logging provides structured JSONL logging for botctrl commands.
-// Log files are written to ~/.botctrl/logging/ with date and component
+// Package logging provides structured JSONL logging for scut commands.
+// Log files are written to ~/.scut/logging/ with date and component
 // name in the filename. Files are rotated on open when they exceed 10 MB.
 package logging
 
@@ -14,7 +14,7 @@ import (
 
 const (
 	maxFileSize = 10 * 1024 * 1024 // 10 MB — rotate when exceeded
-	dirName     = ".botctrl/logging"
+	dirName     = ".scut/logging"
 )
 
 // Discard is a no-op logger that discards all output. Use it when logging
@@ -23,7 +23,7 @@ var Discard = slog.New(slog.NewTextHandler(io.Discard, nil))
 
 // Open creates or opens a JSONL log file for the named component (e.g.
 // "post-tool-use", "status-line"). The file is placed at
-// ~/.botctrl/logging/YYYYMMDD_<name>.jsonl.
+// ~/.scut/logging/YYYYMMDD_<name>.jsonl.
 //
 // If the file already exists and exceeds maxFileSize, it is rotated
 // (renamed with a unix-second suffix) before opening a fresh file.
@@ -53,7 +53,7 @@ func Open(name string, level slog.Level) (*slog.Logger, io.Closer, error) {
 	return logger, f, nil
 }
 
-// logDir returns the absolute path to ~/.botctrl/logging/, creating it
+// logDir returns the absolute path to ~/.scut/logging/, creating it
 // if necessary.
 func logDir() (string, error) {
 	home, err := os.UserHomeDir()
@@ -73,7 +73,7 @@ func fileName(name string) string {
 }
 
 // LogParseError appends a JSONL record describing a kong parse failure
-// to ~/.botctrl/logging/YYYYMMDD_parse-errors.jsonl. It is unconditional —
+// to ~/.scut/logging/YYYYMMDD_parse-errors.jsonl. It is unconditional —
 // parse errors are always bugs worth capturing, so no flag gates them.
 // Failure to write is swallowed: losing the record must not prevent the
 // parent process from seeing the original kong error on stderr.

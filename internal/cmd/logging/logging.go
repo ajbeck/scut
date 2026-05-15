@@ -8,11 +8,11 @@ import (
 	"time"
 )
 
-const dirName = ".botctrl/logging"
+const dirName = ".scut/logging"
 
-// Cmd is the Kong command group for "botctrl logging".
+// Cmd is the Kong command group for "scut logging".
 type Cmd struct {
-	Clean cleanCmd `cmd:"clean" help:"Remove old log files from ~/.botctrl/logging/."`
+	Clean cleanCmd `cmd:"clean" help:"Remove old log files from ~/.scut/logging/."`
 }
 
 type cleanCmd struct {
@@ -64,7 +64,7 @@ func (c *cleanCmd) Run() error {
 	return nil
 }
 
-// logDir returns the absolute path to ~/.botctrl/logging/.
+// logDir returns the absolute path to ~/.scut/logging/.
 func logDir() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {

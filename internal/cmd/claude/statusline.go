@@ -19,7 +19,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/storer"
 
-	cc "github.com/ajbeck/botctrl/hooks/claudecode"
+	cc "github.com/ajbeck/scut/hooks/claudecode"
 )
 
 // Context bar thresholds — control colour shifts and marker placement.

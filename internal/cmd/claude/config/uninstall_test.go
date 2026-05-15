@@ -27,7 +27,7 @@ func TestUninstall(t *testing.T) {
 		}
 	})
 
-	t.Run("uninstall_after_install_clears_all_botctrl_entries", func(t *testing.T) {
+	t.Run("uninstall_after_install_clears_all_scut_entries", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		t.Chdir(t.TempDir())
 		path := projectPathFor(t)
@@ -63,13 +63,13 @@ func TestUninstall(t *testing.T) {
 		t.Chdir(t.TempDir())
 		path := projectPathFor(t)
 
-		// Seed with a botctrl install + foreign keys.
+		// Seed with a scut install + foreign keys.
 		install := &installCmd{Scope: "project"}
 		if err := install.Run(io.Discard, fs, slog.Default()); err != nil {
 			t.Fatalf("install: %v", err)
 		}
 		// Add foreign keys to the file by re-seeding.
-		seedJSON(t, fs, path, `{"allowedTools":["bash"],"statusLine":{"type":"command","command":"botctrl claude status-line"}}`)
+		seedJSON(t, fs, path, `{"allowedTools":["bash"],"statusLine":{"type":"command","command":"scut claude status-line"}}`)
 
 		uninstall := &uninstallCmd{Scope: "project"}
 		if err := uninstall.Run(io.Discard, io.Discard, fs, slog.Default()); err != nil {
@@ -113,16 +113,16 @@ func TestUninstall(t *testing.T) {
 		}
 	})
 
-	t.Run("uninstall_drops_botctrl_group_keeps_foreign_group", func(t *testing.T) {
+	t.Run("uninstall_drops_scut_group_keeps_foreign_group", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		t.Chdir(t.TempDir())
 		path := projectPathFor(t)
 
-		// Seed with a mix: botctrl group + foreign group for PostToolUse.
+		// Seed with a mix: scut group + foreign group for PostToolUse.
 		seedJSON(t, fs, path, `{
   "hooks": {
     "PostToolUse": [
-      {"matcher":"Write|Edit","hooks":[{"type":"command","command":"botctrl claude hook post-tool-use","statusMessage":"Formatting..."}]},
+      {"matcher":"Write|Edit","hooks":[{"type":"command","command":"scut claude hook post-tool-use","statusMessage":"Formatting..."}]},
       {"matcher":"*","hooks":[{"type":"command","command":"other-formatter --check"}]}
     ]
   }
@@ -139,8 +139,8 @@ func TestUninstall(t *testing.T) {
 		}
 
 		// Botctrl group should be gone.
-		if bytes.Contains(data, []byte("botctrl claude hook post-tool-use")) {
-			t.Errorf("botctrl hook still present after uninstall\n%s", data)
+		if bytes.Contains(data, []byte("scut claude hook post-tool-use")) {
+			t.Errorf("scut hook still present after uninstall\n%s", data)
 		}
 		// Foreign group should remain.
 		if !bytes.Contains(data, []byte("other-formatter --check")) {

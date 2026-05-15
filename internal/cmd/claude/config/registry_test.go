@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ajbeck/botctrl/internal/cmd/claude/hook"
+	"github.com/ajbeck/scut/internal/cmd/claude/hook"
 )
 
 // TestHookSpecsMatchHookCmd verifies that hookSpecs and hook.Cmd define exactly

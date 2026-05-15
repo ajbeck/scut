@@ -1,11 +1,11 @@
-# botctrl
+# scut
 
 CLI tool for LLM agents. Provides a consistent interface for agent authors to interact with tools, the environment, and each other via hooks, rules, and instructions.
 
 ## Installation
 
 ```bash
-go install github.com/ajbeck/botctrl@latest
+go install github.com/ajbeck/scut@latest
 ```
 
 Or build from source:
@@ -14,11 +14,11 @@ Or build from source:
 mage build
 ```
 
-The binary is written to `bin/botctrl`.
+The binary is written to `bin/scut`.
 
 ## Hooks
 
-botctrl implements [Claude Code hooks](https://docs.anthropic.com/en/docs/claude-code/hooks) as subcommands under `botctrl claude hook <event>`. Claude Code invokes these as subprocesses, piping JSON to stdin and reading JSON from stdout.
+scut implements [Claude Code hooks](https://docs.anthropic.com/en/docs/claude-code/hooks) as subcommands under `scut claude hook <event>`. Claude Code invokes these as subprocesses, piping JSON to stdin and reading JSON from stdout.
 
 ### PostToolUse — Auto-formatting
 
@@ -36,9 +36,9 @@ Files with other extensions are passed through unchanged.
 Wire everything up with a single command:
 
 ```bash
-botctrl claude config install              # project scope: .claude/settings.json
-botctrl claude config install --scope=user # user scope: ~/.claude/settings.json
-botctrl claude config install --dry-run    # preview without writing
+scut claude config install              # project scope: .claude/settings.json
+scut claude config install --scope=user # user scope: ~/.claude/settings.json
+scut claude config install --dry-run    # preview without writing
 ```
 
 This installs entries for all 25 hook events plus the status line, merging non-destructively with any existing `settings.json`. See [docs/config-command.html](docs/config-command.html) for flags, merge semantics, and the `uninstall` / `status` subcommands.
@@ -54,7 +54,7 @@ For reference, this is the PostToolUse entry the command writes:
         "hooks": [
           {
             "type": "command",
-            "command": "botctrl claude hook post-tool-use",
+            "command": "scut claude hook post-tool-use",
             "statusMessage": "Formatting..."
           }
         ]
@@ -75,7 +75,7 @@ For reference, this is the PostToolUse entry the command writes:
 
 1. Claude writes or edits a file using the Write or Edit tool.
 2. Claude Code fires a `PostToolUse` event and pipes the event payload (including `tool_name`, `tool_input` with `file_path`, and `tool_response`) to the hook's stdin.
-3. `botctrl claude hook post-tool-use` extracts the file path, checks the extension, and runs the appropriate formatter.
+3. `scut claude hook post-tool-use` extracts the file path, checks the extension, and runs the appropriate formatter.
 4. The formatted content is written back to the file in place. The hook returns an empty JSON response — formatting is silent and transparent to the agent.
 
 ### Exit codes
@@ -88,18 +88,18 @@ For reference, this is the PostToolUse entry the command writes:
 
 ### Other hook events
 
-botctrl has subcommands wired for all 25 Claude Code hook events (e.g. `session-start`, `pre-tool-use`, `user-prompt-submit`, `stop`, etc.). These are currently stub implementations that deserialize input and return empty responses. See the [Claude Code hooks documentation](https://docs.anthropic.com/en/docs/claude-code/hooks) for the full event reference.
+scut has subcommands wired for all 25 Claude Code hook events (e.g. `session-start`, `pre-tool-use`, `user-prompt-submit`, `stop`, etc.). These are currently stub implementations that deserialize input and return empty responses. See the [Claude Code hooks documentation](https://docs.anthropic.com/en/docs/claude-code/hooks) for the full event reference.
 
 ```
-botctrl claude hook --help
+scut claude hook --help
 ```
 
 ## Status Line
 
-`botctrl claude status-line` renders a persistent status bar at the bottom of the Claude Code terminal. It displays context window usage, model label, current path, git branch with dirty/ahead-behind indicators — all computed in-process with zero subprocess overhead.
+`scut claude status-line` renders a persistent status bar at the bottom of the Claude Code terminal. It displays context window usage, model label, current path, git branch with dirty/ahead-behind indicators — all computed in-process with zero subprocess overhead.
 
 ```
-████████████████│███ 50% | O4.6 | botctrl/internal/cmd | getting-started ✓ ↑1
+████████████████│███ 50% | O4.6 | scut/internal/cmd | getting-started ✓ ↑1
 ```
 
 | Segment | Description |
@@ -112,13 +112,13 @@ botctrl claude hook --help
 
 ### Configuration
 
-The status line is wired by `botctrl claude config install` alongside the hooks. The entry it writes:
+The status line is wired by `scut claude config install` alongside the hooks. The entry it writes:
 
 ```json
 {
   "statusLine": {
     "type": "command",
-    "command": "botctrl claude status-line"
+    "command": "scut claude status-line"
   }
 }
 ```
@@ -126,14 +126,14 @@ The status line is wired by `botctrl claude config install` alongside the hooks.
 To install only the status line without the hooks, pass `--only=status-line`:
 
 ```bash
-botctrl claude config install --only=status-line
+scut claude config install --only=status-line
 ```
 
 See [docs/config-command.html](docs/config-command.html) for the full surface.
 
 ### Performance
 
-The status line fires after each assistant message (debounced at 300ms), when permission mode changes, or when vim mode toggles. botctrl is designed for this frequency:
+The status line fires after each assistant message (debounced at 300ms), when permission mode changes, or when vim mode toggles. scut is designed for this frequency:
 
 - **No subprocesses**: git branch and worktree status are computed via [go-git](https://github.com/go-git/go-git) (pure Go), not by forking `git`.
 - **Single repo open**: the `.git` directory is opened once per invocation and shared across all queries.
@@ -145,14 +145,14 @@ The status line fires after each assistant message (debounced at 300ms), when pe
 Enable structured JSONL logging for hook commands and the status line with the `--log` flag:
 
 ```bash
-botctrl claude --log hook post-tool-use        # warn level (default)
-botctrl claude --log-level=debug status-line   # debug level (implies --log)
+scut claude --log hook post-tool-use        # warn level (default)
+scut claude --log-level=debug status-line   # debug level (implies --log)
 ```
 
-Log files are written to `~/.botctrl/logging/` with date-partitioned filenames:
+Log files are written to `~/.scut/logging/` with date-partitioned filenames:
 
 ```
-~/.botctrl/logging/
+~/.scut/logging/
   20260403_post-tool-use.jsonl
   20260403_status-line.jsonl
 ```
@@ -162,18 +162,18 @@ Each line is a JSON object with standardized fields: `time`, `level`, `msg`, `ho
 To bake logging into the installed hook commands, pass `--log` (or `--log-level=LEVEL`) when installing:
 
 ```bash
-botctrl claude config install --log
-botctrl claude config install --log-level=debug
+scut claude config install --log
+scut claude config install --log-level=debug
 ```
 
-The generated command in `settings.json` becomes `botctrl claude --log hook post-tool-use` (or `--log-level=debug`).
+The generated command in `settings.json` becomes `scut claude --log hook post-tool-use` (or `--log-level=debug`).
 
 ### Cleanup
 
-Remove old log files with `botctrl logging clean`:
+Remove old log files with `scut logging clean`:
 
 ```bash
-botctrl logging clean              # remove files older than 7 days (default)
-botctrl logging clean --days 30    # remove files older than 30 days
-botctrl logging clean --all        # remove all log files
+scut logging clean              # remove files older than 7 days (default)
+scut logging clean --days 30    # remove files older than 30 days
+scut logging clean --all        # remove all log files
 ```

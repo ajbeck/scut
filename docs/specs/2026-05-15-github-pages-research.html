@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Research — GitHub Pages for botctrl docs</title>
+<title>Research — GitHub Pages for scut docs</title>
 <link rel="stylesheet" href="../botctrl-docs.css">
 <script src="../botctrl-docs.js"></script>
 </head>
@@ -12,7 +12,7 @@
 <div class="layout">
 
   <aside class="rail">
-    <p class="rail-title">// botctrl · research</p>
+    <p class="rail-title">// scut · research</p>
     <p class="rail-product"><span class="live-dot" aria-hidden="true"></span>github pages</p>
 
     <nav class="toc">
@@ -59,7 +59,7 @@
         <span class="badge tests">2026-05-15</span>
       </div>
       <h1><span class="moniker-bracket">[</span><span class="moniker">GitHubPagesResearch</span><span class="moniker-bracket">]</span></h1>
-      <p class="lede">Landscape research for publishing <code>docs/</code> as the <code>ajbeck/botctrl</code> GitHub Pages site. Covers source options, URL/path resolution for our specific HTML layout, Actions workflow components, repo settings prerequisites, limits, and recent breaking changes. Not a recommendation — options and trade-offs only.</p>
+      <p class="lede">Landscape research for publishing <code>docs/</code> as the <code>ajbeck/scut</code> GitHub Pages site. Covers source options, URL/path resolution for our specific HTML layout, Actions workflow components, repo settings prerequisites, limits, and recent breaking changes. Not a recommendation — options and trade-offs only.</p>
 
       <div class="hero-stats">
         <div class="stat"><span class="num">2</span><span class="label">source options</span></div>
@@ -81,11 +81,11 @@
         <tbody>
           <tr>
             <td class="field">Repository</td>
-            <td class="note"><code>github.com/ajbeck/botctrl</code> — public</td>
+            <td class="note"><code>github.com/ajbeck/scut</code> — public</td>
           </tr>
           <tr>
             <td class="field">Expected Pages URL</td>
-            <td class="note"><code>https://ajbeck.github.io/botctrl/</code> (project page, not user/org)</td>
+            <td class="note"><code>https://ajbeck.github.io/scut/</code> (project page, not user/org)</td>
           </tr>
           <tr>
             <td class="field">Docs folder</td>
@@ -156,7 +156,7 @@
     <section id="project-page-urls">
       <h2><span class="section-anchor">// 03</span>Project Page URLs</h2>
 
-      <p>Because <code>ajbeck/botctrl</code> is a project repository (not a <code>ajbeck.github.io</code> repository), Pages publishes under a subpath. (<a href="https://docs.github.com/en/pages/getting-started-with-github-pages/about-github-pages#types-of-github-pages-sites">source: docs.github.com — types of sites</a>)</p>
+      <p>Because <code>ajbeck/scut</code> is a project repository (not a <code>ajbeck.github.io</code> repository), Pages publishes under a subpath. (<a href="https://docs.github.com/en/pages/getting-started-with-github-pages/about-github-pages#types-of-github-pages-sites">source: docs.github.com — types of sites</a>)</p>
 
       <table class="fields">
         <thead>
@@ -168,17 +168,17 @@
             <td class="note"><code>https://ajbeck.github.io/</code></td>
           </tr>
           <tr>
-            <td class="field">Project page (repo: <code>ajbeck/botctrl</code>)</td>
-            <td class="note"><code>https://ajbeck.github.io/botctrl/</code></td>
+            <td class="field">Project page (repo: <code>ajbeck/scut</code>)</td>
+            <td class="note"><code>https://ajbeck.github.io/scut/</code></td>
           </tr>
         </tbody>
       </table>
 
-      <p>The subpath <code>/botctrl/</code> is a URL prefix, not a filesystem directory. Whether paths resolve correctly under it depends entirely on how HTML files reference their assets. There are two categories:</p>
+      <p>The subpath <code>/scut/</code> is a URL prefix, not a filesystem directory. Whether paths resolve correctly under it depends entirely on how HTML files reference their assets. There are two categories:</p>
 
       <table class="fields">
         <thead>
-          <tr><th>Reference style</th><th>Example</th><th>Resolves under <code>/botctrl/</code>?</th></tr>
+          <tr><th>Reference style</th><th>Example</th><th>Resolves under <code>/scut/</code>?</th></tr>
         </thead>
         <tbody>
           <tr>
@@ -189,12 +189,12 @@
           <tr>
             <td class="field">Relative (no slash)</td>
             <td class="type"><code>botctrl-docs.css</code></td>
-            <td class="note"><strong>Works.</strong> Resolves relative to the current document's URL. If the document is at <code>/botctrl/kong-base-setup.html</code>, the browser requests <code>/botctrl/botctrl-docs.css</code>.</td>
+            <td class="note"><strong>Works.</strong> Resolves relative to the current document's URL. If the document is at <code>/scut/kong-base-setup.html</code>, the browser requests <code>/scut/botctrl-docs.css</code>.</td>
           </tr>
           <tr>
             <td class="field">Parent-relative</td>
             <td class="type"><code>../botctrl-docs.css</code></td>
-            <td class="note"><strong>Works.</strong> From <code>/botctrl/specs/2026-05-14-foo.html</code>, resolves to <code>/botctrl/botctrl-docs.css</code>.</td>
+            <td class="note"><strong>Works.</strong> From <code>/scut/specs/2026-05-14-foo.html</code>, resolves to <code>/scut/botctrl-docs.css</code>.</td>
           </tr>
         </tbody>
       </table>
@@ -418,19 +418,19 @@
         <tbody>
           <tr>
             <td class="field"><code>docs/kong-base-setup.html</code></td>
-            <td class="note"><code>https://ajbeck.github.io/botctrl/kong-base-setup.html</code></td>
+            <td class="note"><code>https://ajbeck.github.io/scut/kong-base-setup.html</code></td>
           </tr>
           <tr>
             <td class="field"><code>docs/botctrl-docs.css</code></td>
-            <td class="note"><code>https://ajbeck.github.io/botctrl/botctrl-docs.css</code></td>
+            <td class="note"><code>https://ajbeck.github.io/scut/botctrl-docs.css</code></td>
           </tr>
           <tr>
             <td class="field"><code>docs/specs/2026-05-14-config-command.html</code></td>
-            <td class="note"><code>https://ajbeck.github.io/botctrl/specs/2026-05-14-config-command.html</code></td>
+            <td class="note"><code>https://ajbeck.github.io/scut/specs/2026-05-14-config-command.html</code></td>
           </tr>
           <tr>
             <td class="field"><code>docs/botctrl-docs.js</code></td>
-            <td class="note"><code>https://ajbeck.github.io/botctrl/botctrl-docs.js</code></td>
+            <td class="note"><code>https://ajbeck.github.io/scut/botctrl-docs.js</code></td>
           </tr>
         </tbody>
       </table>
@@ -445,25 +445,25 @@
           <tr>
             <td class="field"><code>kong-base-setup.html</code> (top-level)</td>
             <td class="type"><code>botctrl-docs.css</code></td>
-            <td class="note"><code>https://ajbeck.github.io/botctrl/botctrl-docs.css</code></td>
+            <td class="note"><code>https://ajbeck.github.io/scut/botctrl-docs.css</code></td>
             <td class="note">Yes</td>
           </tr>
           <tr>
             <td class="field"><code>kong-base-setup.html</code> (top-level)</td>
             <td class="type"><code>botctrl-docs.js</code></td>
-            <td class="note"><code>https://ajbeck.github.io/botctrl/botctrl-docs.js</code></td>
+            <td class="note"><code>https://ajbeck.github.io/scut/botctrl-docs.js</code></td>
             <td class="note">Yes</td>
           </tr>
           <tr>
             <td class="field"><code>specs/2026-05-14-config-command.html</code></td>
             <td class="type"><code>../botctrl-docs.css</code></td>
-            <td class="note"><code>https://ajbeck.github.io/botctrl/botctrl-docs.css</code></td>
+            <td class="note"><code>https://ajbeck.github.io/scut/botctrl-docs.css</code></td>
             <td class="note">Yes</td>
           </tr>
           <tr>
             <td class="field"><code>specs/2026-05-14-config-command.html</code></td>
             <td class="type"><code>../botctrl-docs.js</code></td>
-            <td class="note"><code>https://ajbeck.github.io/botctrl/botctrl-docs.js</code></td>
+            <td class="note"><code>https://ajbeck.github.io/scut/botctrl-docs.js</code></td>
             <td class="note">Yes</td>
           </tr>
         </tbody>
@@ -475,13 +475,13 @@
 
       <p>Any link or asset reference that starts with <code>/</code> (e.g., <code>/botctrl-docs.css</code>, <code>/kong-base-setup.html</code>) would resolve to <code>https://ajbeck.github.io/botctrl-docs.css</code> — the user's GitHub Pages root, not the project page root. This would 404. The fix before deploying is to scan all HTML for <code>href="/"</code>, <code>src="/"</code>, and similar patterns and ensure none exist.</p>
 
-      <div class="callout note"><strong>note</strong>The <code>actions/configure-pages</code> action outputs a <code>base_path</code> value (<code>/botctrl</code> for our repo). This is useful if you want to inject the correct base path into HTML at build time (e.g., via a <code>&lt;base href&gt;</code> tag). For a pure static site where all paths are already relative, you don't need it — but it's available if we later add an absolute path anywhere.</div>
+      <div class="callout note"><strong>note</strong>The <code>actions/configure-pages</code> action outputs a <code>base_path</code> value (<code>/scut</code> for our repo). This is useful if you want to inject the correct base path into HTML at build time (e.g., via a <code>&lt;base href&gt;</code> tag). For a pure static site where all paths are already relative, you don't need it — but it's available if we later add an absolute path anywhere.</div>
 
       <h3>Does <code>docs/</code> need an <code>index.html</code>?</h3>
 
-      <p>GitHub Pages will serve a directory listing if there is no <code>index.html</code> at the root. Currently our <code>docs/</code> has no <code>index.html</code>. Navigating to <code>https://ajbeck.github.io/botctrl/</code> would return a 404 (Pages does not generate directory listings). This is a gap we need to address — either add an <code>index.html</code> landing page to <code>docs/</code>, or accept that the root URL produces a 404 and users bookmark specific pages directly. Neither approach is technically broken; it's a UX decision.</p>
+      <p>GitHub Pages will serve a directory listing if there is no <code>index.html</code> at the root. Currently our <code>docs/</code> has no <code>index.html</code>. Navigating to <code>https://ajbeck.github.io/scut/</code> would return a 404 (Pages does not generate directory listings). This is a gap we need to address — either add an <code>index.html</code> landing page to <code>docs/</code>, or accept that the root URL produces a 404 and users bookmark specific pages directly. Neither approach is technically broken; it's a UX decision.</p>
 
-      <div class="callout warn"><strong>warn</strong><code>docs/</code> currently has no <code>index.html</code>. Without one, the root URL <code>https://ajbeck.github.io/botctrl/</code> returns a 404. This must be resolved before the site is usable. Adding a minimal landing page or redirect is the standard fix.</div>
+      <div class="callout warn"><strong>warn</strong><code>docs/</code> currently has no <code>index.html</code>. Without one, the root URL <code>https://ajbeck.github.io/scut/</code> returns a 404. This must be resolved before the site is usable. Adding a minimal landing page or redirect is the standard fix.</div>
     </section>
 
     <section id="triggers">
@@ -594,12 +594,12 @@
         </thead>
         <tbody>
           <tr>
-            <td class="field">Subdomain (e.g., <code>docs.botctrl.dev</code>)</td>
+            <td class="field">Subdomain (e.g., <code>docs.scut.dev</code>)</td>
             <td class="type"><code>CNAME</code> → <code>ajbeck.github.io</code></td>
             <td class="note">Set custom domain in Settings → Pages; GitHub creates/manages a <code>CNAME</code> file in the repo root (branch mode) or you include it in the artifact (Actions mode).</td>
           </tr>
           <tr>
-            <td class="field">Apex domain (e.g., <code>botctrl.dev</code>)</td>
+            <td class="field">Apex domain (e.g., <code>scut.dev</code>)</td>
             <td class="type"><code>A</code> records → four GitHub IPs</td>
             <td class="note">Same setting; GitHub IPs documented at time of setup (can change — CNAME to subdomain is more stable).</td>
           </tr>
@@ -610,7 +610,7 @@
 
       <p>If using Actions mode and a custom domain: include a <code>CNAME</code> file containing the bare domain name in <code>docs/</code> so it is included in the uploaded artifact. GitHub does not create it automatically for Actions-based deploys.</p>
 
-      <div class="callout note"><strong>note</strong>A custom domain changes the URL root from <code>ajbeck.github.io/botctrl/</code> to, say, <code>docs.botctrl.dev/</code>. This eliminates the subpath prefix entirely. Relative paths in our HTML (<code>botctrl-docs.css</code>, <code>../botctrl-docs.css</code>) work correctly under both URL structures — no HTML changes needed when switching to a custom domain.</div>
+      <div class="callout note"><strong>note</strong>A custom domain changes the URL root from <code>ajbeck.github.io/scut/</code> to, say, <code>docs.scut.dev/</code>. This eliminates the subpath prefix entirely. Relative paths in our HTML (<code>botctrl-docs.css</code>, <code>../botctrl-docs.css</code>) work correctly under both URL structures — no HTML changes needed when switching to a custom domain.</div>
     </section>
 
     <section id="recent-changes">
@@ -675,7 +675,7 @@
           <tr>
             <td class="field">Should we add an <code>index.html</code> to <code>docs/</code>?</td>
             <td class="type">Open — human decision</td>
-            <td class="note">Without it, <code>https://ajbeck.github.io/botctrl/</code> 404s. Whether to add a landing page, a redirect, or leave it as a 404 is a product decision.</td>
+            <td class="note">Without it, <code>https://ajbeck.github.io/scut/</code> 404s. Whether to add a landing page, a redirect, or leave it as a 404 is a product decision.</td>
           </tr>
           <tr>
             <td class="field">Do any of our existing HTML files use absolute paths (slash-prefixed <code>href</code> or <code>src</code>)?</td>

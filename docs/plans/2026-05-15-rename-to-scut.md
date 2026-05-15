@@ -115,12 +115,12 @@ Expected: single commit, subject `feat(claude): add config command for managing 
 
 ## Task 3: Bulk-replace the full module path (Phase 1 Step 1)
 
-**Files:** every `.go`, `.mod`, `.sum`, `.html`, `.md` containing `github.com/ajbeck/botctrl`.
+**Files:** every `.go`, `.mod`, `.sum`, `.html`, `.md` containing `github.com/ajbeck/scut`.
 
 - [ ] **Step 1: Survey current scope**
 
 ```bash
-grep -rln 'github.com/ajbeck/botctrl' --include='*.go' --include='*.mod' --include='*.sum' --include='*.html' --include='*.md' .
+grep -rln 'github.com/ajbeck/scut' --include='*.go' --include='*.mod' --include='*.sum' --include='*.html' --include='*.md' .
 ```
 
 Expected: ~13 Go files + go.mod + a few docs. Note the count.
@@ -128,8 +128,8 @@ Expected: ~13 Go files + go.mod + a few docs. Note the count.
 - [ ] **Step 2: Apply the replacement**
 
 ```bash
-grep -rl 'github.com/ajbeck/botctrl' --include='*.go' --include='*.mod' --include='*.sum' --include='*.html' --include='*.md' . \
-  | xargs sed -i '' 's|github.com/ajbeck/botctrl|github.com/ajbeck/scut|g'
+grep -rl 'github.com/ajbeck/scut' --include='*.go' --include='*.mod' --include='*.sum' --include='*.html' --include='*.md' . \
+  | xargs sed -i '' 's|github.com/ajbeck/scut|github.com/ajbeck/scut|g'
 ```
 
 Note: on macOS BSD `sed`, the `-i ''` syntax (empty backup suffix) is required.
@@ -137,7 +137,7 @@ Note: on macOS BSD `sed`, the `-i ''` syntax (empty backup suffix) is required.
 - [ ] **Step 3: Verify the replacement is complete**
 
 ```bash
-grep -rn 'github.com/ajbeck/botctrl' --include='*.go' --include='*.mod' --include='*.sum' --include='*.html' --include='*.md' .
+grep -rn 'github.com/ajbeck/scut' --include='*.go' --include='*.mod' --include='*.sum' --include='*.html' --include='*.md' .
 ```
 
 Expected: no matches.
@@ -442,7 +442,7 @@ Replace `binaryName = "botctrl"` with `binaryName = "scut"`
 
 Replace `mainPkg    = "./cmd/botctrl"` with `mainPkg    = "./cmd/scut"`
 
-Replace `versionPkg = "github.com/ajbeck/botctrl/internal/version"` with `versionPkg = "github.com/ajbeck/scut/internal/version"`
+Replace `versionPkg = "github.com/ajbeck/scut/internal/version"` with `versionPkg = "github.com/ajbeck/scut/internal/version"`
 
 - [ ] **Step 2: Update build.go comments**
 
@@ -522,7 +522,7 @@ Survey:
 grep -n 'botctrl' README.md
 ```
 
-For each match, replace `botctrl` with `scut`. Key sites: the `# botctrl` H1 (becomes `# scut`), the `go install github.com/ajbeck/botctrl@latest` line (already updated to `scut` by Task 3 module path replace), every `botctrl claude config install` CLI example, every `botctrl claude --log hook post-tool-use` example, every `botctrl claude status-line` example, the `botctrl logging clean` examples.
+For each match, replace `botctrl` with `scut`. Key sites: the `# botctrl` H1 (becomes `# scut`), the `go install github.com/ajbeck/scut@latest` line (already updated to `scut` by Task 3 module path replace), every `botctrl claude config install` CLI example, every `botctrl claude --log hook post-tool-use` example, every `botctrl claude status-line` example, the `botctrl logging clean` examples.
 
 - [ ] **Step 2: Update CLAUDE.md**
 
@@ -532,7 +532,7 @@ Survey:
 grep -n 'botctrl' CLAUDE.md
 ```
 
-For each match, replace `botctrl` with `scut`. Key sites: the `# botctrl` H1, the `**Module**: github.com/ajbeck/botctrl` line (already updated by Task 3), every CLI example in the doc, every prose mention of "botctrl" as the project name.
+For each match, replace `botctrl` with `scut`. Key sites: the `# botctrl` H1, the `**Module**: github.com/ajbeck/scut` line (already updated by Task 3), every CLI example in the doc, every prose mention of "botctrl" as the project name.
 
 - [ ] **Step 3: Bulk-replace prose in non-spec docs**
 

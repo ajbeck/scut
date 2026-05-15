@@ -11,12 +11,12 @@ import (
 
 func TestMarshalSettings_idempotent_bytes(t *testing.T) {
 	s := Settings{
-		StatusLine: &StatusLine{Type: "command", Command: "botctrl claude status-line"},
+		StatusLine: &StatusLine{Type: "command", Command: "scut claude status-line"},
 		Hooks: map[string][]HookGroup{
 			"PostToolUse": {
 				{
 					Matcher: "Write|Edit",
-					Hooks:   []HookEntry{{Type: "command", Command: "botctrl claude hook post-tool-use", StatusMessage: "Formatting..."}},
+					Hooks:   []HookEntry{{Type: "command", Command: "scut claude hook post-tool-use", StatusMessage: "Formatting..."}},
 				},
 			},
 		},
@@ -52,7 +52,7 @@ func TestReadWriteSettings_foreign_key_round_trip(t *testing.T) {
 
 	// Write a settings file with foreign keys.
 	original := `{
-  "statusLine": {"type": "command", "command": "botctrl claude status-line"},
+  "statusLine": {"type": "command", "command": "scut claude status-line"},
   "hooks": {},
   "allowedTools": ["bash", "read"],
   "zebra": true

@@ -6,19 +6,19 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/ajbeck/botctrl/internal/cmd/claude/config"
-	"github.com/ajbeck/botctrl/internal/cmd/claude/hook"
-	"github.com/ajbeck/botctrl/internal/logging"
+	"github.com/ajbeck/scut/internal/cmd/claude/config"
+	"github.com/ajbeck/scut/internal/cmd/claude/hook"
+	"github.com/ajbeck/scut/internal/logging"
 )
 
-// Cmd is the Kong command group for "botctrl claude".
+// Cmd is the Kong command group for "scut claude".
 type Cmd struct {
-	Log      bool   `help:"Enable logging to ~/.botctrl/logging/ at info level."`
+	Log      bool   `help:"Enable logging to ~/.scut/logging/ at info level."`
 	LogLevel string `help:"Set log level: debug, info, warn, error (implies --log)." placeholder:"LEVEL"`
 
 	Hook       hook.Cmd      `cmd:"hook" help:"Hook event handlers. Called by Claude Code as subprocesses during lifecycle events."`
 	StatusLine statusLineCmd `cmd:"status-line" help:"Render the Claude Code status bar. Reads session JSON from stdin, prints styled output to stdout."`
-	Config     config.Cmd    `cmd:"config" help:"Configure Claude Code settings.json — install or remove botctrl hooks and status line."`
+	Config     config.Cmd    `cmd:"config" help:"Configure Claude Code settings.json — install or remove scut hooks and status line."`
 }
 
 // OpenLogger returns a logger configured from the --log and --log-level flags.

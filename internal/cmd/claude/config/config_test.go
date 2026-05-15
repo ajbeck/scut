@@ -9,7 +9,7 @@ import (
 
 	"github.com/alecthomas/kong"
 
-	"github.com/ajbeck/botctrl/internal/cmd/claude/config"
+	"github.com/ajbeck/scut/internal/cmd/claude/config"
 )
 
 // kongSmokeCli is a minimal Kong root struct wrapping config.Cmd for parsing.
@@ -20,7 +20,7 @@ type kongSmokeCli struct {
 func TestKongWiring_InstallFlags(t *testing.T) {
 	var cli kongSmokeCli
 	parser := kong.Must(&cli,
-		kong.Name("botctrl"),
+		kong.Name("scut"),
 	)
 
 	ctx, err := parser.Parse([]string{
@@ -45,12 +45,12 @@ func TestKongWiring_ConfigCmdRegistered(t *testing.T) {
 	// Verify that kong.Must does not panic — the command tree is valid.
 	// This catches duplicate flags, missing enum defaults, etc.
 	var cli kongSmokeCli
-	_ = kong.Must(&cli, kong.Name("botctrl"))
+	_ = kong.Must(&cli, kong.Name("scut"))
 }
 
 func TestKongWiring_UninstallParseable(t *testing.T) {
 	var cli kongSmokeCli
-	parser := kong.Must(&cli, kong.Name("botctrl"))
+	parser := kong.Must(&cli, kong.Name("scut"))
 
 	ctx, err := parser.Parse([]string{"config", "uninstall", "--scope=user"})
 	if err != nil {
@@ -63,7 +63,7 @@ func TestKongWiring_UninstallParseable(t *testing.T) {
 
 func TestKongWiring_StatusParseable(t *testing.T) {
 	var cli kongSmokeCli
-	parser := kong.Must(&cli, kong.Name("botctrl"))
+	parser := kong.Must(&cli, kong.Name("scut"))
 
 	ctx, err := parser.Parse([]string{"config", "status", "--scope=both", "--json"})
 	if err != nil {

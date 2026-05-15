@@ -1,9 +1,9 @@
-// Package version provides build and version metadata for botctrl.
+// Package version provides build and version metadata for scut.
 //
 // [Version] and [BuildMetadata] are set at compile time via ldflags:
 //
-//	go build -ldflags "-X github.com/ajbeck/botctrl/internal/version.Version=v0.1.0 \
-//	  -X github.com/ajbeck/botctrl/internal/version.BuildMetadata=abc123"
+//	go build -ldflags "-X github.com/ajbeck/scut/internal/version.Version=v0.1.0 \
+//	  -X github.com/ajbeck/scut/internal/version.BuildMetadata=abc123"
 package version
 
 import "golang.org/x/mod/semver"

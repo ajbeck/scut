@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	binaryName = "botctrl"
+	binaryName = "scut"
 	buildDir   = "bin"
-	mainPkg    = "./cmd/botctrl"
-	versionPkg = "github.com/ajbeck/botctrl/internal/version"
+	mainPkg    = "./cmd/scut"
+	versionPkg = "github.com/ajbeck/scut/internal/version"
 )
 
 func init() {

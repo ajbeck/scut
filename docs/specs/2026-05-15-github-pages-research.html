@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Research — GitHub Pages for scut docs</title>
-<link rel="stylesheet" href="../botctrl-docs.css">
-<script src="../botctrl-docs.js"></script>
+<link rel="stylesheet" href="../scut-docs.css">
+<script src="../scut-docs.js"></script>
 </head>
 <body>
 
@@ -97,15 +97,15 @@
           </tr>
           <tr>
             <td class="field">Shared assets</td>
-            <td class="note"><code>docs/botctrl-docs.css</code>, <code>docs/botctrl-docs.js</code></td>
+            <td class="note"><code>docs/scut-docs.css</code>, <code>docs/scut-docs.js</code></td>
           </tr>
           <tr>
             <td class="field">Specs subdirectory</td>
-            <td class="note"><code>docs/specs/</code> — dated HTML files referencing assets as <code>../botctrl-docs.css</code></td>
+            <td class="note"><code>docs/specs/</code> — dated HTML files referencing assets as <code>../scut-docs.css</code></td>
           </tr>
           <tr>
             <td class="field">Top-level asset reference style</td>
-            <td class="note">Flat relative: <code>&lt;link href="botctrl-docs.css"&gt;</code> (no slash prefix)</td>
+            <td class="note">Flat relative: <code>&lt;link href="scut-docs.css"&gt;</code> (no slash prefix)</td>
           </tr>
           <tr>
             <td class="field">No Jekyll config</td>
@@ -183,23 +183,23 @@
         <tbody>
           <tr>
             <td class="field">Absolute (slash-prefixed)</td>
-            <td class="type"><code>/botctrl-docs.css</code></td>
-            <td class="note"><strong>Breaks.</strong> Browser resolves to <code>https://ajbeck.github.io/botctrl-docs.css</code> — wrong host root, 404.</td>
+            <td class="type"><code>/scut-docs.css</code></td>
+            <td class="note"><strong>Breaks.</strong> Browser resolves to <code>https://ajbeck.github.io/scut-docs.css</code> — wrong host root, 404.</td>
           </tr>
           <tr>
             <td class="field">Relative (no slash)</td>
-            <td class="type"><code>botctrl-docs.css</code></td>
-            <td class="note"><strong>Works.</strong> Resolves relative to the current document's URL. If the document is at <code>/scut/kong-base-setup.html</code>, the browser requests <code>/scut/botctrl-docs.css</code>.</td>
+            <td class="type"><code>scut-docs.css</code></td>
+            <td class="note"><strong>Works.</strong> Resolves relative to the current document's URL. If the document is at <code>/scut/kong-base-setup.html</code>, the browser requests <code>/scut/scut-docs.css</code>.</td>
           </tr>
           <tr>
             <td class="field">Parent-relative</td>
-            <td class="type"><code>../botctrl-docs.css</code></td>
-            <td class="note"><strong>Works.</strong> From <code>/scut/specs/2026-05-14-foo.html</code>, resolves to <code>/scut/botctrl-docs.css</code>.</td>
+            <td class="type"><code>../scut-docs.css</code></td>
+            <td class="note"><strong>Works.</strong> From <code>/scut/specs/2026-05-14-foo.html</code>, resolves to <code>/scut/scut-docs.css</code>.</td>
           </tr>
         </tbody>
       </table>
 
-      <p>Our HTML files already use relative paths (<code>botctrl-docs.css</code> from top-level, <code>../botctrl-docs.css</code> from <code>specs/</code>). Neither uses a leading slash. This means our asset references are correct for a project page without any modification.</p>
+      <p>Our HTML files already use relative paths (<code>scut-docs.css</code> from top-level, <code>../scut-docs.css</code> from <code>specs/</code>). Neither uses a leading slash. This means our asset references are correct for a project page without any modification.</p>
 
       <div class="callout note"><strong>note</strong>The same analysis applies to inter-document links (e.g. <code>&lt;a href="logging.html"&gt;</code> or <code>&lt;a href="../kong-base-setup.html"&gt;</code>). As long as we do not use absolute paths, the subpath does not break anything. Verify no <code>href="/"</code> or <code>src="/</code> appears in our HTML before deploying.</div>
     </section>
@@ -421,16 +421,16 @@
             <td class="note"><code>https://ajbeck.github.io/scut/kong-base-setup.html</code></td>
           </tr>
           <tr>
-            <td class="field"><code>docs/botctrl-docs.css</code></td>
-            <td class="note"><code>https://ajbeck.github.io/scut/botctrl-docs.css</code></td>
+            <td class="field"><code>docs/scut-docs.css</code></td>
+            <td class="note"><code>https://ajbeck.github.io/scut/scut-docs.css</code></td>
           </tr>
           <tr>
             <td class="field"><code>docs/specs/2026-05-14-config-command.html</code></td>
             <td class="note"><code>https://ajbeck.github.io/scut/specs/2026-05-14-config-command.html</code></td>
           </tr>
           <tr>
-            <td class="field"><code>docs/botctrl-docs.js</code></td>
-            <td class="note"><code>https://ajbeck.github.io/scut/botctrl-docs.js</code></td>
+            <td class="field"><code>docs/scut-docs.js</code></td>
+            <td class="note"><code>https://ajbeck.github.io/scut/scut-docs.js</code></td>
           </tr>
         </tbody>
       </table>
@@ -444,26 +444,26 @@
         <tbody>
           <tr>
             <td class="field"><code>kong-base-setup.html</code> (top-level)</td>
-            <td class="type"><code>botctrl-docs.css</code></td>
-            <td class="note"><code>https://ajbeck.github.io/scut/botctrl-docs.css</code></td>
+            <td class="type"><code>scut-docs.css</code></td>
+            <td class="note"><code>https://ajbeck.github.io/scut/scut-docs.css</code></td>
             <td class="note">Yes</td>
           </tr>
           <tr>
             <td class="field"><code>kong-base-setup.html</code> (top-level)</td>
-            <td class="type"><code>botctrl-docs.js</code></td>
-            <td class="note"><code>https://ajbeck.github.io/scut/botctrl-docs.js</code></td>
+            <td class="type"><code>scut-docs.js</code></td>
+            <td class="note"><code>https://ajbeck.github.io/scut/scut-docs.js</code></td>
             <td class="note">Yes</td>
           </tr>
           <tr>
             <td class="field"><code>specs/2026-05-14-config-command.html</code></td>
-            <td class="type"><code>../botctrl-docs.css</code></td>
-            <td class="note"><code>https://ajbeck.github.io/scut/botctrl-docs.css</code></td>
+            <td class="type"><code>../scut-docs.css</code></td>
+            <td class="note"><code>https://ajbeck.github.io/scut/scut-docs.css</code></td>
             <td class="note">Yes</td>
           </tr>
           <tr>
             <td class="field"><code>specs/2026-05-14-config-command.html</code></td>
-            <td class="type"><code>../botctrl-docs.js</code></td>
-            <td class="note"><code>https://ajbeck.github.io/scut/botctrl-docs.js</code></td>
+            <td class="type"><code>../scut-docs.js</code></td>
+            <td class="note"><code>https://ajbeck.github.io/scut/scut-docs.js</code></td>
             <td class="note">Yes</td>
           </tr>
         </tbody>
@@ -473,7 +473,7 @@
 
       <h3>The one absolute-path risk</h3>
 
-      <p>Any link or asset reference that starts with <code>/</code> (e.g., <code>/botctrl-docs.css</code>, <code>/kong-base-setup.html</code>) would resolve to <code>https://ajbeck.github.io/botctrl-docs.css</code> — the user's GitHub Pages root, not the project page root. This would 404. The fix before deploying is to scan all HTML for <code>href="/"</code>, <code>src="/"</code>, and similar patterns and ensure none exist.</p>
+      <p>Any link or asset reference that starts with <code>/</code> (e.g., <code>/scut-docs.css</code>, <code>/kong-base-setup.html</code>) would resolve to <code>https://ajbeck.github.io/scut-docs.css</code> — the user's GitHub Pages root, not the project page root. This would 404. The fix before deploying is to scan all HTML for <code>href="/"</code>, <code>src="/"</code>, and similar patterns and ensure none exist.</p>
 
       <div class="callout note"><strong>note</strong>The <code>actions/configure-pages</code> action outputs a <code>base_path</code> value (<code>/scut</code> for our repo). This is useful if you want to inject the correct base path into HTML at build time (e.g., via a <code>&lt;base href&gt;</code> tag). For a pure static site where all paths are already relative, you don't need it — but it's available if we later add an absolute path anywhere.</div>
 
@@ -610,7 +610,7 @@
 
       <p>If using Actions mode and a custom domain: include a <code>CNAME</code> file containing the bare domain name in <code>docs/</code> so it is included in the uploaded artifact. GitHub does not create it automatically for Actions-based deploys.</p>
 
-      <div class="callout note"><strong>note</strong>A custom domain changes the URL root from <code>ajbeck.github.io/scut/</code> to, say, <code>docs.scut.dev/</code>. This eliminates the subpath prefix entirely. Relative paths in our HTML (<code>botctrl-docs.css</code>, <code>../botctrl-docs.css</code>) work correctly under both URL structures — no HTML changes needed when switching to a custom domain.</div>
+      <div class="callout note"><strong>note</strong>A custom domain changes the URL root from <code>ajbeck.github.io/scut/</code> to, say, <code>docs.scut.dev/</code>. This eliminates the subpath prefix entirely. Relative paths in our HTML (<code>scut-docs.css</code>, <code>../scut-docs.css</code>) work correctly under both URL structures — no HTML changes needed when switching to a custom domain.</div>
     </section>
 
     <section id="recent-changes">

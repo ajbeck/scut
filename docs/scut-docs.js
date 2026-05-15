@@ -5,7 +5,7 @@
 // kicks in for JS-disabled environments.
 
 (function () {
-  const STORAGE_KEY = "botctrl-docs-theme";
+  const STORAGE_KEY = "scut-docs-theme";
   const root = document.documentElement;
 
   // Resolve initial: stored preference > OS preference > "light".

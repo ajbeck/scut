@@ -6,7 +6,7 @@
 <title>Docs Design System (Standalone) — scut</title>
 <style>
 /* ================================================================
-   scut Docs — editorial design system
+   botctrl Docs — editorial design system
    "Tea & Code": warm paper, sharp serif body, dark code as inset
    notes, playful palette as printer's ink accents.
    ================================================================ */
@@ -99,7 +99,7 @@
 }
 
 /* Dark theme values. Applied when EITHER:
-   - <html data-theme="dark"> is set explicitly (by botctrl-docs.js), OR
+   - <html data-theme="dark"> is set explicitly (by scut-docs.js), OR
    - no [data-theme] attribute is present AND the OS is in dark mode
      (the JS-disabled fallback path). */
 :root[data-theme="dark"] {
@@ -799,7 +799,7 @@ h2[id], h3[id] { scroll-margin-top: 1.5rem; }
 section[id] { scroll-margin-top: 1.5rem; }
 </style>
 <script>
-// scut docs — theme toggle with persistence + cross-tab sync.
+// botctrl docs — theme toggle with persistence + cross-tab sync.
 // Initial theme is set before paint to avoid FOUC; runs in <head> as a blocking
 // script (deliberately not deferred). The CSS honors [data-theme="dark"]/[="light"]
 // on <html>; when no attribute is set, the @media (prefers-color-scheme) fallback
@@ -852,7 +852,7 @@ section[id] { scroll-margin-top: 1.5rem; }
 <style>
   /* Inline diagram wrapper — kept local to the design-system page so
      other pages aren't forced to inherit it. If diagrams become a shared
-     primitive, lift this into botctrl-docs.css. */
+     primitive, lift this into scut-docs.css. */
   figure.diagram {
     margin: 1.6rem 0 2rem;
     padding: 1.2rem 1.4rem;
@@ -945,7 +945,7 @@ section[id] { scroll-margin-top: 1.5rem; }
     <section id="what-this-is">
       <h2><span class="section-anchor">// 01</span>What This Is</h2>
 
-      <div class="callout note"><strong>note</strong>This is the <em>single-file</em> edition of the docs design system guide — HTML, CSS, and JS bundled into one file you can save, send, or open offline without any other assets. The CSS and JS live in <code>&lt;style&gt;</code> and <code>&lt;script&gt;</code> blocks inside <code>&lt;head&gt;</code> (necessary for the theme toggle to set the right colour before first paint; putting them at the bottom of the file would cause a flash of unstyled content). The "normal" edition splits them into <code>botctrl-docs.css</code> and <code>botctrl-docs.js</code> so multiple pages share one cache entry — see <code>docs/design-system.html</code> in the scut repository.</div>
+      <div class="callout note"><strong>note</strong>This is the <em>single-file</em> edition of the docs design system guide — HTML, CSS, and JS bundled into one file you can save, send, or open offline without any other assets. The CSS and JS live in <code>&lt;style&gt;</code> and <code>&lt;script&gt;</code> blocks inside <code>&lt;head&gt;</code> (necessary for the theme toggle to set the right colour before first paint; putting them at the bottom of the file would cause a flash of unstyled content). The "normal" edition splits them into <code>scut-docs.css</code> and <code>scut-docs.js</code> so multiple pages share one cache entry — see <code>docs/design-system.html</code> in the scut repository.</div>
 
       <p>The scut docs design system is an editorial pattern for engineering documentation — closer to a typeset manual than a generated reference. It is intentionally <em>not</em> a documentation generator. There is no toolchain: every page is a hand-authored HTML file that links to a shared stylesheet and a tiny JS file. The pattern's job is to make those pages feel like one product, not like a folder of disparate notes.</p>
 
@@ -1112,8 +1112,8 @@ section[id] { scroll-margin-top: 1.5rem; }
               <span class="langtag">SHELL</span>
             </div>
 <pre><span class="tok-comment"># From this repo:</span>
-cp scut/docs/botctrl-docs.css  yourproject/docs/yourproject-docs.css
-cp scut/docs/botctrl-docs.js   yourproject/docs/yourproject-docs.js</pre>
+cp scut/docs/scut-docs.css  yourproject/docs/yourproject-docs.css
+cp scut/docs/scut-docs.js   yourproject/docs/yourproject-docs.js</pre>
           </div>
           <p>Rename the files to <code>&lt;project&gt;-docs.css</code> / <code>&lt;project&gt;-docs.js</code>. The <code>scut-</code> prefix is namespacing the localStorage key the JS uses (see <a href="#theming">section 16</a>); rename the constant inside the JS too.</p>
         </li>
@@ -1324,7 +1324,7 @@ cp scut/docs/botctrl-docs.js   yourproject/docs/yourproject-docs.js</pre>
     <section id="theme-switcher">
       <h2><span class="section-anchor">// 07</span>Theme Switcher</h2>
 
-      <p>The switcher is a single button at the bottom of the rail. It has two glyphs (sun and moon) that the CSS reveals based on the active theme. The JS in <code>botctrl-docs.js</code> wires the click handler and persists the choice in <code>localStorage</code>.</p>
+      <p>The switcher is a single button at the bottom of the rail. It has two glyphs (sun and moon) that the CSS reveals based on the active theme. The JS in <code>scut-docs.js</code> wires the click handler and persists the choice in <code>localStorage</code>.</p>
 
       <div class="code-frame">
         <div class="code-titlebar">
@@ -1739,7 +1739,7 @@ cp scut/docs/botctrl-docs.js   yourproject/docs/yourproject-docs.js</pre>
       <h3>Minimum-effort adoption</h3>
 
       <ol class="steps">
-        <li>Copy <code>botctrl-docs.css</code> and <code>botctrl-docs.js</code> into your project's docs folder. Rename to <code>&lt;project&gt;-docs.css</code> / <code>.js</code>.</li>
+        <li>Copy <code>scut-docs.css</code> and <code>scut-docs.js</code> into your project's docs folder. Rename to <code>&lt;project&gt;-docs.css</code> / <code>.js</code>.</li>
         <li>In the JS, change <code>STORAGE_KEY</code> from <code>"scut-docs-theme"</code> to <code>"&lt;project&gt;-docs-theme"</code>.</li>
         <li>Copy one existing page (e.g. <code>kong-base-setup.html</code> from the full scut docs folder) as a template and overwrite the content.</li>
         <li>Update the rail title (<code>// project · area</code>) and the footer project name on every new page.</li>

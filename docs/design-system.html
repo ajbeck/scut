@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Docs Design System — scut</title>
-<link rel="stylesheet" href="botctrl-docs.css">
-<script src="botctrl-docs.js"></script>
+<link rel="stylesheet" href="scut-docs.css">
+<script src="scut-docs.js"></script>
 <style>
   /* Inline diagram wrapper — kept local to the design-system page so
      other pages aren't forced to inherit it. If diagrams become a shared
-     primitive, lift this into botctrl-docs.css. */
+     primitive, lift this into scut-docs.css. */
   figure.diagram {
     margin: 1.6rem 0 2rem;
     padding: 1.2rem 1.4rem;
@@ -267,8 +267,8 @@
               <span class="langtag">SHELL</span>
             </div>
 <pre><span class="tok-comment"># From this repo:</span>
-cp scut/docs/botctrl-docs.css  yourproject/docs/yourproject-docs.css
-cp scut/docs/botctrl-docs.js   yourproject/docs/yourproject-docs.js</pre>
+cp scut/docs/scut-docs.css  yourproject/docs/yourproject-docs.css
+cp scut/docs/scut-docs.js   yourproject/docs/yourproject-docs.js</pre>
           </div>
           <p>Rename the files to <code>&lt;project&gt;-docs.css</code> / <code>&lt;project&gt;-docs.js</code>. The <code>scut-</code> prefix is namespacing the localStorage key the JS uses (see <a href="#theming">section 16</a>); rename the constant inside the JS too.</p>
         </li>
@@ -479,7 +479,7 @@ cp scut/docs/botctrl-docs.js   yourproject/docs/yourproject-docs.js</pre>
     <section id="theme-switcher">
       <h2><span class="section-anchor">// 07</span>Theme Switcher</h2>
 
-      <p>The switcher is a single button at the bottom of the rail. It has two glyphs (sun and moon) that the CSS reveals based on the active theme. The JS in <code>botctrl-docs.js</code> wires the click handler and persists the choice in <code>localStorage</code>.</p>
+      <p>The switcher is a single button at the bottom of the rail. It has two glyphs (sun and moon) that the CSS reveals based on the active theme. The JS in <code>scut-docs.js</code> wires the click handler and persists the choice in <code>localStorage</code>.</p>
 
       <div class="code-frame">
         <div class="code-titlebar">
@@ -894,7 +894,7 @@ cp scut/docs/botctrl-docs.js   yourproject/docs/yourproject-docs.js</pre>
       <h3>Minimum-effort adoption</h3>
 
       <ol class="steps">
-        <li>Copy <code>botctrl-docs.css</code> and <code>botctrl-docs.js</code> into your project's docs folder. Rename to <code>&lt;project&gt;-docs.css</code> / <code>.js</code>.</li>
+        <li>Copy <code>scut-docs.css</code> and <code>scut-docs.js</code> into your project's docs folder. Rename to <code>&lt;project&gt;-docs.css</code> / <code>.js</code>.</li>
         <li>In the JS, change <code>STORAGE_KEY</code> from <code>"scut-docs-theme"</code> to <code>"&lt;project&gt;-docs-theme"</code>.</li>
         <li>Copy one existing page (e.g. <a href="kong-base-setup.html">kong-base-setup.html</a>) as a template and overwrite the content.</li>
         <li>Update the rail title (<code>// project · area</code>) and the footer project name on every new page.</li>

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Structured JSONL Logging — botctrl</title>
+<link rel="stylesheet" href="botctrl-docs.css">
+<script src="botctrl-docs.js"></script>
+</head>
+<body>
+
+<div class="layout">
+
+  <aside class="rail">
+    <p class="rail-title">// botctrl · observability</p>
+    <p class="rail-product"><span class="live-dot" aria-hidden="true"></span>Logging</p>
+
+    <nav class="toc">
+      <div class="toc-section">
+        <p class="toc-section-label">Overview</p>
+        <a class="toc-link" href="#overview"><span class="toc-num">01</span><span>Overview</span></a>
+        <a class="toc-link" href="#flags"><span class="toc-num">02</span><span>Flags</span></a>
+        <a class="toc-link" href="#file-layout"><span class="toc-num">03</span><span>File Layout</span></a>
+      </div>
+
+      <div class="toc-section">
+        <p class="toc-section-label">Architecture</p>
+        <a class="toc-link" href="#architecture"><span class="toc-num">04</span><span>Architecture</span></a>
+        <a class="toc-link" href="#log-fields"><span class="toc-num">05</span><span>Standardized Fields</span></a>
+      </div>
+
+      <div class="toc-section">
+        <p class="toc-section-label">Management</p>
+        <a class="toc-link" href="#cleanup"><span class="toc-num">06</span><span>Cleanup</span></a>
+        <a class="toc-link" href="#code"><span class="toc-num">07</span><span>Code</span></a>
+      </div>
+    </nav>
+
+    <div class="theme-switcher">
+      <span class="theme-switcher__label">Theme</span>
+      <button class="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle color theme"><span class="toggle-glyph toggle-glyph--sun" aria-hidden="true">☀︎</span><span class="toggle-glyph toggle-glyph--moon" aria-hidden="true">☾</span></button>
+    </div>
+  </aside>
+
+  <main>
+
+    <header class="hero">
+      <div class="hero-meta">
+        <span class="badge primary">v1 docs</span>
+        <span class="badge tests">observability</span>
+        <span class="badge swift">go 1.26</span>
+      </div>
+      <h1><span class="moniker-bracket">[</span><span class="moniker">Logging</span><span class="moniker-bracket">]</span></h1>
+      <p class="lede">Structured JSONL logging for all hook commands and the status line. Off by default — hooks run silently unless <code>--log</code> or <code>--log-level</code> is set. Parse errors are always recorded, regardless of flags.</p>
+
+      <div class="hero-stats">
+        <div class="stat"><span class="num">3</span><span class="label">file types</span></div>
+        <div class="stat"><span class="num">10&nbsp;MB</span><span class="label">rotation threshold</span></div>
+        <div class="stat"><span class="num">6</span><span class="label">standard fields</span></div>
+        <div class="stat"><span class="num">7</span><span class="label">days default retention</span></div>
+      </div>
+    </header>
+
+    <section id="overview">
+      <h2><span class="section-anchor">// 01</span>Overview</h2>
+
+      <p>When enabled, log lines are appended to date-partitioned files at <code>~/.botctrl/logging/</code>. Logging is off by default — hooks run silently unless a flag is set.</p>
+
+      <p>The command surface is <code>botctrl claude --log</code> and <code>botctrl claude --log-level=LEVEL</code>. Both flags live on <code>claude.Cmd</code> so they propagate uniformly to all <code>hook</code> subcommands and to <code>status-line</code>.</p>
+
+      <p>When neither flag is set, all <code>Run()</code> methods receive <code>logging.Discard</code> — a no-op logger backed by <code>io.Discard</code>. No file is opened, no disk I/O occurs.</p>
+    </section>
+
+    <section id="flags">
+      <h2><span class="section-anchor">// 02</span>Flags</h2>
+
+      <p>Flags live on <code>claude.Cmd</code> so they propagate to both <code>hook</code> subcommands and <code>status-line</code>.</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Flag</th><th>Type</th><th>Default</th><th>Behavior</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">--log</td>
+            <td class="type">bool</td>
+            <td class="type">false</td>
+            <td class="note">Enable logging at info level</td>
+          </tr>
+          <tr>
+            <td class="field">--log-level</td>
+            <td class="type">string</td>
+            <td class="type">—</td>
+            <td class="note">Set log level (<code>debug</code>, <code>info</code>, <code>warn</code>, <code>error</code>); implies <code>--log</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>Info is the default because the hook/status-line "happy path" logs at info; a warn default would produce empty files in normal operation. Use <code>--log-level=debug</code> to capture full status-line input payloads (model ID, context window size, workspace dir).</p>
+
+      <h3>Parse-error logging (unconditional)</h3>
+
+      <p><code>main()</code> wraps kong parsing in two steps — <code>kong.Must()</code> then <code>parser.Parse(os.Args[1:])</code> — so we can intercept parse failures before kong calls <code>os.Exit</code>. When parsing fails, <code>logging.LogParseError(os.Args, err)</code> appends a record to <code>~/.botctrl/logging/YYYYMMDD_parse-errors.jsonl</code> capturing the full <code>os.Args</code> (including argv[0]) and the kong error message.</p>
+
+      <div class="callout note"><strong>note</strong>Parse-error logging happens regardless of flags — parse errors are always bugs worth recording, and they occur before the <code>--log</code> / <code>--log-level</code> flags have been parsed out of the args anyway.</div>
+
+      <p>When parsing succeeds, <code>main()</code> emits a <code>logger.Debug("invoked", "args", os.Args, "command", ctx.Command())</code> record so the success path can be compared against failures.</p>
+    </section>
+
+    <section id="file-layout">
+      <h2><span class="section-anchor">// 03</span>File Layout</h2>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">~/.botctrl/logging<span class="ext">/</span></span>
+          <span class="langtag">LAYOUT</span>
+        </div>
+<pre>~/.botctrl/logging/
+  20260403_post-tool-use.jsonl     <span class="tok-comment">← today's post-tool-use log</span>
+  20260403_status-line.jsonl       <span class="tok-comment">← today's status-line log</span>
+  20260403_parse-errors.jsonl      <span class="tok-comment">← kong parse failures (written unconditionally)</span>
+  20260402_post-tool-use.jsonl     <span class="tok-comment">← yesterday's log</span>
+  20260401_session-start.jsonl.1712000000  <span class="tok-comment">← rotated file</span></pre>
+      </div>
+
+      <ul>
+        <li><strong>Filename</strong>: <code>YYYYMMDD_&lt;command-name&gt;.jsonl</code> where command-name is the leaf of the Kong command path (e.g., <code>post-tool-use</code>, <code>status-line</code>, <code>session-start</code>).</li>
+        <li><strong>Format</strong>: JSONL — one JSON object per line, produced by <code>slog.NewJSONHandler</code>.</li>
+        <li><strong>Rotation</strong>: On open, if the file exceeds 10 MB it is renamed with a unix-second suffix (e.g., <code>.jsonl.1712345678</code>) and a fresh file is created. Rotation happens at most once per process invocation.</li>
+        <li><strong>Write mode</strong>: <code>O_APPEND|O_CREATE|O_WRONLY</code> — the file is never read into memory. POSIX guarantees atomicity for small writes, so concurrent hook invocations writing to the same file don't corrupt each other.</li>
+      </ul>
+    </section>
+
+    <section id="architecture">
+      <h2><span class="section-anchor">// 04</span>Architecture</h2>
+
+      <h3>Wiring</h3>
+
+      <p>The logger is created in <code>main()</code> after parsing but before <code>Run()</code>:</p>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">cmd/botctrl/main<span class="ext">.go</span></span>
+          <span class="langtag">GO</span>
+        </div>
+<pre>ctx, err := parser.Parse(os.Args[<span class="tok-number">1</span>:])
+<span class="tok-keyword">if</span> err != <span class="tok-number">nil</span> {
+    logging.LogParseError(os.Args, err)
+    parser.FatalIfErrorf(err)
+}
+
+logger, logCloser := c.Claude.OpenLogger(ctx.Command())
+<span class="tok-keyword">if</span> logCloser != <span class="tok-number">nil</span> {
+    <span class="tok-keyword">defer</span> logCloser.Close()
+}
+
+logger.Debug(<span class="tok-string">"invoked"</span>, <span class="tok-string">"args"</span>, os.Args, <span class="tok-string">"command"</span>, ctx.Command())
+
+ctx.FatalIfErrorf(ctx.Run(logger))</pre>
+      </div>
+
+      <p><code>ctx.Run(logger)</code> passes the <code>*slog.Logger</code> as an extra binding. Kong injects it into any <code>Run()</code> method that declares a <code>*slog.Logger</code> parameter.</p>
+
+      <h3>OpenLogger</h3>
+
+      <p><code>claude.Cmd.OpenLogger(command string)</code> checks the <code>--log</code> and <code>--log-level</code> flags. If logging is disabled, it returns <code>logging.Discard</code> and a nil closer. If enabled, it calls <code>logging.Open(name, level)</code> which:</p>
+
+      <ol class="steps">
+        <li>Resolves <code>~/.botctrl/logging/</code> (creating it if needed)</li>
+        <li>Computes the filename from today's date and the command name</li>
+        <li>Rotates the existing file if it exceeds 10 MB</li>
+        <li>Opens the file in append mode</li>
+        <li>Returns a <code>*slog.Logger</code> backed by <code>slog.NewJSONHandler</code></li>
+      </ol>
+
+      <p>The command name is extracted from the Kong command path: <code>"claude hook post-tool-use"</code> → <code>"post-tool-use"</code>, <code>"claude status-line"</code> → <code>"status-line"</code>.</p>
+
+      <h3>Run method signatures</h3>
+
+      <p>All hook commands and the status line accept <code>*slog.Logger</code> as a <code>Run()</code> parameter:</p>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">internal/cmd/claude<span class="ext">/</span></span>
+          <span class="langtag">GO</span>
+        </div>
+<pre><span class="tok-comment">// Hook commands (most):</span>
+<span class="tok-keyword">func</span> (c *<span class="tok-type">sessionStartCmd</span>) Run(stdin <span class="tok-type">io.Reader</span>, stdout <span class="tok-type">io.Writer</span>, logger *<span class="tok-type">slog.Logger</span>) <span class="tok-type">error</span>
+
+<span class="tok-comment">// PostToolUse (also needs afero.Fs):</span>
+<span class="tok-keyword">func</span> (c *<span class="tok-type">postToolUseCmd</span>) Run(stdin <span class="tok-type">io.Reader</span>, stdout <span class="tok-type">io.Writer</span>, fs <span class="tok-type">afero.Fs</span>, logger *<span class="tok-type">slog.Logger</span>) <span class="tok-type">error</span>
+
+<span class="tok-comment">// Status line:</span>
+<span class="tok-keyword">func</span> (c *<span class="tok-type">statusLineCmd</span>) Run(stdin <span class="tok-type">io.Reader</span>, stdout <span class="tok-type">io.Writer</span>, logger *<span class="tok-type">slog.Logger</span>) <span class="tok-type">error</span></pre>
+      </div>
+
+      <p>In tests, pass <code>logging.Discard</code> as the logger:</p>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">posttooluse_test<span class="ext">.go</span></span>
+          <span class="langtag">GO</span>
+        </div>
+<pre>cmd := &amp;<span class="tok-type">postToolUseCmd</span>{}
+err := cmd.Run(stdin, &amp;stdout, fs, logging.Discard)</pre>
+      </div>
+    </section>
+
+    <section id="log-fields">
+      <h2><span class="section-anchor">// 05</span>Standardized Log Fields</h2>
+
+      <p>Every log line includes these fields (via <code>slog.JSONHandler</code>):</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Field</th><th>Source</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">time</td>
+            <td class="type">slog</td>
+            <td class="note">ISO 8601 timestamp</td>
+          </tr>
+          <tr>
+            <td class="field">level</td>
+            <td class="type">slog</td>
+            <td class="note">INFO, WARN, ERROR, DEBUG</td>
+          </tr>
+          <tr>
+            <td class="field">msg</td>
+            <td class="type">handler</td>
+            <td class="note">Action taken: <code>"handled"</code>, <code>"formatted"</code>, <code>"rendered"</code>, <code>"skipped"</code></td>
+          </tr>
+          <tr>
+            <td class="field">hook</td>
+            <td class="type">handler</td>
+            <td class="note">Hook/command name: <code>"post-tool-use"</code>, <code>"status-line"</code>, etc.</td>
+          </tr>
+          <tr>
+            <td class="field">session_id</td>
+            <td class="type">input</td>
+            <td class="note">Claude Code session identifier</td>
+          </tr>
+          <tr>
+            <td class="field">duration_ms</td>
+            <td class="type">handler</td>
+            <td class="note">Wall-clock milliseconds for the handler</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Hook-specific fields</h3>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Hook</th><th>Extra Fields</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">session-start</td>
+            <td class="note"><code>source</code> (startup, resume, clear, compact)</td>
+          </tr>
+          <tr>
+            <td class="field">session-end</td>
+            <td class="note"><code>reason</code> (clear, resume, logout, etc.)</td>
+          </tr>
+          <tr>
+            <td class="field">pre-tool-use</td>
+            <td class="note"><code>tool_name</code></td>
+          </tr>
+          <tr>
+            <td class="field">post-tool-use</td>
+            <td class="note"><code>tool_name</code>, <code>file_path</code>, <code>formatter</code>, <code>reason</code> (when skipped)</td>
+          </tr>
+          <tr>
+            <td class="field">stop-failure</td>
+            <td class="note"><code>error</code> (rate_limit, server_error, etc.)</td>
+          </tr>
+          <tr>
+            <td class="field">pre-compact, post-compact</td>
+            <td class="note"><code>trigger</code> (manual, auto)</td>
+          </tr>
+          <tr>
+            <td class="field">status-line</td>
+            <td class="note"><code>model</code> (raw ID), <code>path</code>, <code>branch</code>, <code>context_pct</code>; at debug: <code>model_display_name</code>, <code>context_window_size</code>, <code>exceeds_200k_tokens</code>, <code>cwd</code>, <code>workspace_current_dir</code></td>
+          </tr>
+          <tr>
+            <td class="field">parse-errors</td>
+            <td class="note"><code>args</code> (full <code>os.Args</code>), <code>argc</code>, <code>error</code> (kong error message); written unconditionally on parse failure regardless of <code>--log</code> flag</td>
+          </tr>
+          <tr>
+            <td class="field">(every command, at debug)</td>
+            <td class="note"><code>"invoked"</code> record with <code>args</code> (full <code>os.Args</code>) and <code>command</code> (resolved kong command path); emitted from <code>main()</code> before dispatch</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout warn"><strong>warn</strong>Log files may contain sensitive data — full <code>os.Args</code> are recorded on every invocation at debug level, and status-line debug records include workspace paths and model identifiers.</div>
+    </section>
+
+    <section id="cleanup">
+      <h2><span class="section-anchor">// 06</span>Cleanup</h2>
+
+      <p><code>botctrl logging clean</code> removes old log files.</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Flag</th><th>Default</th><th>Behavior</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">--all</td>
+            <td class="type">false</td>
+            <td class="note">Remove all <code>.jsonl</code> files regardless of age</td>
+          </tr>
+          <tr>
+            <td class="field">--days N</td>
+            <td class="type">7</td>
+            <td class="note">Remove files with mtime older than N days</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>The command scans <code>~/.botctrl/logging/</code> and removes files with a <code>.jsonl</code> extension (including rotated files like <code>.jsonl.1712345678</code>). Non-<code>.jsonl</code> files are left untouched.</p>
+
+      <div class="callout danger"><strong>danger</strong><code>--all</code> removes every <code>.jsonl</code> file in the log directory with no age filter — this is irreversible.</div>
+    </section>
+
+    <section id="code">
+      <h2><span class="section-anchor">// 07</span>Code</h2>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Role</th><th>Path</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="note">Core package</td>
+            <td class="field">internal/logging/logging.go</td>
+          </tr>
+          <tr>
+            <td class="note"><code>Open</code>, <code>Discard</code>, rotation logic</td>
+            <td class="field">internal/logging/logging.go</td>
+          </tr>
+          <tr>
+            <td class="note">Flags + <code>OpenLogger</code></td>
+            <td class="field">internal/cmd/claude/claude.go</td>
+          </tr>
+          <tr>
+            <td class="note">Clean command</td>
+            <td class="field">internal/cmd/logging/logging.go</td>
+          </tr>
+          <tr>
+            <td class="note">Main wiring</td>
+            <td class="field">cmd/botctrl/main.go</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>See also: <a href="kong-base-setup.html">kong-base-setup</a> for how the logger is wired via <code>ctx.Run(logger)</code> and how the two-step parse pattern enables unconditional parse-error capture.</p>
+    </section>
+
+    <footer>
+      <span class="blink">botctrl</span>
+      <span>logging · observability</span>
+    </footer>
+
+  </main>
+
+</div>
+
+</body>
+</html>

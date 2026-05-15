@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kong CLI Base Setup — botctrl</title>
+<link rel="stylesheet" href="botctrl-docs.css">
+<script src="botctrl-docs.js"></script>
+</head>
+<body>
+
+<div class="layout">
+
+  <aside class="rail">
+    <p class="rail-title">// botctrl · architecture</p>
+    <p class="rail-product"><span class="live-dot" aria-hidden="true"></span>Kong Base Setup</p>
+
+    <nav class="toc">
+      <div class="toc-section">
+        <p class="toc-section-label">Framework</p>
+        <a class="toc-link" href="#cli-framework"><span class="toc-num">01</span><span>CLI Framework</span></a>
+        <a class="toc-link" href="#entrypoint"><span class="toc-num">02</span><span>Entrypoint</span></a>
+        <a class="toc-link" href="#dependency-injection"><span class="toc-num">03</span><span>Dependency Injection</span></a>
+      </div>
+
+      <div class="toc-section">
+        <p class="toc-section-label">Commands</p>
+        <a class="toc-link" href="#command-structure"><span class="toc-num">04</span><span>Command Structure</span></a>
+        <a class="toc-link" href="#adding-commands"><span class="toc-num">05</span><span>Adding Commands</span></a>
+        <a class="toc-link" href="#struct-tags"><span class="toc-num">06</span><span>Struct Tag Reference</span></a>
+      </div>
+
+      <div class="toc-section">
+        <p class="toc-section-label">Build</p>
+        <a class="toc-link" href="#build"><span class="toc-num">07</span><span>Build</span></a>
+      </div>
+    </nav>
+
+    <div class="theme-switcher">
+      <span class="theme-switcher__label">Theme</span>
+      <button class="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle color theme"><span class="toggle-glyph toggle-glyph--sun" aria-hidden="true">☀︎</span><span class="toggle-glyph toggle-glyph--moon" aria-hidden="true">☾</span></button>
+    </div>
+  </aside>
+
+  <main>
+
+    <header class="hero">
+      <div class="hero-meta">
+        <span class="badge primary">v1 docs</span>
+        <span class="badge tests">architecture</span>
+        <span class="badge swift">go 1.26</span>
+      </div>
+      <h1><span class="moniker-bracket">[</span><span class="moniker">KongBaseSetup</span><span class="moniker-bracket">]</span></h1>
+      <p class="lede">Kong models the entire command tree as nested Go structs — there is no imperative flag registration. The struct <em>is</em> the schema. This document covers the entrypoint, dependency injection via <code>BindTo</code>, the command tree layout, and how to extend it.</p>
+
+      <div class="hero-stats">
+        <div class="stat"><span class="num">3</span><span class="label">parse-time bindings</span></div>
+        <div class="stat"><span class="num">4</span><span class="label">command groups</span></div>
+        <div class="stat"><span class="num">10</span><span class="label">struct tags documented</span></div>
+        <div class="stat"><span class="num">1</span><span class="label">entrypoint</span></div>
+      </div>
+    </header>
+
+    <section id="cli-framework">
+      <h2><span class="section-anchor">// 01</span>CLI Framework</h2>
+
+      <p>botctrl uses <a href="https://github.com/alecthomas/kong">kong</a> for CLI parsing. Kong models the entire command tree as nested Go structs — there is no imperative flag registration. The struct <em>is</em> the schema.</p>
+    </section>
+
+    <section id="entrypoint">
+      <h2><span class="section-anchor">// 02</span>Entrypoint</h2>
+
+      <p><code>cmd/botctrl/main.go</code> defines the root <code>cli</code> struct, builds the parser with <code>kong.Must</code>, then parses <code>os.Args[1:]</code> in a separate step so parse failures can be logged before the process exits:</p>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">cmd/botctrl/main<span class="ext">.go</span></span>
+          <span class="langtag">GO</span>
+        </div>
+<pre><span class="tok-keyword">type</span> <span class="tok-type">cli</span> <span class="tok-keyword">struct</span> {
+    Version versionFlag    `name:<span class="tok-string">"version"</span> help:<span class="tok-string">"Print version and exit."</span> short:<span class="tok-string">"v"</span>`
+    Claude  claude.Cmd     `cmd:<span class="tok-string">"claude"</span> help:<span class="tok-string">"Claude Code agent commands — hooks, status line, and configuration."</span>`
+    Format  formatcmd.Cmd  `cmd:<span class="tok-string">"format"</span> help:<span class="tok-string">"Format source code files."</span>`
+    Logging loggingcmd.Cmd `cmd:<span class="tok-string">"logging"</span> help:<span class="tok-string">"Manage botctrl log files."</span>`
+}
+
+<span class="tok-keyword">func</span> main() {
+    <span class="tok-keyword">var</span> c <span class="tok-type">cli</span>
+    parser := kong.Must(&amp;c,
+        kong.Name(<span class="tok-string">"botctrl"</span>),
+        kong.Description(<span class="tok-string">"CLI tool for managing AI coding agents. Called as a subprocess by agent hooks — reads JSON from stdin, writes JSON to stdout."</span>),
+        kong.Vars{<span class="tok-string">"version"</span>: version.String()},
+        kong.BindTo(os.Stdin, (*io.Reader)(<span class="tok-number">nil</span>)),
+        kong.BindTo(os.Stdout, (*io.Writer)(<span class="tok-number">nil</span>)),
+        kong.BindTo(afero.NewOsFs(), (*afero.Fs)(<span class="tok-number">nil</span>)),
+        kong.HelpOptions{
+            NoExpandSubcommands: <span class="tok-number">true</span>,
+            FlagsLast:           <span class="tok-number">true</span>,
+            Compact:             <span class="tok-number">true</span>,
+        },
+    )
+
+    ctx, err := parser.Parse(os.Args[<span class="tok-number">1</span>:])
+    <span class="tok-keyword">if</span> err != <span class="tok-number">nil</span> {
+        logging.LogParseError(os.Args, err)
+        parser.FatalIfErrorf(err)
+    }
+
+    logger, logCloser := c.Claude.OpenLogger(ctx.Command())
+    <span class="tok-keyword">if</span> logCloser != <span class="tok-number">nil</span> {
+        <span class="tok-keyword">defer</span> logCloser.Close()
+    }
+
+    logger.Debug(<span class="tok-string">"invoked"</span>, <span class="tok-string">"args"</span>, os.Args, <span class="tok-string">"command"</span>, ctx.Command())
+
+    ctx.FatalIfErrorf(ctx.Run(logger))
+}</pre>
+      </div>
+
+      <p><code>kong.Must</code> builds a <code>*kong.Kong</code> parser without parsing arguments. The separate <code>parser.Parse(os.Args[1:])</code> call returns a <code>*kong.Context</code> plus an error — splitting parse from build lets us run <code>logging.LogParseError</code> so bad hook invocations are diagnosable from the log file (see <a href="logging.html">logging</a>). <code>ctx.Run()</code> finds the selected command's <code>Run()</code> method and calls it, injecting any bound dependencies as arguments.</p>
+    </section>
+
+    <section id="dependency-injection">
+      <h2><span class="section-anchor">// 03</span>Dependency Injection via Bind</h2>
+
+      <p>We use <code>kong.BindTo</code> to wire dependencies that commands receive through their <code>Run()</code> method signature. Kong matches <code>Run()</code> parameters by type — if a parameter is <code>io.Reader</code>, Kong looks up what was bound to that interface and injects it.</p>
+
+      <p>Current bindings registered at parse time:</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Binding</th><th>Interface</th><th>Concrete Value</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">kong.BindTo(os.Stdin, (*io.Reader)(nil))</td>
+            <td class="type">io.Reader</td>
+            <td class="type">os.Stdin</td>
+            <td class="note">Commands read input (e.g., hook JSON payloads) from stdin</td>
+          </tr>
+          <tr>
+            <td class="field">kong.BindTo(os.Stdout, (*io.Writer)(nil))</td>
+            <td class="type">io.Writer</td>
+            <td class="type">os.Stdout</td>
+            <td class="note">Commands write output (e.g., hook JSON responses) to stdout</td>
+          </tr>
+          <tr>
+            <td class="field">kong.BindTo(afero.NewOsFs(), (*afero.Fs)(nil))</td>
+            <td class="type">afero.Fs</td>
+            <td class="type">afero.OsFs</td>
+            <td class="note">Commands that need filesystem access (e.g., post-tool-use formatting)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>The <code>(*io.Reader)(nil)</code> syntax is a nil pointer used only for its type — Kong reflects on it to determine the interface. The concrete value (<code>os.Stdin</code>) is what gets injected at runtime.</p>
+
+      <h3>Run-time bindings</h3>
+
+      <p>The <code>*slog.Logger</code> binding is created after parsing, based on <code>--log</code> / <code>--log-level</code> flags, and passed as an extra binding to <code>ctx.Run()</code>:</p>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">cmd/botctrl/main<span class="ext">.go</span></span>
+          <span class="langtag">GO</span>
+        </div>
+<pre>logger, logCloser := c.Claude.OpenLogger(ctx.Command())
+<span class="tok-keyword">if</span> logCloser != <span class="tok-number">nil</span> {
+    <span class="tok-keyword">defer</span> logCloser.Close()
+}
+
+logger.Debug(<span class="tok-string">"invoked"</span>, <span class="tok-string">"args"</span>, os.Args, <span class="tok-string">"command"</span>, ctx.Command())
+
+ctx.FatalIfErrorf(ctx.Run(logger))</pre>
+      </div>
+
+      <p>The <code>logger.Debug("invoked", ...)</code> call records every invocation at Debug level — useful when diagnosing whether a hook subprocess ran at all.</p>
+
+      <p>This makes commands testable without touching real stdio — pass <code>logging.Discard</code> as the logger:</p>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">preToolUse_test<span class="ext">.go</span></span>
+          <span class="langtag">GO</span>
+        </div>
+<pre><span class="tok-keyword">func</span> TestPreToolUse(t *<span class="tok-type">testing.T</span>) {
+    input := strings.NewReader(`{<span class="tok-string">"session_id"</span>:<span class="tok-string">"test"</span>,...}`)
+    <span class="tok-keyword">var</span> output bytes.Buffer
+    cmd := &amp;<span class="tok-type">preToolUseCmd</span>{}
+    <span class="tok-keyword">if</span> err := cmd.Run(input, &amp;output, logging.Discard); err != <span class="tok-number">nil</span> {
+        t.Fatal(err)
+    }
+    <span class="tok-comment">// assert on output.Bytes()</span>
+}</pre>
+      </div>
+
+      <h3>Adding New Bindings</h3>
+
+      <p>To add a new dependency available to all commands:</p>
+
+      <ol class="steps">
+        <li>Register it in <code>main()</code> with <code>kong.BindTo(impl, (*InterfaceType)(nil))</code> for interfaces, <code>kong.Bind(value)</code> for concrete types, or pass as an extra binding to <code>ctx.Run(value)</code>.</li>
+        <li>Add the type as a parameter to any command's <code>Run()</code> method. Kong resolves it automatically.</li>
+      </ol>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">cmd/botctrl/main<span class="ext">.go</span></span>
+          <span class="langtag">GO</span>
+        </div>
+<pre><span class="tok-comment">// In main() — static binding:</span>
+kong.Bind(logger)
+
+<span class="tok-comment">// In main() — run-time binding:</span>
+ctx.FatalIfErrorf(ctx.Run(logger))
+
+<span class="tok-comment">// In a command:</span>
+<span class="tok-keyword">func</span> (c *<span class="tok-type">myCmd</span>) Run(stdin <span class="tok-type">io.Reader</span>, stdout <span class="tok-type">io.Writer</span>, log *<span class="tok-type">slog.Logger</span>) <span class="tok-type">error</span> {</pre>
+      </div>
+
+      <h3>Version Flag</h3>
+
+      <p>The <code>--version</code> / <code>-v</code> flag uses Kong's <code>BeforeReset</code> lifecycle hook. When the flag is set, <code>BeforeReset</code> fires before any command resolution — it prints the version string and exits. This avoids requiring a dedicated <code>version</code> subcommand.</p>
+
+      <h3>Kong Vars</h3>
+
+      <p><code>kong.Vars{"version": version.String()}</code> registers key-value pairs available to struct tags via <code>${version}</code> interpolation and to lifecycle hooks via the <code>kong.Vars</code> map. Currently used only for version output.</p>
+    </section>
+
+    <section id="command-structure">
+      <h2><span class="section-anchor">// 04</span>Command Structure</h2>
+
+      <h3>Layout</h3>
+
+      <p>Commands live under <code>internal/cmd/</code> organized by agent, then by capability:</p>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">internal/cmd<span class="ext">/</span></span>
+          <span class="langtag">TREE</span>
+        </div>
+<pre>cmd/botctrl/main.go                    <span class="tok-comment"># Entrypoint, root cli struct, bindings</span>
+internal/cmd/claude/claude.go          <span class="tok-comment"># "botctrl claude" agent group (--log, --log-level flags)</span>
+internal/cmd/claude/hook/hook.go       <span class="tok-comment"># "botctrl claude hook" subcommands</span>
+internal/cmd/format/format.go          <span class="tok-comment"># "botctrl format" group (formatter commands)</span>
+internal/cmd/logging/logging.go        <span class="tok-comment"># "botctrl logging" group (clean command)</span></pre>
+      </div>
+
+      <p>Each level exports a <code>Cmd</code> struct that the parent embeds with a <code>cmd:""</code> tag.</p>
+
+      <h3>How Commands Map to Structs</h3>
+
+      <p>Kong's command tree is a direct reflection of struct nesting:</p>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">command-tree<span class="ext">.txt</span></span>
+          <span class="langtag">ASCII</span>
+        </div>
+<pre>botctrl claude hook pre-tool-use
+   │      │     │        │
+   cli    │     │        └─ preToolUseCmd (leaf — has Run())
+          │     └─ hook.Cmd struct field
+          └─ claude.Cmd struct field</pre>
+      </div>
+
+      <ul>
+        <li><strong>Group nodes</strong> (claude, hook) are exported <code>Cmd</code> structs with <code>cmd:""</code> tagged fields for their children. They have no <code>Run()</code> method.</li>
+        <li><strong>Leaf commands</strong> (pre-tool-use, session-start, etc.) are unexported structs with a <code>Run(...) error</code> method. They are the actual execution targets.</li>
+      </ul>
+    </section>
+
+    <section id="adding-commands">
+      <h2><span class="section-anchor">// 05</span>Adding Commands</h2>
+
+      <h3>Adding a leaf command to an existing group</h3>
+
+      <ol class="steps">
+        <li>
+          <p>Define an unexported struct in the group's package:</p>
+          <div class="code-frame">
+            <div class="code-titlebar">
+              <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+              <span class="filename">internal/cmd/mygroup/mygroup<span class="ext">.go</span></span>
+              <span class="langtag">GO</span>
+            </div>
+<pre><span class="tok-keyword">type</span> <span class="tok-type">myNewCmd</span> <span class="tok-keyword">struct</span>{}
+
+<span class="tok-keyword">func</span> (c *<span class="tok-type">myNewCmd</span>) Run(stdin <span class="tok-type">io.Reader</span>, stdout <span class="tok-type">io.Writer</span>) <span class="tok-type">error</span> {
+    <span class="tok-comment">// implementation</span>
+    <span class="tok-keyword">return</span> <span class="tok-number">nil</span>
+}</pre>
+          </div>
+        </li>
+        <li>
+          <p>Add it as a field on the group's <code>Cmd</code> struct:</p>
+          <div class="code-frame">
+            <div class="code-titlebar">
+              <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+              <span class="filename">internal/cmd/mygroup/mygroup<span class="ext">.go</span></span>
+              <span class="langtag">GO</span>
+            </div>
+<pre><span class="tok-keyword">type</span> <span class="tok-type">Cmd</span> <span class="tok-keyword">struct</span> {
+    <span class="tok-comment">// ... existing commands</span>
+    MyNew myNewCmd `cmd:<span class="tok-string">"my-new"</span> help:<span class="tok-string">"Does the new thing."</span>`
+}</pre>
+          </div>
+          <p>The <code>cmd:"my-new"</code> tag sets the CLI name. Kong lowercases and hyphenates automatically if you omit the tag value, but explicit names are clearer.</p>
+        </li>
+      </ol>
+
+      <h3>Adding a new command group</h3>
+
+      <ol class="steps">
+        <li>
+          <p>Create a new package under <code>internal/cmd/</code>:</p>
+          <div class="code-frame">
+            <div class="code-titlebar">
+              <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+              <span class="filename">internal/cmd/mygroup/mygroup<span class="ext">.go</span></span>
+              <span class="langtag">GO</span>
+            </div>
+<pre><span class="tok-keyword">package</span> mygroup
+
+<span class="tok-keyword">type</span> <span class="tok-type">Cmd</span> <span class="tok-keyword">struct</span> {
+    SubCmd subCmd `cmd:<span class="tok-string">"sub"</span> help:<span class="tok-string">"A subcommand."</span>`
+}
+
+<span class="tok-keyword">type</span> <span class="tok-type">subCmd</span> <span class="tok-keyword">struct</span>{}
+
+<span class="tok-keyword">func</span> (c *<span class="tok-type">subCmd</span>) Run(stdin <span class="tok-type">io.Reader</span>, stdout <span class="tok-type">io.Writer</span>) <span class="tok-type">error</span> {
+    <span class="tok-keyword">return</span> <span class="tok-number">nil</span>
+}</pre>
+          </div>
+        </li>
+        <li>
+          <p>Add the group to its parent's <code>Cmd</code> struct:</p>
+          <div class="code-frame">
+            <div class="code-titlebar">
+              <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+              <span class="filename">cmd/botctrl/main<span class="ext">.go</span></span>
+              <span class="langtag">GO</span>
+            </div>
+<pre><span class="tok-comment">// In cmd/botctrl/main.go or the parent group package:</span>
+<span class="tok-keyword">type</span> <span class="tok-type">cli</span> <span class="tok-keyword">struct</span> {
+    <span class="tok-comment">// ... existing</span>
+    MyGroup mygroup.Cmd `cmd:<span class="tok-string">"my-group"</span> help:<span class="tok-string">"My new group."</span>`
+}</pre>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <section id="struct-tags">
+      <h2><span class="section-anchor">// 06</span>Struct Tag Reference</h2>
+
+      <p>Tags used on command/flag struct fields:</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Tag</th><th>Purpose</th><th>Example</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">cmd:""</td>
+            <td class="note">Marks a struct field as a subcommand</td>
+            <td class="type">cmd:"pre-tool-use"</td>
+          </tr>
+          <tr>
+            <td class="field">help:""</td>
+            <td class="note">Short help text shown in <code>--help</code></td>
+            <td class="type">help:"Handle PreToolUse events."</td>
+          </tr>
+          <tr>
+            <td class="field">name:""</td>
+            <td class="note">Overrides the flag/command name</td>
+            <td class="type">name:"version"</td>
+          </tr>
+          <tr>
+            <td class="field">short:""</td>
+            <td class="note">Single-character flag alias</td>
+            <td class="type">short:"v"</td>
+          </tr>
+          <tr>
+            <td class="field">arg:""</td>
+            <td class="note">Marks a field as a positional argument</td>
+            <td class="type">arg:""</td>
+          </tr>
+          <tr>
+            <td class="field">required:""</td>
+            <td class="note">Makes a flag/arg mandatory</td>
+            <td class="type">required:""</td>
+          </tr>
+          <tr>
+            <td class="field">default:""</td>
+            <td class="note">Sets a default value</td>
+            <td class="type">default:"json"</td>
+          </tr>
+          <tr>
+            <td class="field">enum:""</td>
+            <td class="note">Restricts to a set of values</td>
+            <td class="type">enum:"json,text"</td>
+          </tr>
+          <tr>
+            <td class="field">env:""</td>
+            <td class="note">Reads default from env var</td>
+            <td class="type">env:"BOTCTRL_FORMAT"</td>
+          </tr>
+          <tr>
+            <td class="field">hidden:""</td>
+            <td class="note">Hides from help output</td>
+            <td class="type">hidden:""</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="build">
+      <h2><span class="section-anchor">// 07</span>Build</h2>
+
+      <p>See <code>magefiles/</code> for build targets. <code>mage build</code> compiles with ldflags that inject build metadata into <code>internal/version</code>. All mage targets set <code>GOEXPERIMENT=jsonv2</code> via <code>init()</code> in <code>magefiles/helpers.go</code>.</p>
+
+      <div class="callout note"><strong>note</strong>Do not run <code>go test</code>, <code>go build</code>, or <code>go vet</code> directly — always use the corresponding Mage target. Magefiles set <code>GOEXPERIMENT=jsonv2</code> and other required environment configuration automatically. Running Go toolchain commands directly will produce incorrect results or miss build tags.</div>
+    </section>
+
+    <footer>
+      <span class="blink">botctrl</span>
+      <span>kong-base-setup · architecture</span>
+    </footer>
+
+  </main>
+
+</div>
+
+</body>
+</html>

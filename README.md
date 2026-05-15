@@ -40,17 +40,7 @@ Add the following to your Claude Code `settings.json` (project-level at `.claude
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": "Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "botctrl claude hook post-tool-use",
-            "statusMessage": "Formatting..."
-          }
-        ]
-      },
-      {
-        "matcher": "Edit",
+        "matcher": "Write|Edit",
         "hooks": [
           {
             "type": "command",

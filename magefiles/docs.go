@@ -12,7 +12,7 @@ import (
 )
 
 // DocsStandalone regenerates docs/design-system-standalone.html by inlining
-// docs/botctrl-docs.css and docs/botctrl-docs.js into docs/design-system.html.
+// docs/scut-docs.css and docs/scut-docs.js into docs/design-system.html.
 //
 // The standalone file is a shareable single-file edition of the design-system
 // guide. Run this after changing the design system's CSS, JS, or the source
@@ -20,11 +20,11 @@ import (
 func DocsStandalone(ctx context.Context) error {
 	const (
 		srcHTML  = "docs/design-system.html"
-		srcCSS   = "docs/botctrl-docs.css"
-		srcJS    = "docs/botctrl-docs.js"
+		srcCSS   = "docs/scut-docs.css"
+		srcJS    = "docs/scut-docs.js"
 		dstHTML  = "docs/design-system-standalone.html"
-		linkLine = `<link rel="stylesheet" href="botctrl-docs.css">`
-		scriptLn = `<script src="botctrl-docs.js"></script>`
+		linkLine = `<link rel="stylesheet" href="scut-docs.css">`
+		scriptLn = `<script src="scut-docs.js"></script>`
 	)
 
 	html, err := os.ReadFile(srcHTML)
@@ -80,7 +80,7 @@ func DocsStandalone(ctx context.Context) error {
 			`<section id="what-this-is">
       <h2><span class="section-anchor">// 01</span>What This Is</h2>
 
-      <div class="callout note"><strong>note</strong>This is the <em>single-file</em> edition of the docs design system guide — HTML, CSS, and JS bundled into one file you can save, send, or open offline without any other assets. The CSS and JS live in <code>&lt;style&gt;</code> and <code>&lt;script&gt;</code> blocks inside <code>&lt;head&gt;</code> (necessary for the theme toggle to set the right colour before first paint; putting them at the bottom of the file would cause a flash of unstyled content). The "normal" edition splits them into <code>botctrl-docs.css</code> and <code>botctrl-docs.js</code> so multiple pages share one cache entry — see <code>docs/design-system.html</code> in the scut repository.</div>
+      <div class="callout note"><strong>note</strong>This is the <em>single-file</em> edition of the docs design system guide — HTML, CSS, and JS bundled into one file you can save, send, or open offline without any other assets. The CSS and JS live in <code>&lt;style&gt;</code> and <code>&lt;script&gt;</code> blocks inside <code>&lt;head&gt;</code> (necessary for the theme toggle to set the right colour before first paint; putting them at the bottom of the file would cause a flash of unstyled content). The "normal" edition splits them into <code>scut-docs.css</code> and <code>scut-docs.js</code> so multiple pages share one cache entry — see <code>docs/design-system.html</code> in the scut repository.</div>
 
       <p>The scut docs design system`,
 		},

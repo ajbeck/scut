@@ -92,7 +92,7 @@
 }
 
 /* Dark theme values. Applied when EITHER:
-   - <html data-theme="dark"> is set explicitly (by botctrl-docs.js), OR
+   - <html data-theme="dark"> is set explicitly (by scut-docs.js), OR
    - no [data-theme] attribute is present AND the OS is in dark mode
      (the JS-disabled fallback path). */
 :root[data-theme="dark"] {

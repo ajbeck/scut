@@ -56,7 +56,7 @@ We use `encoding/json/v2` (the new JSON package). This requires:
 
 ## Implementation Documentation
 
-Implementation docs live in `docs/` as standalone HTML files styled by the shared `botctrl-docs.css` / `botctrl-docs.js` design system. **The HTML is the single source of truth** — there are no Markdown counterparts. Edit the HTML directly when behaviour changes; preserve the existing structure (`<section id>` blocks, `table.fields`, `.code-frame` code samples, `.callout` callouts, `<ol class="steps">` procedures, syntax-token spans).
+Implementation docs live in `docs/` as standalone HTML files styled by the shared `scut-docs.css` / `scut-docs.js` design system. **The HTML is the single source of truth** — there are no Markdown counterparts. Edit the HTML directly when behaviour changes; preserve the existing structure (`<section id>` blocks, `table.fields`, `.code-frame` code samples, `.callout` callouts, `<ol class="steps">` procedures, syntax-token spans).
 
 | Document                                                       | Covers                                                                                                                 |
 | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
@@ -79,7 +79,7 @@ Implementation docs live in `docs/` as standalone HTML files styled by the share
 - `internal/cmd/claude/statusline.go` or `hooks/claudecode/statusline.go` changes → review `status-line.html`
 - `internal/logging/**` or `internal/cmd/logging/**` or `--log`/`--log-level` flag changes → review `logging.html`
 - `internal/cmd/claude/config/**` changes → review `config-command.html`
-- `docs/botctrl-docs.css` or `docs/botctrl-docs.js` changes → review `design-system.html` (class names and conventions documented there), then run `mage docsStandalone` to refresh `design-system-standalone.html`
+- `docs/scut-docs.css` or `docs/scut-docs.js` changes → review `design-system.html` (class names and conventions documented there), then run `mage docsStandalone` to refresh `design-system-standalone.html`
 - `docs/design-system.html` changes → run `mage docsStandalone` in the same commit to refresh the standalone edition
 - Any new `docs/*.html` documentation file → add it to the index table above
 

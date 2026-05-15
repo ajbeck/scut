@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Research — GitHub Pages for botctrl docs</title>
+<link rel="stylesheet" href="../botctrl-docs.css">
+<script src="../botctrl-docs.js"></script>
+</head>
+<body>
+
+<div class="layout">
+
+  <aside class="rail">
+    <p class="rail-title">// botctrl · research</p>
+    <p class="rail-product"><span class="live-dot" aria-hidden="true"></span>github pages</p>
+
+    <nav class="toc">
+      <div class="toc-section">
+        <p class="toc-section-label">Context</p>
+        <a class="toc-link" href="#setup"><span class="toc-num">01</span><span>Our Setup</span></a>
+        <a class="toc-link" href="#source-options"><span class="toc-num">02</span><span>Source Options</span></a>
+        <a class="toc-link" href="#project-page-urls"><span class="toc-num">03</span><span>Project Page URLs</span></a>
+      </div>
+
+      <div class="toc-section">
+        <p class="toc-section-label">Mechanics</p>
+        <a class="toc-link" href="#jekyll-behavior"><span class="toc-num">04</span><span>Jekyll Behavior</span></a>
+        <a class="toc-link" href="#actions-workflow"><span class="toc-num">05</span><span>Actions Workflow</span></a>
+        <a class="toc-link" href="#repo-settings"><span class="toc-num">06</span><span>Repo Settings</span></a>
+      </div>
+
+      <div class="toc-section">
+        <p class="toc-section-label">Path &amp; URL Analysis</p>
+        <a class="toc-link" href="#path-gotchas"><span class="toc-num">07</span><span>Path / URL Gotchas</span></a>
+        <a class="toc-link" href="#triggers"><span class="toc-num">08</span><span>Workflow Triggers</span></a>
+      </div>
+
+      <div class="toc-section">
+        <p class="toc-section-label">Reference</p>
+        <a class="toc-link" href="#limits"><span class="toc-num">09</span><span>Limits</span></a>
+        <a class="toc-link" href="#custom-domains"><span class="toc-num">10</span><span>Custom Domains</span></a>
+        <a class="toc-link" href="#recent-changes"><span class="toc-num">11</span><span>Recent Changes</span></a>
+        <a class="toc-link" href="#open-questions"><span class="toc-num">12</span><span>Open Questions</span></a>
+      </div>
+    </nav>
+
+    <div class="theme-switcher">
+      <span class="theme-switcher__label">Theme</span>
+      <button class="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle color theme"><span class="toggle-glyph toggle-glyph--sun" aria-hidden="true">☀︎</span><span class="toggle-glyph toggle-glyph--moon" aria-hidden="true">☾</span></button>
+    </div>
+  </aside>
+
+  <main>
+
+    <header class="hero">
+      <div class="hero-meta">
+        <span class="badge primary">v0.1 research</span>
+        <span class="badge tests">2026-05-15</span>
+      </div>
+      <h1><span class="moniker-bracket">[</span><span class="moniker">GitHubPagesResearch</span><span class="moniker-bracket">]</span></h1>
+      <p class="lede">Landscape research for publishing <code>docs/</code> as the <code>ajbeck/botctrl</code> GitHub Pages site. Covers source options, URL/path resolution for our specific HTML layout, Actions workflow components, repo settings prerequisites, limits, and recent breaking changes. Not a recommendation — options and trade-offs only.</p>
+
+      <div class="hero-stats">
+        <div class="stat"><span class="num">2</span><span class="label">source options</span></div>
+        <div class="stat"><span class="num">3</span><span class="label">required actions</span></div>
+        <div class="stat"><span class="num">1 GB</span><span class="label">max site size</span></div>
+        <div class="stat"><span class="num">1</span><span class="label">manual settings step</span></div>
+      </div>
+    </header>
+
+    <section id="setup">
+      <h2><span class="section-anchor">// 01</span>Our Setup</h2>
+
+      <p>Summarized here so each subsequent section can reference it directly without restating assumptions.</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Property</th><th>Value</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">Repository</td>
+            <td class="note"><code>github.com/ajbeck/botctrl</code> — public</td>
+          </tr>
+          <tr>
+            <td class="field">Expected Pages URL</td>
+            <td class="note"><code>https://ajbeck.github.io/botctrl/</code> (project page, not user/org)</td>
+          </tr>
+          <tr>
+            <td class="field">Docs folder</td>
+            <td class="note"><code>docs/</code> at repo root — static HTML/CSS/JS, no build step</td>
+          </tr>
+          <tr>
+            <td class="field">Top-level HTML files</td>
+            <td class="note"><code>kong-base-setup.html</code>, <code>claude-hook-commands.html</code>, <code>post-tool-use.html</code>, <code>status-line.html</code>, <code>logging.html</code>, <code>config-command.html</code>, <code>design-system.html</code>, <code>design-system-standalone.html</code></td>
+          </tr>
+          <tr>
+            <td class="field">Shared assets</td>
+            <td class="note"><code>docs/botctrl-docs.css</code>, <code>docs/botctrl-docs.js</code></td>
+          </tr>
+          <tr>
+            <td class="field">Specs subdirectory</td>
+            <td class="note"><code>docs/specs/</code> — dated HTML files referencing assets as <code>../botctrl-docs.css</code></td>
+          </tr>
+          <tr>
+            <td class="field">Top-level asset reference style</td>
+            <td class="note">Flat relative: <code>&lt;link href="botctrl-docs.css"&gt;</code> (no slash prefix)</td>
+          </tr>
+          <tr>
+            <td class="field">No Jekyll config</td>
+            <td class="note">No <code>_config.yml</code>, no <code>_layouts/</code>, no Markdown. Pure static HTML.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="source-options">
+      <h2><span class="section-anchor">// 02</span>Source Options</h2>
+
+      <p>GitHub Pages currently supports exactly two publishing source modes. They are mutually exclusive — you pick one in Settings and it governs how all deployments work. (<a href="https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site">source: docs.github.com</a>)</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Mode</th><th>How it works</th><th>Our fit</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">Deploy from a branch</td>
+            <td class="note">On each push to the chosen branch, GitHub runs a built-in pipeline that passes the selected folder (<code>/</code> root or <code>/docs</code>) through Jekyll and publishes the result. No workflow file needed.</td>
+            <td class="note">Works, but we get Jekyll processing we don't need, 10-build/hour rate limit applies, and we cannot control the trigger.</td>
+          </tr>
+          <tr>
+            <td class="field">GitHub Actions</td>
+            <td class="note">A workflow file in <code>.github/workflows/</code> drives everything: checkout, optionally transform files, upload an artifact via <code>actions/upload-pages-artifact</code>, deploy via <code>actions/deploy-pages</code>. The branch-rate limit does not apply.</td>
+            <td class="note">More explicit, allows <code>paths:</code> filters, no Jekyll unless we invoke it, artifact approach cleanly separates what we publish from the rest of the repo.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>GitHub's stated guidance</h3>
+
+      <p>The official docs phrase it as: "If you do not need any control over the build process for your site, we recommend that you publish your site when changes are pushed to a specific branch. If you want to use a build process other than Jekyll or you do not want a dedicated branch to hold your compiled static files, we recommend that you write a GitHub Actions workflow." (<a href="https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site">source</a>)</p>
+
+      <p>For our case — no build step, no Markdown, HTML files that reference assets by relative path — either mode technically works. The key differentiators are:</p>
+
+      <ul>
+        <li>Branch mode runs Jekyll by default. We can suppress it with <code>.nojekyll</code> but that's an extra file to maintain. The Actions mode with no Jekyll invocation simply never runs it.</li>
+        <li>Branch mode allows only <code>/</code> root or <code>/docs</code> as the source folder. Both match our repo layout (we'd use <code>/docs</code>). Actions mode uses the <code>path:</code> parameter on <code>upload-pages-artifact</code> for the same effect.</li>
+        <li>Branch mode triggers on every push that touches any file in the branch, not just <code>docs/</code>. Actions mode allows <code>paths: ['docs/**']</code>.</li>
+      </ul>
+
+      <div class="callout note"><strong>note</strong>The <a href="https://github.com/actions/starter-workflows/blob/main/pages/static.yml">official starter workflow for static sites</a> (retrieved 2026-05-15) shows a single-job pattern with no separate build/deploy split: checkout → configure-pages → upload artifact → deploy. For a site with no build step this is fine.</div>
+    </section>
+
+    <section id="project-page-urls">
+      <h2><span class="section-anchor">// 03</span>Project Page URLs</h2>
+
+      <p>Because <code>ajbeck/botctrl</code> is a project repository (not a <code>ajbeck.github.io</code> repository), Pages publishes under a subpath. (<a href="https://docs.github.com/en/pages/getting-started-with-github-pages/about-github-pages#types-of-github-pages-sites">source: docs.github.com — types of sites</a>)</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Site type</th><th>Published URL</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">User page (repo: <code>ajbeck.github.io</code>)</td>
+            <td class="note"><code>https://ajbeck.github.io/</code></td>
+          </tr>
+          <tr>
+            <td class="field">Project page (repo: <code>ajbeck/botctrl</code>)</td>
+            <td class="note"><code>https://ajbeck.github.io/botctrl/</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>The subpath <code>/botctrl/</code> is a URL prefix, not a filesystem directory. Whether paths resolve correctly under it depends entirely on how HTML files reference their assets. There are two categories:</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Reference style</th><th>Example</th><th>Resolves under <code>/botctrl/</code>?</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">Absolute (slash-prefixed)</td>
+            <td class="type"><code>/botctrl-docs.css</code></td>
+            <td class="note"><strong>Breaks.</strong> Browser resolves to <code>https://ajbeck.github.io/botctrl-docs.css</code> — wrong host root, 404.</td>
+          </tr>
+          <tr>
+            <td class="field">Relative (no slash)</td>
+            <td class="type"><code>botctrl-docs.css</code></td>
+            <td class="note"><strong>Works.</strong> Resolves relative to the current document's URL. If the document is at <code>/botctrl/kong-base-setup.html</code>, the browser requests <code>/botctrl/botctrl-docs.css</code>.</td>
+          </tr>
+          <tr>
+            <td class="field">Parent-relative</td>
+            <td class="type"><code>../botctrl-docs.css</code></td>
+            <td class="note"><strong>Works.</strong> From <code>/botctrl/specs/2026-05-14-foo.html</code>, resolves to <code>/botctrl/botctrl-docs.css</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>Our HTML files already use relative paths (<code>botctrl-docs.css</code> from top-level, <code>../botctrl-docs.css</code> from <code>specs/</code>). Neither uses a leading slash. This means our asset references are correct for a project page without any modification.</p>
+
+      <div class="callout note"><strong>note</strong>The same analysis applies to inter-document links (e.g. <code>&lt;a href="logging.html"&gt;</code> or <code>&lt;a href="../kong-base-setup.html"&gt;</code>). As long as we do not use absolute paths, the subpath does not break anything. Verify no <code>href="/"</code> or <code>src="/</code> appears in our HTML before deploying.</div>
+    </section>
+
+    <section id="jekyll-behavior">
+      <h2><span class="section-anchor">// 04</span>Jekyll Behavior</h2>
+
+      <p>By default, when using branch-mode publishing, GitHub Pages passes the source folder through Jekyll before serving it. For an HTML-only site this has two relevant effects:</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Default Jekyll behavior</th><th>Impact on our site</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">Jekyll processes HTML files through its template engine</td>
+            <td class="note">Our HTML contains no Jekyll front matter (<code>---</code> blocks), so Jekyll passes HTML files through unmodified. No template expansion will fire.</td>
+          </tr>
+          <tr>
+            <td class="field">Jekyll ignores <code>_</code>-prefixed files and directories</td>
+            <td class="note">Our <code>docs/</code> has no <code>_</code>-prefixed files. Not a current problem, but any future <code>_drafts/</code> or <code>_data/</code> directory would be silently excluded from the published site. (<a href="https://docs.github.com/en/pages/setting-up-a-github-pages-site-with-jekyll/about-github-pages-and-jekyll">source</a>)</td>
+          </tr>
+          <tr>
+            <td class="field">Jekyll ignores <code>.</code>-prefixed files</td>
+            <td class="note">Dotfiles in <code>docs/</code> (e.g. <code>.nojekyll</code> itself) are excluded by Jekyll but the file still works as a signal to the pipeline.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>The <code>.nojekyll</code> file</h3>
+
+      <p>An empty file named <code>.nojekyll</code> placed at the root of the publishing source tells GitHub to skip Jekyll entirely. (<a href="https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site">source: docs.github.com</a>) The source files are served verbatim.</p>
+
+      <div class="callout note"><strong>note</strong>For our current layout — no <code>_</code>-prefixed files, pure static HTML — <code>.nojekyll</code> is not strictly required. Jekyll will pass our files through without modification. Adding it is defensive: it prevents Jekyll processing overhead, avoids any future surprise if we add a file starting with <code>_</code>, and makes intent explicit. The cost is one empty file in <code>docs/</code>.</div>
+
+      <div class="callout note"><strong>note</strong>If we use the GitHub Actions approach (not branch mode), Jekyll never runs regardless. <code>.nojekyll</code> only matters for branch-mode publishing. The Actions artifact upload bypasses Jekyll entirely.</div>
+
+      <h3>Trade-off summary</h3>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Scenario</th><th>Need <code>.nojekyll</code>?</th><th>Risk without it</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">Branch mode, no <code>_</code> files today</td>
+            <td class="type">Optional</td>
+            <td class="note">Low. Future <code>_</code>-prefixed file would silently disappear from the published site.</td>
+          </tr>
+          <tr>
+            <td class="field">Branch mode, with <code>_</code> files</td>
+            <td class="type">Required</td>
+            <td class="note">Files starting with <code>_</code> are excluded from the published output.</td>
+          </tr>
+          <tr>
+            <td class="field">Actions mode</td>
+            <td class="type">Irrelevant</td>
+            <td class="note">Jekyll does not run. The artifact contents are deployed as-is.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="actions-workflow">
+      <h2><span class="section-anchor">// 05</span>Actions Workflow Components</h2>
+
+      <p>The official Actions-based approach uses three purpose-built actions provided by the <code>actions/</code> organization. All three are required for a complete deploy. Versions retrieved 2026-05-15.</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Action</th><th>Latest version</th><th>Role</th><th>Required?</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field"><a href="https://github.com/actions/configure-pages">actions/configure-pages</a></td>
+            <td class="type">v6.0.0 (2026-03-25)</td>
+            <td class="note">Enables Pages on the repo if not already enabled (<code>enablement: false</code> by default). Extracts metadata: <code>base_url</code>, <code>origin</code>, <code>host</code>, <code>base_path</code>. Also configures supported SSGs (Next.js, Gatsby, Nuxt, SvelteKit). For a plain static site, this action's primary value is the <code>base_path</code> output — useful if you want to inject the subpath into build output. Not strictly required for a site that already uses correct relative paths.</td>
+            <td class="note">Optional for pure static</td>
+          </tr>
+          <tr>
+            <td class="field"><a href="https://github.com/actions/upload-pages-artifact">actions/upload-pages-artifact</a></td>
+            <td class="type">v5.0.0 (2026-04-10)</td>
+            <td class="note">Packages a directory into a <code>github-pages</code> artifact and uploads it. The <code>path:</code> input (required; defaults to <code>_site/</code>) specifies which directory to package. The contents of that directory become the root of the deployed site — the directory name itself is stripped. Artifacts expire after 1 day by default.</td>
+            <td class="note">Required</td>
+          </tr>
+          <tr>
+            <td class="field"><a href="https://github.com/actions/deploy-pages">actions/deploy-pages</a></td>
+            <td class="type">v5.0.0 (2026-03-25)</td>
+            <td class="note">Deploys the artifact produced by <code>upload-pages-artifact</code> to the Pages CDN. Outputs <code>page_url</code> (the deployed URL). Must run in the deploy job, which depends on the build job via <code>needs:</code>.</td>
+            <td class="note">Required</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Permissions and environment</h3>
+
+      <p>The deploy job requires specific GITHUB_TOKEN permissions and must declare the <code>github-pages</code> environment. (<a href="https://github.com/actions/deploy-pages">source: actions/deploy-pages README</a>)</p>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">permissions-block<span class="ext">.yml</span></span>
+          <span class="langtag">YAML</span>
+        </div>
+<pre><span class="tok-comment"># Top-level permissions (or per-job if you use a split build/deploy structure)</span>
+<span class="tok-keyword">permissions</span>:
+  <span class="tok-string">contents</span>: <span class="tok-keyword">read</span>
+  <span class="tok-string">pages</span>: <span class="tok-keyword">write</span>
+  <span class="tok-string">id-token</span>: <span class="tok-keyword">write</span>  <span class="tok-comment"># OIDC token; required by deploy-pages for verification</span></pre>
+      </div>
+
+      <p>The deploy job must also declare the deployment environment:</p>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">deploy-job-environment<span class="ext">.yml</span></span>
+          <span class="langtag">YAML</span>
+        </div>
+<pre><span class="tok-keyword">jobs</span>:
+  <span class="tok-string">deploy</span>:
+    <span class="tok-keyword">environment</span>:
+      <span class="tok-string">name</span>: <span class="tok-keyword">github-pages</span>
+      <span class="tok-string">url</span>: <span class="tok-type">${{ steps.deployment.outputs.page_url }}</span></pre>
+      </div>
+
+      <p>The <code>github-pages</code> environment is created automatically the first time a workflow runs, if it does not already exist. GitHub recommends adding a deployment protection rule so only the default branch can deploy to it.</p>
+
+      <h3>Full single-job starter workflow (official, static sites)</h3>
+
+      <p>This is the exact content of <a href="https://github.com/actions/starter-workflows/blob/main/pages/static.yml"><code>actions/starter-workflows/pages/static.yml</code></a> as retrieved 2026-05-15. Note the action versions used here (<code>configure-pages@v5</code>, <code>upload-pages-artifact@v3</code>, <code>deploy-pages@v5</code>) are older than the latest available; the next session should pin to current versions.</p>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">.github/workflows/static.yml<span class="ext"></span></span>
+          <span class="langtag">YAML</span>
+        </div>
+<pre><span class="tok-keyword">name</span>: <span class="tok-string">Deploy static content to Pages</span>
+
+<span class="tok-keyword">on</span>:
+  <span class="tok-string">push</span>:
+    <span class="tok-string">branches</span>: [<span class="tok-type">$default-branch</span>]
+  <span class="tok-string">workflow_dispatch</span>:
+
+<span class="tok-keyword">permissions</span>:
+  <span class="tok-string">contents</span>: <span class="tok-keyword">read</span>
+  <span class="tok-string">pages</span>: <span class="tok-keyword">write</span>
+  <span class="tok-string">id-token</span>: <span class="tok-keyword">write</span>
+
+<span class="tok-keyword">concurrency</span>:
+  <span class="tok-string">group</span>: <span class="tok-string">"pages"</span>
+  <span class="tok-string">cancel-in-progress</span>: <span class="tok-keyword">false</span>
+
+<span class="tok-keyword">jobs</span>:
+  <span class="tok-string">deploy</span>:
+    <span class="tok-keyword">environment</span>:
+      <span class="tok-string">name</span>: <span class="tok-keyword">github-pages</span>
+      <span class="tok-string">url</span>: <span class="tok-type">${{ steps.deployment.outputs.page_url }}</span>
+    <span class="tok-keyword">runs-on</span>: <span class="tok-string">ubuntu-latest</span>
+    <span class="tok-keyword">steps</span>:
+      - <span class="tok-string">name</span>: <span class="tok-string">Checkout</span>
+        <span class="tok-string">uses</span>: <span class="tok-type">actions/checkout@v4</span>
+      - <span class="tok-string">name</span>: <span class="tok-string">Setup Pages</span>
+        <span class="tok-string">uses</span>: <span class="tok-type">actions/configure-pages@v5</span>
+      - <span class="tok-string">name</span>: <span class="tok-string">Upload artifact</span>
+        <span class="tok-string">uses</span>: <span class="tok-type">actions/upload-pages-artifact@v3</span>
+        <span class="tok-string">with</span>:
+          <span class="tok-comment"># Upload entire repository</span>
+          <span class="tok-string">path</span>: <span class="tok-string">'.'</span>
+      - <span class="tok-string">name</span>: <span class="tok-string">Deploy to GitHub Pages</span>
+        <span class="tok-string">id</span>: <span class="tok-string">deployment</span>
+        <span class="tok-string">uses</span>: <span class="tok-type">actions/deploy-pages@v5</span></pre>
+      </div>
+
+      <div class="callout warn"><strong>warn</strong>The starter workflow above uses <code>path: '.'</code> — the entire repository root. For our use case we want <code>path: './docs'</code> so only the <code>docs/</code> directory is published. Using <code>path: '.'</code> would publish Go source code, Magefiles, and everything else alongside the HTML docs. This is the first change we must make.</div>
+
+      <h3>Two-job vs single-job pattern</h3>
+
+      <p>For sites that have a build step, the canonical pattern splits into a <code>build</code> job (which runs the build and uploads the artifact) and a separate <code>deploy</code> job (<code>needs: build</code>). The deploy job only runs the <code>actions/deploy-pages</code> step. For our site — no build step — a single-job pattern is simpler and the official starter workflow demonstrates it. Either pattern is valid.</p>
+    </section>
+
+    <section id="repo-settings">
+      <h2><span class="section-anchor">// 06</span>Repo Settings Prerequisites</h2>
+
+      <p>Before any workflow can successfully deploy to Pages, a one-time manual step in the repository settings is required.</p>
+
+      <ol class="steps">
+        <li>Go to <strong>Settings → Pages</strong> (under "Code and automation").</li>
+        <li>Under <strong>Build and deployment → Source</strong>, select <strong>GitHub Actions</strong> (not "Deploy from a branch").</li>
+        <li>Save. GitHub creates the <code>github-pages</code> environment automatically the first time a workflow runs.</li>
+      </ol>
+
+      <div class="callout warn"><strong>warn</strong>If you push the workflow file before setting Source to "GitHub Actions" in Settings, the workflow will run but the deploy step will fail because the <code>github-pages</code> environment does not yet exist. The setting must be changed first, or at minimum before the first deploy run. (<a href="https://dev.to/jajera/setting-up-github-pages-with-github-actions-2o72">source</a>)</div>
+
+      <p>There are no other required one-time steps for a public repository. The <code>pages: write</code> permission in the workflow grants the GITHUB_TOKEN the right to deploy. No additional secrets or tokens are needed.</p>
+
+      <p>Optionally, after the first deploy, navigate to <strong>Settings → Environments → github-pages</strong> and add a deployment protection rule restricting deployments to the <code>main</code> branch. This prevents accidental deploys from feature branches if the workflow's <code>branches:</code> filter ever changes.</p>
+    </section>
+
+    <section id="path-gotchas">
+      <h2><span class="section-anchor">// 07</span>Path / URL Gotchas for Our Layout</h2>
+
+      <p>This section addresses our exact directory structure and how each piece resolves under the Actions deploy approach (<code>path: './docs'</code>).</p>
+
+      <h3>How <code>upload-pages-artifact</code> serves a subdirectory</h3>
+
+      <p>When you pass <code>path: './docs'</code>, the action packages the <em>contents</em> of <code>docs/</code> — not the directory wrapper itself — into the artifact. After deployment, the URL root of the Pages site maps directly to the contents of <code>docs/</code>. (<a href="https://github.com/marketplace/actions/upload-github-pages-artifact">source: GitHub Marketplace</a>; <a href="https://dev.to/vast-cow/publishing-a-non-docs-folder-with-github-pages-using-github-actions-5em1">secondary confirmation</a>)</p>
+
+      <p>Concretely:</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>File in repo</th><th>Published URL</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field"><code>docs/kong-base-setup.html</code></td>
+            <td class="note"><code>https://ajbeck.github.io/botctrl/kong-base-setup.html</code></td>
+          </tr>
+          <tr>
+            <td class="field"><code>docs/botctrl-docs.css</code></td>
+            <td class="note"><code>https://ajbeck.github.io/botctrl/botctrl-docs.css</code></td>
+          </tr>
+          <tr>
+            <td class="field"><code>docs/specs/2026-05-14-config-command.html</code></td>
+            <td class="note"><code>https://ajbeck.github.io/botctrl/specs/2026-05-14-config-command.html</code></td>
+          </tr>
+          <tr>
+            <td class="field"><code>docs/botctrl-docs.js</code></td>
+            <td class="note"><code>https://ajbeck.github.io/botctrl/botctrl-docs.js</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Asset path resolution analysis</h3>
+
+      <table class="fields">
+        <thead>
+          <tr><th>HTML file</th><th>Asset reference</th><th>Resolves to</th><th>Correct?</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field"><code>kong-base-setup.html</code> (top-level)</td>
+            <td class="type"><code>botctrl-docs.css</code></td>
+            <td class="note"><code>https://ajbeck.github.io/botctrl/botctrl-docs.css</code></td>
+            <td class="note">Yes</td>
+          </tr>
+          <tr>
+            <td class="field"><code>kong-base-setup.html</code> (top-level)</td>
+            <td class="type"><code>botctrl-docs.js</code></td>
+            <td class="note"><code>https://ajbeck.github.io/botctrl/botctrl-docs.js</code></td>
+            <td class="note">Yes</td>
+          </tr>
+          <tr>
+            <td class="field"><code>specs/2026-05-14-config-command.html</code></td>
+            <td class="type"><code>../botctrl-docs.css</code></td>
+            <td class="note"><code>https://ajbeck.github.io/botctrl/botctrl-docs.css</code></td>
+            <td class="note">Yes</td>
+          </tr>
+          <tr>
+            <td class="field"><code>specs/2026-05-14-config-command.html</code></td>
+            <td class="type"><code>../botctrl-docs.js</code></td>
+            <td class="note"><code>https://ajbeck.github.io/botctrl/botctrl-docs.js</code></td>
+            <td class="note">Yes</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>Our existing relative-path convention is correct for both the Actions deploy and the branch-mode <code>/docs</code> deploy. No HTML files need to change.</p>
+
+      <h3>The one absolute-path risk</h3>
+
+      <p>Any link or asset reference that starts with <code>/</code> (e.g., <code>/botctrl-docs.css</code>, <code>/kong-base-setup.html</code>) would resolve to <code>https://ajbeck.github.io/botctrl-docs.css</code> — the user's GitHub Pages root, not the project page root. This would 404. The fix before deploying is to scan all HTML for <code>href="/"</code>, <code>src="/"</code>, and similar patterns and ensure none exist.</p>
+
+      <div class="callout note"><strong>note</strong>The <code>actions/configure-pages</code> action outputs a <code>base_path</code> value (<code>/botctrl</code> for our repo). This is useful if you want to inject the correct base path into HTML at build time (e.g., via a <code>&lt;base href&gt;</code> tag). For a pure static site where all paths are already relative, you don't need it — but it's available if we later add an absolute path anywhere.</div>
+
+      <h3>Does <code>docs/</code> need an <code>index.html</code>?</h3>
+
+      <p>GitHub Pages will serve a directory listing if there is no <code>index.html</code> at the root. Currently our <code>docs/</code> has no <code>index.html</code>. Navigating to <code>https://ajbeck.github.io/botctrl/</code> would return a 404 (Pages does not generate directory listings). This is a gap we need to address — either add an <code>index.html</code> landing page to <code>docs/</code>, or accept that the root URL produces a 404 and users bookmark specific pages directly. Neither approach is technically broken; it's a UX decision.</p>
+
+      <div class="callout warn"><strong>warn</strong><code>docs/</code> currently has no <code>index.html</code>. Without one, the root URL <code>https://ajbeck.github.io/botctrl/</code> returns a 404. This must be resolved before the site is usable. Adding a minimal landing page or redirect is the standard fix.</div>
+    </section>
+
+    <section id="triggers">
+      <h2><span class="section-anchor">// 08</span>Workflow Triggers</h2>
+
+      <p>The idiomatic trigger for a Pages deploy workflow is:</p>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">trigger-options<span class="ext">.yml</span></span>
+          <span class="langtag">YAML</span>
+        </div>
+<pre><span class="tok-keyword">on</span>:
+  <span class="tok-string">push</span>:
+    <span class="tok-string">branches</span>: [<span class="tok-string">main</span>]
+    <span class="tok-string">paths</span>:
+      - <span class="tok-string">'docs/**'</span>
+  <span class="tok-string">workflow_dispatch</span>:  <span class="tok-comment"># allows manual trigger from Actions tab</span></pre>
+      </div>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Trigger option</th><th>Behavior</th><th>Recommendation</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">Every push to <code>main</code> (no paths filter)</td>
+            <td class="note">Deploys on any commit — Go code changes, Magefiles, README updates. Wastes Actions minutes, clutters deployment history.</td>
+            <td class="note">Avoid</td>
+          </tr>
+          <tr>
+            <td class="field"><code>paths: ['docs/**']</code></td>
+            <td class="note">Deploys only when something under <code>docs/</code> changes. Commits touching only Go source do not trigger a deploy.</td>
+            <td class="note">Idiomatic; recommended</td>
+          </tr>
+          <tr>
+            <td class="field"><code>workflow_dispatch</code></td>
+            <td class="note">Allows manual one-click deploy from the Actions tab. Useful for first deploy, hotfixes, or debugging.</td>
+            <td class="note">Always include alongside the push trigger</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>Combining <code>paths:</code> and <code>branches:</code> is AND logic: the workflow runs only when the pushed branch is <code>main</code> AND at least one changed file matches <code>docs/**</code>. (<a href="https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow">source: docs.github.com — triggering a workflow</a>)</p>
+
+      <div class="callout note"><strong>note</strong>If a push to <code>main</code> changes both Go source and a docs file, the workflow fires (because at least one path matches). This is correct behavior for our case — we want to deploy whenever docs change.</div>
+    </section>
+
+    <section id="limits">
+      <h2><span class="section-anchor">// 09</span>Limits and Constraints</h2>
+
+      <p>All figures from <a href="https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits">docs.github.com/pages/getting-started-with-github-pages/github-pages-limits</a> unless noted.</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Limit</th><th>Value</th><th>Type</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">Source repository size</td>
+            <td class="type">1 GB</td>
+            <td class="note">Recommended limit (soft)</td>
+            <td class="note">Applies to total repo size, not just <code>docs/</code>.</td>
+          </tr>
+          <tr>
+            <td class="field">Published site size</td>
+            <td class="type">1 GB</td>
+            <td class="note">Hard limit</td>
+            <td class="note">The deployed artifact must be under 1 GB.</td>
+          </tr>
+          <tr>
+            <td class="field">Monthly bandwidth</td>
+            <td class="type">100 GB</td>
+            <td class="note">Soft limit</td>
+            <td class="note">Rate limiting applied if exceeded; HTTP 429 responses.</td>
+          </tr>
+          <tr>
+            <td class="field">Build frequency (branch mode)</td>
+            <td class="type">10 builds / hour</td>
+            <td class="note">Soft limit</td>
+            <td class="note">Does not apply to Actions-based workflows. Irrelevant if we use the Actions approach.</td>
+          </tr>
+          <tr>
+            <td class="field">Deployment timeout</td>
+            <td class="type">10 minutes</td>
+            <td class="note">Hard limit</td>
+            <td class="note">Per deployment. Not a concern for a static HTML site with no build step.</td>
+          </tr>
+          <tr>
+            <td class="field">Artifact size (<code>upload-pages-artifact</code>)</td>
+            <td class="type">10 GB max, 1 GB recommended</td>
+            <td class="note">Action limit</td>
+            <td class="note">Files over 1 GB may cause timeout issues during deploy. (<a href="https://github.com/actions/upload-pages-artifact">source: action README</a>)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>None of these limits are relevant concerns for our current <code>docs/</code> folder, which is a handful of HTML, CSS, and JS files well under 10 MB total.</p>
+    </section>
+
+    <section id="custom-domains">
+      <h2><span class="section-anchor">// 10</span>Custom Domains</h2>
+
+      <p>Covered briefly for completeness. Not in scope for the initial deploy. (<a href="https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site">source: docs.github.com</a>)</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Scenario</th><th>DNS record</th><th>GitHub-side config</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">Subdomain (e.g., <code>docs.botctrl.dev</code>)</td>
+            <td class="type"><code>CNAME</code> → <code>ajbeck.github.io</code></td>
+            <td class="note">Set custom domain in Settings → Pages; GitHub creates/manages a <code>CNAME</code> file in the repo root (branch mode) or you include it in the artifact (Actions mode).</td>
+          </tr>
+          <tr>
+            <td class="field">Apex domain (e.g., <code>botctrl.dev</code>)</td>
+            <td class="type"><code>A</code> records → four GitHub IPs</td>
+            <td class="note">Same setting; GitHub IPs documented at time of setup (can change — CNAME to subdomain is more stable).</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>HTTPS enforcement is toggled in Settings → Pages alongside the custom domain field. It can take up to 24 hours to become available after DNS propagation. GitHub auto-provisions a TLS cert via Let's Encrypt.</p>
+
+      <p>If using Actions mode and a custom domain: include a <code>CNAME</code> file containing the bare domain name in <code>docs/</code> so it is included in the uploaded artifact. GitHub does not create it automatically for Actions-based deploys.</p>
+
+      <div class="callout note"><strong>note</strong>A custom domain changes the URL root from <code>ajbeck.github.io/botctrl/</code> to, say, <code>docs.botctrl.dev/</code>. This eliminates the subpath prefix entirely. Relative paths in our HTML (<code>botctrl-docs.css</code>, <code>../botctrl-docs.css</code>) work correctly under both URL structures — no HTML changes needed when switching to a custom domain.</div>
+    </section>
+
+    <section id="recent-changes">
+      <h2><span class="section-anchor">// 11</span>Recent Changes Worth Knowing</h2>
+
+      <h3>Artifact actions v3/v4 requirement (January 2025)</h3>
+
+      <p>On <strong>January 30, 2025</strong>, GitHub deprecated the use of older artifact action versions in Pages workflows. Any workflow using <code>actions/upload-pages-artifact</code> below v3 or <code>actions/deploy-pages</code> below v4 stopped working on GitHub.com. (<a href="https://github.blog/changelog/2024-12-05-deprecation-notice-github-pages-actions-to-require-artifacts-actions-v4-on-github-com/">source: GitHub Changelog, 2024-12-05</a>)</p>
+
+      <p>This is relevant to us only because community tutorials and blog posts written before late 2024 may show older version pins. When writing the workflow, use current versions:</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Action</th><th>Minimum required</th><th>Latest as of 2026-05-15</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">actions/upload-pages-artifact</td>
+            <td class="type">v3</td>
+            <td class="note">v5.0.0</td>
+          </tr>
+          <tr>
+            <td class="field">actions/deploy-pages</td>
+            <td class="type">v4</td>
+            <td class="note">v5.0.0</td>
+          </tr>
+          <tr>
+            <td class="field">actions/configure-pages</td>
+            <td class="type">v5 (starter workflow)</td>
+            <td class="note">v6.0.0</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout warn"><strong>warn</strong>The official starter workflow at <code>actions/starter-workflows/pages/static.yml</code> (as retrieved 2026-05-15) still pins <code>upload-pages-artifact@v3</code> and <code>deploy-pages@v5</code>, which are not the latest versions. The next session should verify the versions to use and pin to current major versions, not blindly copy the starter workflow.</div>
+
+      <h3>No other significant recent changes found</h3>
+
+      <p>A search of the GitHub Changelog for 2025–2026 found no Pages-specific behavioral changes beyond the artifact deprecation above. The branch-mode vs Actions-mode choice, URL structure for project pages, and Jekyll/nojekyll behavior have been stable. The Actions pricing changes (January 2026) reduced the cost of hosted runners but do not affect Pages workflow mechanics.</p>
+    </section>
+
+    <section id="open-questions">
+      <h2><span class="section-anchor">// 12</span>Open Questions</h2>
+
+      <p>Items where research was ambiguous or where the answer depends on a decision not made yet.</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Question</th><th>Status</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">Does the community discussion at <a href="https://github.com/orgs/community/discussions/28253">orgs/community/discussions/28253</a> confirm that <code>upload-pages-artifact path: './docs'</code> serves contents (not directory) as root?</td>
+            <td class="type">Partially confirmed</td>
+            <td class="note">Multiple sources confirm this behavior, but the community discussion itself showed a case where a user confused an inner directory for the specified path. The action behavior (contents of <code>path</code> become root) is consistent across the action README and multiple independent sources. Safe to assume correct, but worth a dry-run verify on first deploy.</td>
+          </tr>
+          <tr>
+            <td class="field">Which source mode to use: branch + <code>/docs</code> folder, or GitHub Actions?</td>
+            <td class="type">Open — human decision</td>
+            <td class="note">Research favors Actions for flexibility and no Jekyll, but branch mode is simpler for initial setup. See section 02 trade-offs.</td>
+          </tr>
+          <tr>
+            <td class="field">Should we add an <code>index.html</code> to <code>docs/</code>?</td>
+            <td class="type">Open — human decision</td>
+            <td class="note">Without it, <code>https://ajbeck.github.io/botctrl/</code> 404s. Whether to add a landing page, a redirect, or leave it as a 404 is a product decision.</td>
+          </tr>
+          <tr>
+            <td class="field">Do any of our existing HTML files use absolute paths (slash-prefixed <code>href</code> or <code>src</code>)?</td>
+            <td class="type">Unverified — requires code check</td>
+            <td class="note">Research confirms this would break. A <code>grep -r 'href="/' docs/</code> and <code>grep -r 'src="/' docs/</code> before deploying would confirm or deny.</td>
+          </tr>
+          <tr>
+            <td class="field">Whether <code>configure-pages@v6</code> is needed at all for a pure static site</td>
+            <td class="type">Likely not required</td>
+            <td class="note">Its primary value for SSG-aware path injection. Our relative paths are already correct. Including it adds the <code>base_path</code> output as a future tool if needed, at negligible cost.</td>
+          </tr>
+          <tr>
+            <td class="field">Exact current action versions to pin</td>
+            <td class="type">Should be re-verified at implementation time</td>
+            <td class="note">Versions retrieved 2026-05-15: <code>configure-pages@v6.0.0</code>, <code>upload-pages-artifact@v5.0.0</code>, <code>deploy-pages@v5.0.0</code>. Check release pages at implementation time.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+  </main>
+</div>
+
+<footer class="doc-footer">
+  <span>research · 2026-05-15 · github pages</span>
+</footer>
+
+</body>
+</html>

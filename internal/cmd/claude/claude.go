@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/ajbeck/botctrl/internal/cmd/claude/config"
 	"github.com/ajbeck/botctrl/internal/cmd/claude/hook"
 	"github.com/ajbeck/botctrl/internal/logging"
 )
@@ -17,6 +18,7 @@ type Cmd struct {
 
 	Hook       hook.Cmd      `cmd:"hook" help:"Hook event handlers. Called by Claude Code as subprocesses during lifecycle events."`
 	StatusLine statusLineCmd `cmd:"status-line" help:"Render the Claude Code status bar. Reads session JSON from stdin, prints styled output to stdout."`
+	Config     config.Cmd    `cmd:"config" help:"Configure Claude Code settings.json — install or remove botctrl hooks and status line."`
 }
 
 // OpenLogger returns a logger configured from the --log and --log-level flags.

@@ -126,53 +126,56 @@
           <title id="anatomy-title">Page layout anatomy</title>
           <desc id="anatomy-desc">Schematic of a botctrl docs page: sticky rail on the left containing project label, page name with live dot, numbered table of contents, and theme switcher. Main column on the right containing hero with badges, moniker, lede and stats, followed by numbered sections containing primitives, and a single-line footer.</desc>
           <style>
-            .frame      { fill: var(--bg); stroke: var(--rule); stroke-width: 1; }
-            .rail-bg    { fill: var(--bg-sunk); }
-            .divider    { stroke: var(--rule); stroke-width: 1; }
-            .label      { font: 10px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg-mute); letter-spacing: 0.08em; }
-            .label-mute { font: 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg-dim); letter-spacing: 0.10em; text-transform: uppercase; }
-            .label-strong { font: 600 11px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg); }
-            .num        { font: 600 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--primary); }
-            .anchor     { font: 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--primary); }
-            .moniker    { font: 700 20px "Charter","Iowan Old Style","Source Serif Pro",Georgia,serif; fill: var(--fg); }
-            .bracket    { font: 700 20px "Charter","Iowan Old Style","Source Serif Pro",Georgia,serif; fill: var(--fg-dim); }
-            .heading    { font: 600 13px "Charter","Iowan Old Style","Source Serif Pro",Georgia,serif; fill: var(--fg); }
-            .stat-num   { font: 700 18px "Charter","Iowan Old Style","Source Serif Pro",Georgia,serif; fill: var(--fg); }
-            .skeleton   { fill: var(--rule-soft); }
-            .annotation { font: 600 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg-dim); letter-spacing: 0.10em; text-transform: uppercase; }
-            .callout-tint { fill: color-mix(in srgb, var(--type) 8%, var(--bg)); }
+            /* All class names use a dia- prefix because SVG style is document-scoped:
+               bare names like .moniker, .num, and .label would otherwise override
+               the host page's hero h1 .moniker, .stat .num, and .stat .label. */
+            .dia-frame      { fill: var(--bg); stroke: var(--rule); stroke-width: 1; }
+            .dia-rail-bg    { fill: var(--bg-sunk); }
+            .dia-divider    { stroke: var(--rule); stroke-width: 1; }
+            .dia-label      { font: 10px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg-mute); letter-spacing: 0.08em; }
+            .dia-label-mute { font: 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg-dim); letter-spacing: 0.10em; text-transform: uppercase; }
+            .dia-label-strong { font: 600 11px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg); }
+            .dia-num        { font: 600 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--primary); }
+            .dia-anchor     { font: 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--primary); }
+            .dia-moniker    { font: 700 20px "Charter","Iowan Old Style","Source Serif Pro",Georgia,serif; fill: var(--fg); }
+            .dia-bracket    { font: 700 20px "Charter","Iowan Old Style","Source Serif Pro",Georgia,serif; fill: var(--fg-dim); }
+            .dia-heading    { font: 600 13px "Charter","Iowan Old Style","Source Serif Pro",Georgia,serif; fill: var(--fg); }
+            .dia-stat-num   { font: 700 18px "Charter","Iowan Old Style","Source Serif Pro",Georgia,serif; fill: var(--fg); }
+            .dia-skeleton   { fill: var(--rule-soft); }
+            .dia-annotation { font: 600 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg-dim); letter-spacing: 0.10em; text-transform: uppercase; }
+            .dia-callout-tint { fill: color-mix(in srgb, var(--type) 8%, var(--bg)); }
           </style>
 
           <!-- Outer page frame -->
-          <rect x="10" y="20" width="740" height="440" rx="8" class="frame"/>
+          <rect x="10" y="20" width="740" height="440" rx="8" class="dia-frame"/>
 
           <!-- Rail region -->
-          <rect x="11" y="21" width="170" height="438" rx="7" class="rail-bg"/>
-          <line x1="181" y1="21" x2="181" y2="459" class="divider"/>
+          <rect x="11" y="21" width="170" height="438" rx="7" class="dia-rail-bg"/>
+          <line x1="181" y1="21" x2="181" y2="459" class="dia-divider"/>
 
           <!-- Rail title -->
-          <text x="24" y="44" class="label">// project · area</text>
+          <text x="24" y="44" class="dia-label">// project · area</text>
 
           <!-- Rail product with live dot -->
           <circle cx="27" cy="66" r="3" fill="var(--mint-500)"/>
-          <text x="36" y="70" class="label-strong">Page Name</text>
+          <text x="36" y="70" class="dia-label-strong">Page Name</text>
 
           <!-- TOC group 1 -->
-          <text x="24" y="100" class="label-mute">Overview</text>
-          <text x="24" y="120" class="num">01</text><text x="44" y="120" class="label-strong">Introduction</text>
-          <text x="24" y="138" class="num">02</text><text x="44" y="138" class="label-strong">Anatomy</text>
-          <text x="24" y="156" class="num">03</text><text x="44" y="156" class="label-strong">Quick Start</text>
+          <text x="24" y="100" class="dia-label-mute">Overview</text>
+          <text x="24" y="120" class="dia-num">01</text><text x="44" y="120" class="dia-label-strong">Introduction</text>
+          <text x="24" y="138" class="dia-num">02</text><text x="44" y="138" class="dia-label-strong">Anatomy</text>
+          <text x="24" y="156" class="dia-num">03</text><text x="44" y="156" class="dia-label-strong">Quick Start</text>
 
           <!-- TOC group 2 -->
-          <text x="24" y="186" class="label-mute">Primitives</text>
-          <text x="24" y="206" class="num">04</text><text x="44" y="206" class="label-strong">Layout</text>
-          <text x="24" y="224" class="num">05</text><text x="44" y="224" class="label-strong">Rail and TOC</text>
-          <text x="24" y="242" class="num">06</text><text x="44" y="242" class="label-strong">Hero</text>
-          <text x="24" y="260" class="num">07</text><text x="44" y="260" class="label-strong">Sections</text>
+          <text x="24" y="186" class="dia-label-mute">Primitives</text>
+          <text x="24" y="206" class="dia-num">04</text><text x="44" y="206" class="dia-label-strong">Layout</text>
+          <text x="24" y="224" class="dia-num">05</text><text x="44" y="224" class="dia-label-strong">Rail and TOC</text>
+          <text x="24" y="242" class="dia-num">06</text><text x="44" y="242" class="dia-label-strong">Hero</text>
+          <text x="24" y="260" class="dia-num">07</text><text x="44" y="260" class="dia-label-strong">Sections</text>
 
           <!-- Theme switcher (bottom of rail) -->
           <rect x="24" y="410" width="72" height="22" rx="3" fill="none" stroke="var(--rule)" stroke-width="1"/>
-          <text x="32" y="425" class="label">Theme</text>
+          <text x="32" y="425" class="dia-label">Theme</text>
           <circle cx="84" cy="421" r="6" fill="var(--bg)" stroke="var(--rule)" stroke-width="1"/>
 
           <!-- MAIN: hero -->
@@ -181,30 +184,30 @@
             <rect x="52"  y="0"  width="56" height="14" rx="2" fill="color-mix(in srgb, var(--success) 12%, var(--bg))" stroke="color-mix(in srgb, var(--success) 20%, var(--bg))" stroke-width="0.5"/>
             <rect x="114" y="0"  width="58" height="14" rx="2" fill="color-mix(in srgb, var(--tangerine-500) 12%, var(--bg))" stroke="color-mix(in srgb, var(--tangerine-500) 20%, var(--bg))" stroke-width="0.5"/>
 
-            <text x="0"   y="50" class="bracket">[</text>
-            <text x="11"  y="50" class="moniker">PageMoniker</text>
-            <text x="151" y="50" class="bracket">]</text>
+            <text x="0"   y="50" class="dia-bracket">[</text>
+            <text x="11"  y="50" class="dia-moniker">PageMoniker</text>
+            <text x="151" y="50" class="dia-bracket">]</text>
 
-            <rect x="0" y="64" width="500" height="5" rx="2" class="skeleton"/>
-            <rect x="0" y="76" width="478" height="5" rx="2" class="skeleton"/>
-            <rect x="0" y="88" width="320" height="5" rx="2" class="skeleton"/>
+            <rect x="0" y="64" width="500" height="5" rx="2" class="dia-skeleton"/>
+            <rect x="0" y="76" width="478" height="5" rx="2" class="dia-skeleton"/>
+            <rect x="0" y="88" width="320" height="5" rx="2" class="dia-skeleton"/>
 
             <g transform="translate(0, 108)">
-              <text x="0"   y="14" class="stat-num">25</text><text x="0"   y="28" class="label">hook events</text>
-              <text x="120" y="14" class="stat-num">2</text> <text x="120" y="28" class="label">scopes</text>
-              <text x="240" y="14" class="stat-num">9</text> <text x="240" y="28" class="label">primitives</text>
-              <text x="360" y="14" class="stat-num">0</text> <text x="360" y="28" class="label">build steps</text>
+              <text x="0"   y="14" class="dia-stat-num">25</text><text x="0"   y="28" class="dia-label">hook events</text>
+              <text x="120" y="14" class="dia-stat-num">2</text> <text x="120" y="28" class="dia-label">scopes</text>
+              <text x="240" y="14" class="dia-stat-num">9</text> <text x="240" y="28" class="dia-label">primitives</text>
+              <text x="360" y="14" class="dia-stat-num">0</text> <text x="360" y="28" class="dia-label">build steps</text>
             </g>
           </g>
 
           <!-- Hero / body divider -->
-          <line x1="208" y1="208" x2="730" y2="208" class="divider"/>
+          <line x1="208" y1="208" x2="730" y2="208" class="dia-divider"/>
 
           <!-- Section 1 -->
-          <text x="208" y="234" class="anchor">// 01</text>
-          <text x="240" y="234" class="heading">First Section</text>
-          <rect x="208" y="248" width="500" height="5" rx="2" class="skeleton"/>
-          <rect x="208" y="260" width="478" height="5" rx="2" class="skeleton"/>
+          <text x="208" y="234" class="dia-anchor">// 01</text>
+          <text x="240" y="234" class="dia-heading">First Section</text>
+          <rect x="208" y="248" width="500" height="5" rx="2" class="dia-skeleton"/>
+          <rect x="208" y="260" width="478" height="5" rx="2" class="dia-skeleton"/>
 
           <!-- Code-frame mini -->
           <g transform="translate(208, 278)">
@@ -224,27 +227,27 @@
           </g>
 
           <!-- Section 2 -->
-          <text x="208" y="352" class="anchor">// 02</text>
-          <text x="240" y="352" class="heading">Second Section</text>
+          <text x="208" y="352" class="dia-anchor">// 02</text>
+          <text x="240" y="352" class="dia-heading">Second Section</text>
 
           <!-- Callout mini -->
           <g transform="translate(208, 366)">
-            <rect x="0" y="0" width="500" height="32" rx="4" class="callout-tint"/>
+            <rect x="0" y="0" width="500" height="32" rx="4" class="dia-callout-tint"/>
             <rect x="0" y="0" width="3"   height="32" fill="var(--type)"/>
             <text x="14" y="14" font="600 8px Berkeley Mono, monospace" letter-spacing="0.14em" fill="var(--type)">NOTE</text>
-            <rect x="50"  y="10" width="200" height="4" rx="1.5" class="skeleton"/>
-            <rect x="50"  y="20" width="160" height="4" rx="1.5" class="skeleton"/>
+            <rect x="50"  y="10" width="200" height="4" rx="1.5" class="dia-skeleton"/>
+            <rect x="50"  y="20" width="160" height="4" rx="1.5" class="dia-skeleton"/>
           </g>
 
           <!-- Footer line -->
-          <line x1="208" y1="428" x2="730" y2="428" class="divider"/>
-          <text x="208" y="446" class="label-strong">project</text>
-          <text x="710" y="446" text-anchor="end" class="label">section · category</text>
+          <line x1="208" y1="428" x2="730" y2="428" class="dia-divider"/>
+          <text x="208" y="446" class="dia-label-strong">project</text>
+          <text x="710" y="446" text-anchor="end" class="dia-label">section · category</text>
 
           <!-- Outer annotations -->
-          <text x="96"  y="14" text-anchor="middle" class="annotation">rail · 260px</text>
-          <text x="469" y="14" text-anchor="middle" class="annotation">main · fluid (max 1340px)</text>
-          <text x="380" y="478" text-anchor="middle" class="annotation">page max-width · 1600px · centred</text>
+          <text x="96"  y="14" text-anchor="middle" class="dia-annotation">rail · 260px</text>
+          <text x="469" y="14" text-anchor="middle" class="dia-annotation">main · fluid (max 1340px)</text>
+          <text x="380" y="478" text-anchor="middle" class="dia-annotation">page max-width · 1600px · centred</text>
         </svg>
       </figure>
 
@@ -703,119 +706,119 @@ cp botctrl/docs/botctrl-docs.js   yourproject/docs/yourproject-docs.js</pre>
           <title id="palette-title">Colour palette swatches</title>
           <desc id="palette-desc">Each row shows one palette family with five representative shades (100, 300, 500, 700, 900) and a usage note. Coral is the primary accent; sunshine highlights selections; sky tints type and note callouts; mint marks success and the live dot; violet colours keywords in code; tangerine colours numbers and INI sections; bubblegum and lagoon are reserved accents; slate provides body type and rules.</desc>
           <style>
-            .pal-name  { font: 600 12px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg); }
-            .pal-role  { font: 10px "Charter","Iowan Old Style",Georgia,serif; fill: var(--fg-mute); font-style: italic; }
-            .shade     { font: 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg-dim); text-anchor: middle; letter-spacing: 0.04em; }
-            .swatch    { stroke: var(--rule); stroke-width: 0.5; }
-            .header    { font: 600 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg-dim); text-anchor: middle; letter-spacing: 0.14em; text-transform: uppercase; }
+            /* dia- prefix on every class — see comment on the anatomy SVG style block. */
+            .dia-pal-name { font: 600 12px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg); }
+            .dia-pal-role { font: 10px "Charter","Iowan Old Style",Georgia,serif; fill: var(--fg-mute); font-style: italic; }
+            .dia-swatch   { stroke: var(--rule); stroke-width: 0.5; }
+            .dia-col-head { font: 600 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg-dim); text-anchor: middle; letter-spacing: 0.14em; text-transform: uppercase; }
           </style>
 
           <!-- Shade column headers -->
-          <text x="260" y="14" class="header">100</text>
-          <text x="338" y="14" class="header">300</text>
-          <text x="416" y="14" class="header">500</text>
-          <text x="494" y="14" class="header">700</text>
-          <text x="572" y="14" class="header">900</text>
-          <text x="668" y="14" class="header">role</text>
+          <text x="260" y="14" class="dia-col-head">100</text>
+          <text x="338" y="14" class="dia-col-head">300</text>
+          <text x="416" y="14" class="dia-col-head">500</text>
+          <text x="494" y="14" class="dia-col-head">700</text>
+          <text x="572" y="14" class="dia-col-head">900</text>
+          <text x="668" y="14" class="dia-col-head">role</text>
 
           <!-- Row template: y starts at 28, height 40, gap 4 -->
           <!-- coral -->
           <g transform="translate(0, 28)">
-            <text x="20"  y="22" class="pal-name">coral</text>
-            <rect x="232" y="6" width="56" height="28" fill="var(--coral-100)" class="swatch" rx="3"/>
-            <rect x="310" y="6" width="56" height="28" fill="var(--coral-300)" class="swatch" rx="3"/>
-            <rect x="388" y="6" width="56" height="28" fill="var(--coral-500)" class="swatch" rx="3"/>
-            <rect x="466" y="6" width="56" height="28" fill="var(--coral-700)" class="swatch" rx="3"/>
-            <rect x="544" y="6" width="56" height="28" fill="var(--coral-900)" class="swatch" rx="3"/>
-            <text x="612" y="24" class="pal-role">primary · links · accents</text>
+            <text x="20"  y="22" class="dia-pal-name">coral</text>
+            <rect x="232" y="6" width="56" height="28" fill="var(--coral-100)" class="dia-swatch" rx="3"/>
+            <rect x="310" y="6" width="56" height="28" fill="var(--coral-300)" class="dia-swatch" rx="3"/>
+            <rect x="388" y="6" width="56" height="28" fill="var(--coral-500)" class="dia-swatch" rx="3"/>
+            <rect x="466" y="6" width="56" height="28" fill="var(--coral-700)" class="dia-swatch" rx="3"/>
+            <rect x="544" y="6" width="56" height="28" fill="var(--coral-900)" class="dia-swatch" rx="3"/>
+            <text x="612" y="24" class="dia-pal-role">primary · links · accents</text>
           </g>
 
           <!-- sunshine -->
           <g transform="translate(0, 76)">
-            <text x="20"  y="22" class="pal-name">sunshine</text>
-            <rect x="232" y="6" width="56" height="28" fill="var(--sunshine-100)" class="swatch" rx="3"/>
-            <rect x="310" y="6" width="56" height="28" fill="var(--sunshine-300)" class="swatch" rx="3"/>
-            <rect x="388" y="6" width="56" height="28" fill="var(--sunshine-500)" class="swatch" rx="3"/>
-            <rect x="466" y="6" width="56" height="28" fill="var(--sunshine-700)" class="swatch" rx="3"/>
-            <rect x="544" y="6" width="56" height="28" fill="var(--sunshine-900)" class="swatch" rx="3"/>
-            <text x="612" y="24" class="pal-role">selection · decisions</text>
+            <text x="20"  y="22" class="dia-pal-name">sunshine</text>
+            <rect x="232" y="6" width="56" height="28" fill="var(--sunshine-100)" class="dia-swatch" rx="3"/>
+            <rect x="310" y="6" width="56" height="28" fill="var(--sunshine-300)" class="dia-swatch" rx="3"/>
+            <rect x="388" y="6" width="56" height="28" fill="var(--sunshine-500)" class="dia-swatch" rx="3"/>
+            <rect x="466" y="6" width="56" height="28" fill="var(--sunshine-700)" class="dia-swatch" rx="3"/>
+            <rect x="544" y="6" width="56" height="28" fill="var(--sunshine-900)" class="dia-swatch" rx="3"/>
+            <text x="612" y="24" class="dia-pal-role">selection · decisions</text>
           </g>
 
           <!-- sky -->
           <g transform="translate(0, 124)">
-            <text x="20"  y="22" class="pal-name">sky</text>
-            <rect x="232" y="6" width="56" height="28" fill="var(--sky-100)" class="swatch" rx="3"/>
-            <rect x="310" y="6" width="56" height="28" fill="var(--sky-300)" class="swatch" rx="3"/>
-            <rect x="388" y="6" width="56" height="28" fill="var(--sky-500)" class="swatch" rx="3"/>
-            <rect x="466" y="6" width="56" height="28" fill="var(--sky-700)" class="swatch" rx="3"/>
-            <rect x="544" y="6" width="56" height="28" fill="var(--sky-900)" class="swatch" rx="3"/>
-            <text x="612" y="24" class="pal-role">types in code · note callouts</text>
+            <text x="20"  y="22" class="dia-pal-name">sky</text>
+            <rect x="232" y="6" width="56" height="28" fill="var(--sky-100)" class="dia-swatch" rx="3"/>
+            <rect x="310" y="6" width="56" height="28" fill="var(--sky-300)" class="dia-swatch" rx="3"/>
+            <rect x="388" y="6" width="56" height="28" fill="var(--sky-500)" class="dia-swatch" rx="3"/>
+            <rect x="466" y="6" width="56" height="28" fill="var(--sky-700)" class="dia-swatch" rx="3"/>
+            <rect x="544" y="6" width="56" height="28" fill="var(--sky-900)" class="dia-swatch" rx="3"/>
+            <text x="612" y="24" class="dia-pal-role">types in code · note callouts</text>
           </g>
 
           <!-- mint -->
           <g transform="translate(0, 172)">
-            <text x="20"  y="22" class="pal-name">mint</text>
-            <rect x="232" y="6" width="56" height="28" fill="var(--mint-100)" class="swatch" rx="3"/>
-            <rect x="310" y="6" width="56" height="28" fill="var(--mint-300)" class="swatch" rx="3"/>
-            <rect x="388" y="6" width="56" height="28" fill="var(--mint-500)" class="swatch" rx="3"/>
-            <rect x="466" y="6" width="56" height="28" fill="var(--mint-700)" class="swatch" rx="3"/>
-            <rect x="544" y="6" width="56" height="28" fill="var(--mint-900)" class="swatch" rx="3"/>
-            <text x="612" y="24" class="pal-role">strings · success · live dot</text>
+            <text x="20"  y="22" class="dia-pal-name">mint</text>
+            <rect x="232" y="6" width="56" height="28" fill="var(--mint-100)" class="dia-swatch" rx="3"/>
+            <rect x="310" y="6" width="56" height="28" fill="var(--mint-300)" class="dia-swatch" rx="3"/>
+            <rect x="388" y="6" width="56" height="28" fill="var(--mint-500)" class="dia-swatch" rx="3"/>
+            <rect x="466" y="6" width="56" height="28" fill="var(--mint-700)" class="dia-swatch" rx="3"/>
+            <rect x="544" y="6" width="56" height="28" fill="var(--mint-900)" class="dia-swatch" rx="3"/>
+            <text x="612" y="24" class="dia-pal-role">strings · success · live dot</text>
           </g>
 
           <!-- violet -->
           <g transform="translate(0, 220)">
-            <text x="20"  y="22" class="pal-name">violet</text>
-            <rect x="232" y="6" width="56" height="28" fill="var(--violet-100)" class="swatch" rx="3"/>
-            <rect x="310" y="6" width="56" height="28" fill="var(--violet-300)" class="swatch" rx="3"/>
-            <rect x="388" y="6" width="56" height="28" fill="var(--violet-500)" class="swatch" rx="3"/>
-            <rect x="466" y="6" width="56" height="28" fill="var(--violet-700)" class="swatch" rx="3"/>
-            <rect x="544" y="6" width="56" height="28" fill="var(--violet-900)" class="swatch" rx="3"/>
-            <text x="612" y="24" class="pal-role">keywords in code</text>
+            <text x="20"  y="22" class="dia-pal-name">violet</text>
+            <rect x="232" y="6" width="56" height="28" fill="var(--violet-100)" class="dia-swatch" rx="3"/>
+            <rect x="310" y="6" width="56" height="28" fill="var(--violet-300)" class="dia-swatch" rx="3"/>
+            <rect x="388" y="6" width="56" height="28" fill="var(--violet-500)" class="dia-swatch" rx="3"/>
+            <rect x="466" y="6" width="56" height="28" fill="var(--violet-700)" class="dia-swatch" rx="3"/>
+            <rect x="544" y="6" width="56" height="28" fill="var(--violet-900)" class="dia-swatch" rx="3"/>
+            <text x="612" y="24" class="dia-pal-role">keywords in code</text>
           </g>
 
           <!-- tangerine -->
           <g transform="translate(0, 268)">
-            <text x="20"  y="22" class="pal-name">tangerine</text>
-            <rect x="232" y="6" width="56" height="28" fill="var(--tangerine-100)" class="swatch" rx="3"/>
-            <rect x="310" y="6" width="56" height="28" fill="var(--tangerine-300)" class="swatch" rx="3"/>
-            <rect x="388" y="6" width="56" height="28" fill="var(--tangerine-500)" class="swatch" rx="3"/>
-            <rect x="466" y="6" width="56" height="28" fill="var(--tangerine-700)" class="swatch" rx="3"/>
-            <rect x="544" y="6" width="56" height="28" fill="var(--tangerine-900)" class="swatch" rx="3"/>
-            <text x="612" y="24" class="pal-role">numbers · INI sections</text>
+            <text x="20"  y="22" class="dia-pal-name">tangerine</text>
+            <rect x="232" y="6" width="56" height="28" fill="var(--tangerine-100)" class="dia-swatch" rx="3"/>
+            <rect x="310" y="6" width="56" height="28" fill="var(--tangerine-300)" class="dia-swatch" rx="3"/>
+            <rect x="388" y="6" width="56" height="28" fill="var(--tangerine-500)" class="dia-swatch" rx="3"/>
+            <rect x="466" y="6" width="56" height="28" fill="var(--tangerine-700)" class="dia-swatch" rx="3"/>
+            <rect x="544" y="6" width="56" height="28" fill="var(--tangerine-900)" class="dia-swatch" rx="3"/>
+            <text x="612" y="24" class="dia-pal-role">numbers · INI sections</text>
           </g>
 
           <!-- bubblegum -->
           <g transform="translate(0, 316)">
-            <text x="20"  y="22" class="pal-name">bubblegum</text>
-            <rect x="232" y="6" width="56" height="28" fill="var(--bubblegum-100)" class="swatch" rx="3"/>
-            <rect x="310" y="6" width="56" height="28" fill="var(--bubblegum-300)" class="swatch" rx="3"/>
-            <rect x="388" y="6" width="56" height="28" fill="var(--bubblegum-500)" class="swatch" rx="3"/>
-            <rect x="466" y="6" width="56" height="28" fill="var(--bubblegum-700)" class="swatch" rx="3"/>
-            <rect x="544" y="6" width="56" height="28" fill="var(--bubblegum-900)" class="swatch" rx="3"/>
-            <text x="612" y="24" class="pal-role">reserved · editorial accent</text>
+            <text x="20"  y="22" class="dia-pal-name">bubblegum</text>
+            <rect x="232" y="6" width="56" height="28" fill="var(--bubblegum-100)" class="dia-swatch" rx="3"/>
+            <rect x="310" y="6" width="56" height="28" fill="var(--bubblegum-300)" class="dia-swatch" rx="3"/>
+            <rect x="388" y="6" width="56" height="28" fill="var(--bubblegum-500)" class="dia-swatch" rx="3"/>
+            <rect x="466" y="6" width="56" height="28" fill="var(--bubblegum-700)" class="dia-swatch" rx="3"/>
+            <rect x="544" y="6" width="56" height="28" fill="var(--bubblegum-900)" class="dia-swatch" rx="3"/>
+            <text x="612" y="24" class="dia-pal-role">reserved · editorial accent</text>
           </g>
 
           <!-- lagoon -->
           <g transform="translate(0, 364)">
-            <text x="20"  y="22" class="pal-name">lagoon</text>
-            <rect x="232" y="6" width="56" height="28" fill="var(--lagoon-100)" class="swatch" rx="3"/>
-            <rect x="310" y="6" width="56" height="28" fill="var(--lagoon-300)" class="swatch" rx="3"/>
-            <rect x="388" y="6" width="56" height="28" fill="var(--lagoon-500)" class="swatch" rx="3"/>
-            <rect x="466" y="6" width="56" height="28" fill="var(--lagoon-700)" class="swatch" rx="3"/>
-            <rect x="544" y="6" width="56" height="28" fill="var(--lagoon-900)" class="swatch" rx="3"/>
-            <text x="612" y="24" class="pal-role">reserved · alternate cool tone</text>
+            <text x="20"  y="22" class="dia-pal-name">lagoon</text>
+            <rect x="232" y="6" width="56" height="28" fill="var(--lagoon-100)" class="dia-swatch" rx="3"/>
+            <rect x="310" y="6" width="56" height="28" fill="var(--lagoon-300)" class="dia-swatch" rx="3"/>
+            <rect x="388" y="6" width="56" height="28" fill="var(--lagoon-500)" class="dia-swatch" rx="3"/>
+            <rect x="466" y="6" width="56" height="28" fill="var(--lagoon-700)" class="dia-swatch" rx="3"/>
+            <rect x="544" y="6" width="56" height="28" fill="var(--lagoon-900)" class="dia-swatch" rx="3"/>
+            <text x="612" y="24" class="dia-pal-role">reserved · alternate cool tone</text>
           </g>
 
           <!-- slate -->
           <g transform="translate(0, 412)">
-            <text x="20"  y="22" class="pal-name">slate</text>
-            <rect x="232" y="6" width="56" height="28" fill="var(--slate-100)" class="swatch" rx="3"/>
-            <rect x="310" y="6" width="56" height="28" fill="var(--slate-300)" class="swatch" rx="3"/>
-            <rect x="388" y="6" width="56" height="28" fill="var(--slate-500)" class="swatch" rx="3"/>
-            <rect x="466" y="6" width="56" height="28" fill="var(--slate-700)" class="swatch" rx="3"/>
-            <rect x="544" y="6" width="56" height="28" fill="var(--slate-900)" class="swatch" rx="3"/>
-            <text x="612" y="24" class="pal-role">body type · rules · muted UI</text>
+            <text x="20"  y="22" class="dia-pal-name">slate</text>
+            <rect x="232" y="6" width="56" height="28" fill="var(--slate-100)" class="dia-swatch" rx="3"/>
+            <rect x="310" y="6" width="56" height="28" fill="var(--slate-300)" class="dia-swatch" rx="3"/>
+            <rect x="388" y="6" width="56" height="28" fill="var(--slate-500)" class="dia-swatch" rx="3"/>
+            <rect x="466" y="6" width="56" height="28" fill="var(--slate-700)" class="dia-swatch" rx="3"/>
+            <rect x="544" y="6" width="56" height="28" fill="var(--slate-900)" class="dia-swatch" rx="3"/>
+            <text x="612" y="24" class="dia-pal-role">body type · rules · muted UI</text>
           </g>
         </svg>
       </figure>

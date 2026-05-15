@@ -32,10 +32,10 @@ func TestStatus(t *testing.T) {
 		}
 
 		out := stdout.String()
-		if !bytes.Contains(stdout.Bytes(), []byte("botctrl claude status-line")) {
+		if !bytes.Contains(stdout.Bytes(), []byte("scut claude status-line")) {
 			t.Errorf("status-line entry missing in human output\npath: %q\noutput:\n%s", path, out)
 		}
-		if !bytes.Contains(stdout.Bytes(), []byte("botctrl claude hook post-tool-use")) {
+		if !bytes.Contains(stdout.Bytes(), []byte("scut claude hook post-tool-use")) {
 			t.Errorf("post-tool-use entry missing in human output\npath: %q\noutput:\n%s", path, out)
 		}
 	})
@@ -51,9 +51,9 @@ func TestStatus(t *testing.T) {
 		}
 
 		out := stdout.String()
-		// Should mention the file doesn't exist or show "(no botctrl entries)" / "(file does not exist)".
+		// Should mention the file doesn't exist or show "(no scut entries)" / "(file does not exist)".
 		if !bytes.Contains(stdout.Bytes(), []byte("(file does not exist)")) &&
-			!bytes.Contains(stdout.Bytes(), []byte("(no botctrl entries)")) {
+			!bytes.Contains(stdout.Bytes(), []byte("(no scut entries)")) {
 			t.Errorf("expected missing-file message in human output, got:\n%s", out)
 		}
 	})

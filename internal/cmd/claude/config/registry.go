@@ -1,10 +1,10 @@
 //go:build goexperiment.jsonv2
 
-// Package config implements the "botctrl claude config" command group.
+// Package config implements the "scut claude config" command group.
 package config
 
 // hookSpec describes one row in the install registry.
-// Slug is the --only token AND the leaf command name under "botctrl claude hook".
+// Slug is the --only token AND the leaf command name under "scut claude hook".
 // Event is Claude Code's event-name key in settings.json.
 // Matcher defaults to "*" and StatusMessage to "".
 type hookSpec struct {

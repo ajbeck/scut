@@ -157,7 +157,7 @@ func TestInstall(t *testing.T) {
 		}
 
 		data := stdout.Bytes()
-		if !bytes.Contains(data, []byte("botctrl claude --log hook session-start")) {
+		if !bytes.Contains(data, []byte("scut claude --log hook session-start")) {
 			t.Errorf("expected --log in generated command\n%s", data)
 		}
 	})
@@ -173,7 +173,7 @@ func TestInstall(t *testing.T) {
 		}
 
 		data := stdout.Bytes()
-		if !bytes.Contains(data, []byte("botctrl claude --log-level=debug hook session-start")) {
+		if !bytes.Contains(data, []byte("scut claude --log-level=debug hook session-start")) {
 			t.Errorf("expected --log-level=debug in generated command\n%s", data)
 		}
 	})

@@ -1,4 +1,4 @@
-module github.com/ajbeck/botctrl
+module github.com/ajbeck/scut
 
 go 1.26.1
 

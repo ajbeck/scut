@@ -10,9 +10,9 @@ import (
 
 	"github.com/spf13/afero"
 
-	"github.com/ajbeck/botctrl/internal/logging"
+	"github.com/ajbeck/scut/internal/logging"
 
-	cc "github.com/ajbeck/botctrl/hooks/claudecode"
+	cc "github.com/ajbeck/scut/hooks/claudecode"
 )
 
 // toolInput builds a JSON tool_input payload with the given file_path.

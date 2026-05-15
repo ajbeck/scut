@@ -10,19 +10,19 @@ func TestOwns(t *testing.T) {
 		want    bool
 	}{
 		// Exact match.
-		{"botctrl", true},
+		{"scut", true},
 		// Space prefix.
-		{"botctrl claude hook post-tool-use", true},
+		{"scut claude hook post-tool-use", true},
 		// Tab prefix.
-		{"botctrl\tclaude hook post-tool-use", true},
+		{"scut\tclaude hook post-tool-use", true},
 		// Leading whitespace is stripped.
-		{"  botctrl claude hook session-start", true},
-		{"\t botctrl claude status-line", true},
-		// Not botctrl.
-		{"not-botctrl ...", false},
-		// Token boundary: must not match "botctrlsomething".
-		{"botctrlsomething", false},
-		{"botctrlx claude hook post-tool-use", false},
+		{"  scut claude hook session-start", true},
+		{"\t scut claude status-line", true},
+		// Not scut.
+		{"not-scut ...", false},
+		// Token boundary: must not match "scutsomething".
+		{"scutsomething", false},
+		{"scutx claude hook post-tool-use", false},
 		// Empty string.
 		{"", false},
 		// Other tools.

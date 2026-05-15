@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kong CLI Base Setup — botctrl</title>
+<title>Kong CLI Base Setup — scut</title>
 <link rel="stylesheet" href="botctrl-docs.css">
 <script src="botctrl-docs.js"></script>
 </head>
@@ -12,7 +12,7 @@
 <div class="layout">
 
   <aside class="rail">
-    <p class="rail-title">// botctrl · architecture</p>
+    <p class="rail-title">// scut · architecture</p>
     <p class="rail-product"><span class="live-dot" aria-hidden="true"></span>Kong Base Setup</p>
 
     <nav class="toc">
@@ -64,31 +64,31 @@
     <section id="cli-framework">
       <h2><span class="section-anchor">// 01</span>CLI Framework</h2>
 
-      <p>botctrl uses <a href="https://github.com/alecthomas/kong">kong</a> for CLI parsing. Kong models the entire command tree as nested Go structs — there is no imperative flag registration. The struct <em>is</em> the schema.</p>
+      <p>scut uses <a href="https://github.com/alecthomas/kong">kong</a> for CLI parsing. Kong models the entire command tree as nested Go structs — there is no imperative flag registration. The struct <em>is</em> the schema.</p>
     </section>
 
     <section id="entrypoint">
       <h2><span class="section-anchor">// 02</span>Entrypoint</h2>
 
-      <p><code>cmd/botctrl/main.go</code> defines the root <code>cli</code> struct, builds the parser with <code>kong.Must</code>, then parses <code>os.Args[1:]</code> in a separate step so parse failures can be logged before the process exits:</p>
+      <p><code>cmd/scut/main.go</code> defines the root <code>cli</code> struct, builds the parser with <code>kong.Must</code>, then parses <code>os.Args[1:]</code> in a separate step so parse failures can be logged before the process exits:</p>
 
       <div class="code-frame">
         <div class="code-titlebar">
           <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
-          <span class="filename">cmd/botctrl/main<span class="ext">.go</span></span>
+          <span class="filename">cmd/scut/main<span class="ext">.go</span></span>
           <span class="langtag">GO</span>
         </div>
 <pre><span class="tok-keyword">type</span> <span class="tok-type">cli</span> <span class="tok-keyword">struct</span> {
     Version versionFlag    `name:<span class="tok-string">"version"</span> help:<span class="tok-string">"Print version and exit."</span> short:<span class="tok-string">"v"</span>`
     Claude  claude.Cmd     `cmd:<span class="tok-string">"claude"</span> help:<span class="tok-string">"Claude Code agent commands — hooks, status line, and configuration."</span>`
     Format  formatcmd.Cmd  `cmd:<span class="tok-string">"format"</span> help:<span class="tok-string">"Format source code files."</span>`
-    Logging loggingcmd.Cmd `cmd:<span class="tok-string">"logging"</span> help:<span class="tok-string">"Manage botctrl log files."</span>`
+    Logging loggingcmd.Cmd `cmd:<span class="tok-string">"logging"</span> help:<span class="tok-string">"Manage scut log files."</span>`
 }
 
 <span class="tok-keyword">func</span> main() {
     <span class="tok-keyword">var</span> c <span class="tok-type">cli</span>
     parser := kong.Must(&amp;c,
-        kong.Name(<span class="tok-string">"botctrl"</span>),
+        kong.Name(<span class="tok-string">"scut"</span>),
         kong.Description(<span class="tok-string">"CLI tool for managing AI coding agents. Called as a subprocess by agent hooks — reads JSON from stdin, writes JSON to stdout."</span>),
         kong.Vars{<span class="tok-string">"version"</span>: version.String()},
         kong.BindTo(os.Stdin, (*io.Reader)(<span class="tok-number">nil</span>)),
@@ -163,7 +163,7 @@
       <div class="code-frame">
         <div class="code-titlebar">
           <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
-          <span class="filename">cmd/botctrl/main<span class="ext">.go</span></span>
+          <span class="filename">cmd/scut/main<span class="ext">.go</span></span>
           <span class="langtag">GO</span>
         </div>
 <pre>logger, logCloser := c.Claude.OpenLogger(ctx.Command())
@@ -209,7 +209,7 @@ ctx.FatalIfErrorf(ctx.Run(logger))</pre>
       <div class="code-frame">
         <div class="code-titlebar">
           <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
-          <span class="filename">cmd/botctrl/main<span class="ext">.go</span></span>
+          <span class="filename">cmd/scut/main<span class="ext">.go</span></span>
           <span class="langtag">GO</span>
         </div>
 <pre><span class="tok-comment">// In main() — static binding:</span>
@@ -244,12 +244,12 @@ ctx.FatalIfErrorf(ctx.Run(logger))
           <span class="filename">internal/cmd<span class="ext">/</span></span>
           <span class="langtag">TREE</span>
         </div>
-<pre>cmd/botctrl/main.go                    <span class="tok-comment"># Entrypoint, root cli struct, bindings</span>
-internal/cmd/claude/claude.go          <span class="tok-comment"># "botctrl claude" agent group (--log, --log-level flags)</span>
-internal/cmd/claude/hook/hook.go       <span class="tok-comment"># "botctrl claude hook" subcommands</span>
-internal/cmd/claude/config/config.go   <span class="tok-comment"># "botctrl claude config" subcommands (install, uninstall, status)</span>
-internal/cmd/format/format.go          <span class="tok-comment"># "botctrl format" group (formatter commands)</span>
-internal/cmd/logging/logging.go        <span class="tok-comment"># "botctrl logging" group (clean command)</span></pre>
+<pre>cmd/scut/main.go                    <span class="tok-comment"># Entrypoint, root cli struct, bindings</span>
+internal/cmd/claude/claude.go          <span class="tok-comment"># "scut claude" agent group (--log, --log-level flags)</span>
+internal/cmd/claude/hook/hook.go       <span class="tok-comment"># "scut claude hook" subcommands</span>
+internal/cmd/claude/config/config.go   <span class="tok-comment"># "scut claude config" subcommands (install, uninstall, status)</span>
+internal/cmd/format/format.go          <span class="tok-comment"># "scut format" group (formatter commands)</span>
+internal/cmd/logging/logging.go        <span class="tok-comment"># "scut logging" group (clean command)</span></pre>
       </div>
 
       <p>Each level exports a <code>Cmd</code> struct that the parent embeds with a <code>cmd:""</code> tag.</p>
@@ -264,7 +264,7 @@ internal/cmd/logging/logging.go        <span class="tok-comment"># "botctrl logg
           <span class="filename">command-tree<span class="ext">.txt</span></span>
           <span class="langtag">ASCII</span>
         </div>
-<pre>botctrl claude hook pre-tool-use
+<pre>scut claude hook pre-tool-use
    │      │     │        │
    cli    │     │        └─ preToolUseCmd (leaf — has Run())
           │     └─ hook.Cmd struct field
@@ -345,10 +345,10 @@ internal/cmd/logging/logging.go        <span class="tok-comment"># "botctrl logg
           <div class="code-frame">
             <div class="code-titlebar">
               <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
-              <span class="filename">cmd/botctrl/main<span class="ext">.go</span></span>
+              <span class="filename">cmd/scut/main<span class="ext">.go</span></span>
               <span class="langtag">GO</span>
             </div>
-<pre><span class="tok-comment">// In cmd/botctrl/main.go or the parent group package:</span>
+<pre><span class="tok-comment">// In cmd/scut/main.go or the parent group package:</span>
 <span class="tok-keyword">type</span> <span class="tok-type">cli</span> <span class="tok-keyword">struct</span> {
     <span class="tok-comment">// ... existing</span>
     MyGroup mygroup.Cmd `cmd:<span class="tok-string">"my-group"</span> help:<span class="tok-string">"My new group."</span>`
@@ -431,7 +431,7 @@ internal/cmd/logging/logging.go        <span class="tok-comment"># "botctrl logg
     </section>
 
     <footer>
-      <span class="blink">botctrl</span>
+      <span class="blink">scut</span>
       <span>kong-base-setup · architecture</span>
     </footer>
 

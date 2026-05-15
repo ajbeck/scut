@@ -12,7 +12,7 @@ import (
 
 	"github.com/spf13/afero"
 
-	"github.com/ajbeck/botctrl/internal/logging"
+	"github.com/ajbeck/scut/internal/logging"
 )
 
 // runHandler normalizes the handler signatures into one callable.

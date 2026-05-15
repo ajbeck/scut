@@ -11,14 +11,14 @@ import (
 	"github.com/spf13/afero"
 )
 
-// uninstallCmd is the kong leaf for "botctrl claude config uninstall".
+// uninstallCmd is the kong leaf for "scut claude config uninstall".
 type uninstallCmd struct {
 	Scope  string   `help:"Settings scope: project or user." default:"project" enum:"project,user"`
 	Only   []string `help:"Comma-separated list of items to remove (hook event slugs and/or 'status-line')." sep:","`
 	DryRun bool     `help:"Print resulting JSON to stdout instead of writing." name:"dry-run"`
 }
 
-// Run executes the uninstall command: removes botctrl entries from settings.json.
+// Run executes the uninstall command: removes scut entries from settings.json.
 func (c *uninstallCmd) Run(stdout io.Writer, stderr io.Writer, fs afero.Fs, logger *slog.Logger) error {
 	// Resolve the settings file path.
 	path, err := resolveScope(c.Scope)
@@ -61,14 +61,14 @@ func (c *uninstallCmd) Run(stdout io.Writer, stderr io.Writer, fs afero.Fs, logg
 		}
 	}
 
-	// For each event in the hooks map, remove botctrl-owned groups when the event is targeted.
+	// For each event in the hooks map, remove scut-owned groups when the event is targeted.
 	for event, groups := range s.Hooks {
 		if !eventsToRemove[event] {
 			continue
 		}
 		var kept []HookGroup
 		for _, g := range groups {
-			if !isBotctrlGroup(g) {
+			if !isScutGroup(g) {
 				kept = append(kept, g)
 			}
 		}

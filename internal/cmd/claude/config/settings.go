@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-// Settings is the subset of Claude Code's settings.json that botctrl manipulates.
+// Settings is the subset of Claude Code's settings.json that scut manipulates.
 // Foreign top-level keys round-trip through the Foreign field without modification.
 type Settings struct {
 	StatusLine *StatusLine               `json:"statusLine,omitzero"`

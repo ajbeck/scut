@@ -51,8 +51,8 @@ func DocsStandalone(ctx context.Context) error {
 	// callout near §01 explaining what this file is.
 	standaloneEdits := []struct{ from, to string }{
 		{
-			`<title>Docs Design System — botctrl</title>`,
-			`<title>Docs Design System (Standalone) — botctrl</title>`,
+			`<title>Docs Design System — scut</title>`,
+			`<title>Docs Design System (Standalone) — scut</title>`,
 		},
 		{
 			`<p class="rail-title">// docs · design system</p>
@@ -70,27 +70,27 @@ func DocsStandalone(ctx context.Context) error {
 		},
 		{
 			`<li>Copy one existing page (e.g. <a href="kong-base-setup.html">kong-base-setup.html</a>) as a template and overwrite the content.</li>`,
-			`<li>Copy one existing page (e.g. <code>kong-base-setup.html</code> from the full botctrl docs folder) as a template and overwrite the content.</li>`,
+			`<li>Copy one existing page (e.g. <code>kong-base-setup.html</code> from the full scut docs folder) as a template and overwrite the content.</li>`,
 		},
 		{
 			`<section id="what-this-is">
       <h2><span class="section-anchor">// 01</span>What This Is</h2>
 
-      <p>The botctrl docs design system`,
+      <p>The scut docs design system`,
 			`<section id="what-this-is">
       <h2><span class="section-anchor">// 01</span>What This Is</h2>
 
-      <div class="callout note"><strong>note</strong>This is the <em>single-file</em> edition of the docs design system guide — HTML, CSS, and JS bundled into one file you can save, send, or open offline without any other assets. The CSS and JS live in <code>&lt;style&gt;</code> and <code>&lt;script&gt;</code> blocks inside <code>&lt;head&gt;</code> (necessary for the theme toggle to set the right colour before first paint; putting them at the bottom of the file would cause a flash of unstyled content). The "normal" edition splits them into <code>botctrl-docs.css</code> and <code>botctrl-docs.js</code> so multiple pages share one cache entry — see <code>docs/design-system.html</code> in the botctrl repository.</div>
+      <div class="callout note"><strong>note</strong>This is the <em>single-file</em> edition of the docs design system guide — HTML, CSS, and JS bundled into one file you can save, send, or open offline without any other assets. The CSS and JS live in <code>&lt;style&gt;</code> and <code>&lt;script&gt;</code> blocks inside <code>&lt;head&gt;</code> (necessary for the theme toggle to set the right colour before first paint; putting them at the bottom of the file would cause a flash of unstyled content). The "normal" edition splits them into <code>botctrl-docs.css</code> and <code>botctrl-docs.js</code> so multiple pages share one cache entry — see <code>docs/design-system.html</code> in the scut repository.</div>
 
-      <p>The botctrl docs design system`,
+      <p>The scut docs design system`,
 		},
 		{
 			`<footer>
-      <span class="blink">botctrl</span>
+      <span class="blink">scut</span>
       <span>design-system · docs</span>
     </footer>`,
 			`<footer>
-      <span class="blink">botctrl</span>
+      <span class="blink">scut</span>
       <span>design-system · standalone · single file</span>
     </footer>`,
 		},

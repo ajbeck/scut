@@ -5,10 +5,10 @@ package config
 import "errors"
 
 // ErrForeignStatusLine is returned by install when settings.json already
-// has a statusLine entry whose command does not start with "botctrl ".
+// has a statusLine entry whose command does not start with "scut ".
 // Callers must either remove the foreign entry manually or pass --only
 // excluding status-line.
-var ErrForeignStatusLine = errors.New("settings.json has a non-botctrl statusLine")
+var ErrForeignStatusLine = errors.New("settings.json has a non-scut statusLine")
 
 // ErrUnknownOnlyToken is returned when --only contains a token that is
 // neither a registered hook slug nor the literal "status-line". The wrapped

@@ -147,12 +147,12 @@ func TestCompactPath(t *testing.T) {
 		max  int
 		want string
 	}{
-		{"fits", "botctrl/cmd", 25, "botctrl/cmd"},
-		{"collapse_one", "botctrl/internal/cmd/claude", 20, "botctrl/i/cmd/claude"},
-		{"collapse_all", "botctrl/internal/cmd/claude", 19, "botctrl/i/c/claude"},
-		{"elision", "botctrl/internal/cmd/claude", 15, "botctrl/…/clau…"},
-		{"two_segments", "botctrl/claude", 12, "botctrl/cla…"},
-		{"single", "botctrl", 6, "botct…"},
+		{"fits", "scut/cmd", 25, "scut/cmd"},
+		{"collapse_one", "scut/internal/cmd/claude", 20, "scut/i/cmd/claude"},
+		{"collapse_all", "scut/internal/cmd/claude", 19, "scut/i/cmd/claude"},
+		{"elision", "scut/internal/cmd/claude", 15, "scut/i/c/claude"},
+		{"two_segments", "scut/claude", 12, "scut/claude"},
+		{"single", "scut", 6, "scut"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			got := compactPath(tc.path, tc.max)

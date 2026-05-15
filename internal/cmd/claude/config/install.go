@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-// installCmd is the kong leaf for "botctrl claude config install".
+// installCmd is the kong leaf for "scut claude config install".
 type installCmd struct {
 	Scope        string   `help:"Settings scope: project or user." default:"project" enum:"project,user"`
 	Only         []string `help:"Comma-separated list of items to install (hook event slugs and/or 'status-line')." sep:","`
@@ -22,7 +22,7 @@ type installCmd struct {
 	DryRun       bool     `help:"Print resulting JSON to stdout instead of writing." name:"dry-run"`
 }
 
-// Run executes the install command: reads settings.json, merges botctrl entries, and writes back.
+// Run executes the install command: reads settings.json, merges scut entries, and writes back.
 func (c *installCmd) Run(stdout io.Writer, fs afero.Fs, logger *slog.Logger) error {
 	// Resolve the settings file path.
 	path, err := resolveScope(c.Scope)
@@ -55,7 +55,7 @@ func (c *installCmd) Run(stdout io.Writer, fs afero.Fs, logger *slog.Logger) err
 	if installSet["status-line"] {
 		s.StatusLine = &StatusLine{
 			Type:    "command",
-			Command: "botctrl claude " + logPrefix + "status-line",
+			Command: "scut claude " + logPrefix + "status-line",
 		}
 	}
 
@@ -63,7 +63,7 @@ func (c *installCmd) Run(stdout io.Writer, fs afero.Fs, logger *slog.Logger) err
 		if !installSet[spec.Slug] {
 			continue
 		}
-		cmd := "botctrl claude " + logPrefix + "hook " + spec.Slug
+		cmd := "scut claude " + logPrefix + "hook " + spec.Slug
 		entry := HookEntry{
 			Type:          "command",
 			Command:       cmd,
@@ -167,10 +167,10 @@ func sortedValidTokens() []string {
 	return tokens
 }
 
-// buildLogPrefix returns the command-string fragment to insert between "botctrl claude "
+// buildLogPrefix returns the command-string fragment to insert between "scut claude "
 // and the next token, based on the bake-log flags.
 //
-// Neither flag:     "" (empty — bare "botctrl claude hook <slug>")
+// Neither flag:     "" (empty — bare "scut claude hook <slug>")
 // --bake-log only:  "--log "
 // --bake-log-level: "--log-level=LEVEL " (bare --log is redundant per OpenLogger semantics)
 func buildLogPrefix(bakeLog bool, bakeLogLevel string) string {
@@ -183,23 +183,23 @@ func buildLogPrefix(bakeLog bool, bakeLogLevel string) string {
 	return ""
 }
 
-// mergeHookGroup inserts botctrl's group at index 0 of groups, replacing any
-// existing botctrl group and preserving foreign groups in their original order.
-func mergeHookGroup(groups []HookGroup, botctrlGroup HookGroup) []HookGroup {
-	// Remove any existing botctrl-owned group.
+// mergeHookGroup inserts scut's group at index 0 of groups, replacing any
+// existing scut group and preserving foreign groups in their original order.
+func mergeHookGroup(groups []HookGroup, scutGroup HookGroup) []HookGroup {
+	// Remove any existing scut-owned group.
 	foreign := make([]HookGroup, 0, len(groups))
 	for _, g := range groups {
-		if !isBotctrlGroup(g) {
+		if !isScutGroup(g) {
 			foreign = append(foreign, g)
 		}
 	}
-	// Insert botctrl's group at index 0.
-	return append([]HookGroup{botctrlGroup}, foreign...)
+	// Insert scut's group at index 0.
+	return append([]HookGroup{scutGroup}, foreign...)
 }
 
-// isBotctrlGroup reports whether every inner hooks[].command in g is botctrl-owned.
-// A mixed group (any foreign command) is not botctrl-owned.
-func isBotctrlGroup(g HookGroup) bool {
+// isScutGroup reports whether every inner hooks[].command in g is scut-owned.
+// A mixed group (any foreign command) is not scut-owned.
+func isScutGroup(g HookGroup) bool {
 	if len(g.Hooks) == 0 {
 		return false
 	}

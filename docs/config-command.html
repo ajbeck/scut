@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Config Command — botctrl</title>
+<title>Config Command — scut</title>
 <link rel="stylesheet" href="botctrl-docs.css">
 <script src="botctrl-docs.js"></script>
 </head>
@@ -12,7 +12,7 @@
 <div class="layout">
 
   <aside class="rail">
-    <p class="rail-title">// botctrl · command</p>
+    <p class="rail-title">// scut · command</p>
     <p class="rail-product"><span class="live-dot" aria-hidden="true"></span>claude config</p>
 
     <nav class="toc">
@@ -60,7 +60,7 @@
         <span class="badge swift">go 1.26</span>
       </div>
       <h1><span class="moniker-bracket">[</span><span class="moniker">ClaudeConfig</span><span class="moniker-bracket">]</span></h1>
-      <p class="lede"><code>botctrl claude config</code> manages Claude Code's <code>settings.json</code> on behalf of the user. <code>install</code> writes (or merges) every botctrl hook handler and the status line into the chosen scope. <code>uninstall</code> reverses the operation. <code>status</code> reports what is currently wired. The command never destroys foreign configuration — keys it does not own are round-tripped verbatim.</p>
+      <p class="lede"><code>scut claude config</code> manages Claude Code's <code>settings.json</code> on behalf of the user. <code>install</code> writes (or merges) every scut hook handler and the status line into the chosen scope. <code>uninstall</code> reverses the operation. <code>status</code> reports what is currently wired. The command never destroys foreign configuration — keys it does not own are round-tripped verbatim.</p>
 
       <div class="hero-stats">
         <div class="stat"><span class="num">3</span><span class="label">subcommands</span></div>
@@ -73,16 +73,16 @@
     <section id="overview">
       <h2><span class="section-anchor">// 01</span>Overview</h2>
 
-      <p>Before this command existed, wiring botctrl into Claude Code required hand-editing roughly 150 lines of JSON into <code>.claude/settings.json</code> (project scope) or <code>~/.claude/settings.json</code> (user scope). The setup was error-prone, hard to keep in sync with newly added hook events, and impossible to undo without another hand-edit.</p>
+      <p>Before this command existed, wiring scut into Claude Code required hand-editing roughly 150 lines of JSON into <code>.claude/settings.json</code> (project scope) or <code>~/.claude/settings.json</code> (user scope). The setup was error-prone, hard to keep in sync with newly added hook events, and impossible to undo without another hand-edit.</p>
 
-      <p><code>botctrl claude config</code> replaces those hand-edits with three explicit operations. The command tree itself only generates the JSON wiring that <em>invokes</em> the hook subcommand tree — it does not modify or replace any hook handler. See <a href="claude-hook-commands.html">claude-hook-commands</a> for the handlers themselves.</p>
+      <p><code>scut claude config</code> replaces those hand-edits with three explicit operations. The command tree itself only generates the JSON wiring that <em>invokes</em> the hook subcommand tree — it does not modify or replace any hook handler. See <a href="claude-hook-commands.html">claude-hook-commands</a> for the handlers themselves.</p>
 
       <p>Three properties define the behavior:</p>
 
       <ul>
         <li><strong>Idempotent.</strong> Running <code>install</code> twice with the same inputs produces byte-identical files.</li>
         <li><strong>Non-destructive.</strong> Top-level keys other than <code>hooks</code> and <code>statusLine</code> are round-tripped verbatim through an inlined fallback map.</li>
-        <li><strong>Refuses unsafe overwrites.</strong> If <code>settings.json</code> already has a <code>statusLine</code> entry whose <code>command</code> does not start with <code>botctrl&nbsp;</code>, <code>install</code> errors out rather than silently replacing the user's existing status line.</li>
+        <li><strong>Refuses unsafe overwrites.</strong> If <code>settings.json</code> already has a <code>statusLine</code> entry whose <code>command</code> does not start with <code>scut&nbsp;</code>, <code>install</code> errors out rather than silently replacing the user's existing status line.</li>
       </ul>
     </section>
 
@@ -95,10 +95,10 @@
           <span class="filename">command-tree<span class="ext">.txt</span></span>
           <span class="langtag">ASCII</span>
         </div>
-<pre>botctrl claude config
-   ├── install     Write/merge botctrl entries into settings.json
-   ├── uninstall   Remove botctrl entries from settings.json
-   └── status      Show currently-installed botctrl entries</pre>
+<pre>scut claude config
+   ├── install     Write/merge scut entries into settings.json
+   ├── uninstall   Remove scut entries from settings.json
+   └── status      Show currently-installed scut entries</pre>
       </div>
 
       <p>The group is a sibling of <code>hook</code> and <code>status-line</code> under <code>claude.Cmd</code>. It follows the pattern documented in <a href="kong-base-setup.html">kong-base-setup</a> §04: a parent <code>Cmd</code> struct with <code>cmd:""</code> tagged children, each child a leaf with a <code>Run()</code> method.</p>
@@ -110,12 +110,12 @@
           <span class="langtag">GO</span>
         </div>
 <pre><span class="tok-keyword">type</span> <span class="tok-type">Cmd</span> <span class="tok-keyword">struct</span> {
-    Log      <span class="tok-type">bool</span>   `help:<span class="tok-string">"Enable logging to ~/.botctrl/logging/ at info level."</span>`
+    Log      <span class="tok-type">bool</span>   `help:<span class="tok-string">"Enable logging to ~/.scut/logging/ at info level."</span>`
     LogLevel <span class="tok-type">string</span> `help:<span class="tok-string">"Set log level: debug, info, warn, error (implies --log)."</span> placeholder:<span class="tok-string">"LEVEL"</span>`
 
     Hook       hook.Cmd      `cmd:<span class="tok-string">"hook"</span> help:<span class="tok-string">"Hook event handlers..."</span>`
     StatusLine statusLineCmd `cmd:<span class="tok-string">"status-line"</span> help:<span class="tok-string">"Render the Claude Code status bar..."</span>`
-    Config     config.Cmd    `cmd:<span class="tok-string">"config"</span> help:<span class="tok-string">"Configure Claude Code settings.json — install or remove botctrl hooks and status line."</span>`
+    Config     config.Cmd    `cmd:<span class="tok-string">"config"</span> help:<span class="tok-string">"Configure Claude Code settings.json — install or remove scut hooks and status line."</span>`
 }</pre>
       </div>
 
@@ -125,7 +125,7 @@
     <section id="install">
       <h2><span class="section-anchor">// 03</span>install</h2>
 
-      <p><code>botctrl claude config install</code> writes botctrl's hook and status-line entries into <code>settings.json</code>, merging with any existing content.</p>
+      <p><code>scut claude config install</code> writes scut's hook and status-line entries into <code>settings.json</code>, merging with any existing content.</p>
 
       <h3>Flags</h3>
 
@@ -189,23 +189,23 @@
           <span class="langtag">SHELL</span>
         </div>
 <pre><span class="tok-comment"># Wire everything into the current project's .claude/settings.json</span>
-botctrl claude config install
+scut claude config install
 
 <span class="tok-comment"># Only the formatter + status line, project scope</span>
-botctrl claude config install --only=post-tool-use,status-line
+scut claude config install --only=post-tool-use,status-line
 
 <span class="tok-comment"># User scope with debug logging baked in</span>
-botctrl claude config install --scope=user --log-level=debug
+scut claude config install --scope=user --log-level=debug
 
 <span class="tok-comment"># See what would be written without touching the file</span>
-botctrl claude config install --dry-run</pre>
+scut claude config install --dry-run</pre>
       </div>
     </section>
 
     <section id="uninstall">
       <h2><span class="section-anchor">// 04</span>uninstall</h2>
 
-      <p><code>botctrl claude config uninstall</code> removes botctrl entries from <code>settings.json</code>, preserving any non-botctrl content.</p>
+      <p><code>scut claude config uninstall</code> removes scut entries from <code>settings.json</code>, preserving any non-scut content.</p>
 
       <h3>Flags</h3>
 
@@ -223,7 +223,7 @@ botctrl claude config install --dry-run</pre>
           <tr>
             <td class="field">--only</td>
             <td class="type">[]string (comma-sep)</td>
-            <td class="note">empty = all botctrl entries</td>
+            <td class="note">empty = all scut entries</td>
             <td class="note">Whitelist of items to remove. Same token set as <code>install --only</code>.</td>
           </tr>
           <tr>
@@ -241,19 +241,19 @@ botctrl claude config install --dry-run</pre>
         <li>Resolve the path for <code>--scope</code>. If the file does not exist, print <code>no settings file at &lt;path&gt;; nothing to remove</code> to stderr and exit 0.</li>
         <li>Read and unmarshal as in <code>install</code>.</li>
         <li>Compute the remove set with the same defaulting + validation rules as <code>install</code>.</li>
-        <li>For each <code>hooks[Event]</code> array, drop entries whose every inner <code>hooks[].command</code> starts with <code>botctrl&nbsp;</code> (token boundary aware — see <a href="#merge-semantics">§07</a>). If a hook array becomes empty after removal, delete the <code>hooks[Event]</code> key entirely.</li>
-        <li>If <code>statusLine.command</code> starts with <code>botctrl&nbsp;</code> and <code>status-line</code> is in the remove set, delete the <code>statusLine</code> key.</li>
+        <li>For each <code>hooks[Event]</code> array, drop entries whose every inner <code>hooks[].command</code> starts with <code>scut&nbsp;</code> (token boundary aware — see <a href="#merge-semantics">§07</a>). If a hook array becomes empty after removal, delete the <code>hooks[Event]</code> key entirely.</li>
+        <li>If <code>statusLine.command</code> starts with <code>scut&nbsp;</code> and <code>status-line</code> is in the remove set, delete the <code>statusLine</code> key.</li>
         <li>If the resulting <code>hooks</code> map is empty, delete it too.</li>
         <li>If <code>--dry-run</code>, write to stdout. Otherwise write the file at <code>0644</code>.</li>
       </ol>
 
-      <div class="callout note"><strong>note</strong><code>uninstall</code> only removes entries whose <code>command</code> begins with <code>botctrl&nbsp;</code> (followed by space or tab) or is exactly <code>botctrl</code>. Foreign tools that happen to embed the string <code>botctrl</code> elsewhere in their command are untouched.</div>
+      <div class="callout note"><strong>note</strong><code>uninstall</code> only removes entries whose <code>command</code> begins with <code>scut&nbsp;</code> (followed by space or tab) or is exactly <code>scut</code>. Foreign tools that happen to embed the string <code>scut</code> elsewhere in their command are untouched.</div>
     </section>
 
     <section id="status">
       <h2><span class="section-anchor">// 05</span>status</h2>
 
-      <p><code>botctrl claude config status</code> prints what botctrl currently has wired across the configured scopes.</p>
+      <p><code>scut claude config status</code> prints what scut currently has wired across the configured scopes.</p>
 
       <h3>Flags</h3>
 
@@ -286,14 +286,14 @@ botctrl claude config install --dry-run</pre>
           <span class="langtag">ASCII</span>
         </div>
 <pre>PROJECT  .claude/settings.json
-  status-line    botctrl claude status-line
-  PostToolUse    botctrl claude --log hook post-tool-use   (matcher: Write|Edit)
-  PreToolUse     botctrl claude hook pre-tool-use          (matcher: *)
-  SessionStart   botctrl claude hook session-start         (matcher: *)
+  status-line    scut claude status-line
+  PostToolUse    scut claude --log hook post-tool-use   (matcher: Write|Edit)
+  PreToolUse     scut claude hook pre-tool-use          (matcher: *)
+  SessionStart   scut claude hook session-start         (matcher: *)
   …
 
 USER     /Users/aj/.claude/settings.json
-  (no botctrl entries)</pre>
+  (no scut entries)</pre>
       </div>
 
       <h3>JSON output (<code>--json</code>)</h3>
@@ -311,8 +311,8 @@ USER     /Users/aj/.claude/settings.json
       <span class="tok-string">"path"</span>: <span class="tok-string">".claude/settings.json"</span>,
       <span class="tok-string">"exists"</span>: <span class="tok-keyword">true</span>,
       <span class="tok-string">"entries"</span>: [
-        { <span class="tok-string">"kind"</span>: <span class="tok-string">"statusLine"</span>, <span class="tok-string">"command"</span>: <span class="tok-string">"botctrl claude status-line"</span> },
-        { <span class="tok-string">"kind"</span>: <span class="tok-string">"hook"</span>, <span class="tok-string">"event"</span>: <span class="tok-string">"PostToolUse"</span>, <span class="tok-string">"matcher"</span>: <span class="tok-string">"Write|Edit"</span>, <span class="tok-string">"command"</span>: <span class="tok-string">"botctrl claude --log hook post-tool-use"</span> }
+        { <span class="tok-string">"kind"</span>: <span class="tok-string">"statusLine"</span>, <span class="tok-string">"command"</span>: <span class="tok-string">"scut claude status-line"</span> },
+        { <span class="tok-string">"kind"</span>: <span class="tok-string">"hook"</span>, <span class="tok-string">"event"</span>: <span class="tok-string">"PostToolUse"</span>, <span class="tok-string">"matcher"</span>: <span class="tok-string">"Write|Edit"</span>, <span class="tok-string">"command"</span>: <span class="tok-string">"scut claude --log hook post-tool-use"</span> }
       ]
     },
     { <span class="tok-string">"scope"</span>: <span class="tok-string">"user"</span>, <span class="tok-string">"path"</span>: <span class="tok-string">"/Users/aj/.claude/settings.json"</span>, <span class="tok-string">"exists"</span>: <span class="tok-keyword">false</span>, <span class="tok-string">"entries"</span>: [] }
@@ -324,7 +324,7 @@ USER     /Users/aj/.claude/settings.json
     <section id="settings-model">
       <h2><span class="section-anchor">// 06</span>Settings Model</h2>
 
-      <p>The Go model for <code>settings.json</code> needs three properties: type safety on the keys botctrl owns, lossless round-tripping of keys botctrl does not own, and deterministic output for diff-friendly file writes.</p>
+      <p>The Go model for <code>settings.json</code> needs three properties: type safety on the keys scut owns, lossless round-tripping of keys scut does not own, and deterministic output for diff-friendly file writes.</p>
 
       <p><code>encoding/json/v2</code> with the <code>inline</code> tag option gives us exactly this. The inlined field acts as a fallback for every top-level key not directly handled by the parent struct.</p>
 
@@ -343,7 +343,7 @@ USER     /Users/aj/.claude/settings.json
     json <span class="tok-string">"encoding/json/v2"</span>
 )
 
-<span class="tok-comment">// Settings is the subset of Claude Code's settings.json that botctrl manipulates.</span>
+<span class="tok-comment">// Settings is the subset of Claude Code's settings.json that scut manipulates.</span>
 <span class="tok-comment">// Foreign top-level keys round-trip through the Foreign field.</span>
 <span class="tok-keyword">type</span> <span class="tok-type">Settings</span> <span class="tok-keyword">struct</span> {
     StatusLine *<span class="tok-type">StatusLine</span>             `json:<span class="tok-string">"statusLine,omitzero"</span>`
@@ -407,7 +407,7 @@ USER     /Users/aj/.claude/settings.json
 
       <table class="fields">
         <thead>
-          <tr><th>Region of settings.json</th><th>botctrl owns?</th><th>Behavior on install / uninstall</th></tr>
+          <tr><th>Region of settings.json</th><th>scut owns?</th><th>Behavior on install / uninstall</th></tr>
         </thead>
         <tbody>
           <tr>
@@ -416,31 +416,31 @@ USER     /Users/aj/.claude/settings.json
             <td class="note">Round-tripped verbatim via <code>Foreign map[string]jsontext.Value</code></td>
           </tr>
           <tr>
-            <td class="field"><code>statusLine</code> when its <code>command</code> starts with <code>botctrl&nbsp;</code></td>
+            <td class="field"><code>statusLine</code> when its <code>command</code> starts with <code>scut&nbsp;</code></td>
             <td class="type">yes</td>
-            <td class="note">install: replaces with botctrl's entry. uninstall: deletes the <code>statusLine</code> key.</td>
+            <td class="note">install: replaces with scut's entry. uninstall: deletes the <code>statusLine</code> key.</td>
           </tr>
           <tr>
-            <td class="field"><code>statusLine</code> when its <code>command</code> does not start with <code>botctrl&nbsp;</code></td>
+            <td class="field"><code>statusLine</code> when its <code>command</code> does not start with <code>scut&nbsp;</code></td>
             <td class="type">no</td>
             <td class="note">install: <strong>refuses</strong> with <code>ErrForeignStatusLine</code>. The user must explicitly remove it or pass <code>--only</code> excluding <code>status-line</code>. uninstall: leaves alone.</td>
           </tr>
           <tr>
-            <td class="field"><code>hooks[Event][i]</code> where every inner <code>hooks[].command</code> starts with <code>botctrl&nbsp;</code></td>
+            <td class="field"><code>hooks[Event][i]</code> where every inner <code>hooks[].command</code> starts with <code>scut&nbsp;</code></td>
             <td class="type">yes</td>
             <td class="note">install: replaces the group. uninstall: removes the group.</td>
           </tr>
           <tr>
             <td class="field"><code>hooks[Event][i]</code> where any inner <code>hooks[].command</code> is foreign</td>
             <td class="type">no</td>
-            <td class="note">Round-tripped verbatim. install inserts botctrl's own group as a separate element rather than touching the foreign one. uninstall ignores it.</td>
+            <td class="note">Round-tripped verbatim. install inserts scut's own group as a separate element rather than touching the foreign one. uninstall ignores it.</td>
           </tr>
         </tbody>
       </table>
 
-      <h3>The <code>botctrl&nbsp;</code> prefix test</h3>
+      <h3>The <code>scut&nbsp;</code> prefix test</h3>
 
-      <p>A command string is "botctrl-owned" if and only if, after trimming leading whitespace, it equals <code>botctrl</code> or starts with <code>botctrl</code> followed by a space or tab. This rejects commands like <code>not-botctrl ...</code> and <code>botctrlsomething</code> while accepting <code>botctrl claude hook post-tool-use</code> and <code>botctrl claude --log hook post-tool-use</code>.</p>
+      <p>A command string is "scut-owned" if and only if, after trimming leading whitespace, it equals <code>scut</code> or starts with <code>scut</code> followed by a space or tab. This rejects commands like <code>not-scut ...</code> and <code>scutsomething</code> while accepting <code>scut claude hook post-tool-use</code> and <code>scut claude --log hook post-tool-use</code>.</p>
 
       <div class="code-frame">
         <div class="code-titlebar">
@@ -448,13 +448,13 @@ USER     /Users/aj/.claude/settings.json
           <span class="filename">internal/cmd/claude/config/ownership<span class="ext">.go</span></span>
           <span class="langtag">GO</span>
         </div>
-<pre><span class="tok-comment">// owns reports whether command is a botctrl invocation we should manage.</span>
+<pre><span class="tok-comment">// owns reports whether command is a scut invocation we should manage.</span>
 <span class="tok-keyword">func</span> owns(command <span class="tok-type">string</span>) <span class="tok-type">bool</span> {
     c := strings.TrimLeft(command, <span class="tok-string">" \t"</span>)
-    <span class="tok-keyword">if</span> c == <span class="tok-string">"botctrl"</span> {
+    <span class="tok-keyword">if</span> c == <span class="tok-string">"scut"</span> {
         <span class="tok-keyword">return</span> <span class="tok-number">true</span>
     }
-    <span class="tok-keyword">return</span> strings.HasPrefix(c, <span class="tok-string">"botctrl "</span>) || strings.HasPrefix(c, <span class="tok-string">"botctrl\t"</span>)
+    <span class="tok-keyword">return</span> strings.HasPrefix(c, <span class="tok-string">"scut "</span>) || strings.HasPrefix(c, <span class="tok-string">"scut\t"</span>)
 }</pre>
       </div>
 
@@ -466,7 +466,7 @@ USER     /Users/aj/.claude/settings.json
         <li><strong>Indent:</strong> two spaces.</li>
         <li><strong>Trailing newline:</strong> file ends with a single <code>\n</code>.</li>
         <li><strong>Top-level key order:</strong> determined by <code>json.Deterministic(true)</code> — typed fields first (struct order: <code>statusLine</code>, <code>hooks</code>), then every key of <code>Foreign</code> in sorted order.</li>
-        <li><strong><code>hooks</code> entry order:</strong> event-name keys are written in sorted order (deterministic mode sorts maps). Inside each event's array, botctrl's own group is always at index 0; foreign groups follow in their original relative order.</li>
+        <li><strong><code>hooks</code> entry order:</strong> event-name keys are written in sorted order (deterministic mode sorts maps). Inside each event's array, scut's own group is always at index 0; foreign groups follow in their original relative order.</li>
         <li><strong><code>HookGroup.Hooks</code> order:</strong> as written in the registry — one entry per event.</li>
       </ul>
     </section>
@@ -485,7 +485,7 @@ USER     /Users/aj/.claude/settings.json
 <pre>{
   <span class="tok-string">"statusLine"</span>: {
     <span class="tok-string">"type"</span>: <span class="tok-string">"command"</span>,
-    <span class="tok-string">"command"</span>: <span class="tok-string">"botctrl claude status-line"</span>
+    <span class="tok-string">"command"</span>: <span class="tok-string">"scut claude status-line"</span>
   }
 }</pre>
       </div>
@@ -508,7 +508,7 @@ USER     /Users/aj/.claude/settings.json
         <span class="tok-string">"hooks"</span>: [
           {
             <span class="tok-string">"type"</span>: <span class="tok-string">"command"</span>,
-            <span class="tok-string">"command"</span>: <span class="tok-string">"botctrl claude hook post-tool-use"</span>,
+            <span class="tok-string">"command"</span>: <span class="tok-string">"scut claude hook post-tool-use"</span>,
             <span class="tok-string">"statusMessage"</span>: <span class="tok-string">"Formatting..."</span>
           }
         ]
@@ -518,7 +518,7 @@ USER     /Users/aj/.claude/settings.json
       {
         <span class="tok-string">"matcher"</span>: <span class="tok-string">"*"</span>,
         <span class="tok-string">"hooks"</span>: [
-          { <span class="tok-string">"type"</span>: <span class="tok-string">"command"</span>, <span class="tok-string">"command"</span>: <span class="tok-string">"botctrl claude hook session-start"</span> }
+          { <span class="tok-string">"type"</span>: <span class="tok-string">"command"</span>, <span class="tok-string">"command"</span>: <span class="tok-string">"scut claude hook session-start"</span> }
         ]
       }
     ]
@@ -537,7 +537,7 @@ USER     /Users/aj/.claude/settings.json
           <span class="langtag">GO</span>
         </div>
 <pre><span class="tok-comment">// hookSpec describes one row in the install registry.</span>
-<span class="tok-comment">// Slug is the --only token AND the leaf command name under "botctrl claude hook".</span>
+<span class="tok-comment">// Slug is the --only token AND the leaf command name under "scut claude hook".</span>
 <span class="tok-comment">// Event is Claude Code's event-name key in settings.json.</span>
 <span class="tok-keyword">type</span> <span class="tok-type">hookSpec</span> <span class="tok-keyword">struct</span> {
     Slug          <span class="tok-type">string</span>
@@ -589,13 +589,13 @@ USER     /Users/aj/.claude/settings.json
           <span class="filename">command-template<span class="ext">.txt</span></span>
           <span class="langtag">ASCII</span>
         </div>
-<pre>Hook:        botctrl claude [--log | --log-level=LEVEL] hook &lt;slug&gt;
-Status line: botctrl claude [--log | --log-level=LEVEL] status-line</pre>
+<pre>Hook:        scut claude [--log | --log-level=LEVEL] hook &lt;slug&gt;
+Status line: scut claude [--log | --log-level=LEVEL] status-line</pre>
       </div>
 
       <ul>
         <li><code>--log-level</code> implies <code>--log</code>: emit <code>--log-level=LEVEL</code> alone (matches <code>claude.go</code>'s <code>resolveLevel</code>; <code>--log</code> would be redundant).</li>
-        <li>Neither flag set: omit both — bare <code>botctrl claude hook &lt;slug&gt;</code>.</li>
+        <li>Neither flag set: omit both — bare <code>scut claude hook &lt;slug&gt;</code>.</li>
         <li><code>--log</code> alone: emit <code>--log</code>.</li>
       </ul>
     </section>
@@ -664,8 +664,8 @@ Status line: botctrl claude [--log | --log-level=LEVEL] status-line</pre>
           <span class="langtag">GO</span>
         </div>
 <pre><span class="tok-comment">// ErrForeignStatusLine is returned by install when settings.json already</span>
-<span class="tok-comment">// has a statusLine entry whose command does not start with "botctrl ".</span>
-<span class="tok-keyword">var</span> ErrForeignStatusLine = errors.New(<span class="tok-string">"settings.json has a non-botctrl statusLine"</span>)
+<span class="tok-comment">// has a statusLine entry whose command does not start with "scut ".</span>
+<span class="tok-keyword">var</span> ErrForeignStatusLine = errors.New(<span class="tok-string">"settings.json has a non-scut statusLine"</span>)
 
 <span class="tok-comment">// ErrUnknownOnlyToken is returned when --only contains a token that is</span>
 <span class="tok-comment">// neither a registered hook slug nor the literal "status-line".</span>
@@ -775,17 +775,17 @@ Status line: botctrl claude [--log | --log-level=LEVEL] status-line</pre>
       <p>Deliberately out of scope for this iteration:</p>
 
       <ul>
-        <li><strong>Absolute paths in generated commands.</strong> The generated <code>command</code> string is always bare <code>botctrl ...</code>, never <code>/usr/local/bin/botctrl ...</code>. Users who need an absolute path can hand-edit; absolute-path detection in <code>owns()</code> is reserved for a future iteration.</li>
-        <li><strong>Migrating existing user settings.</strong> If a user has a hand-written settings.json with non-botctrl <code>statusLine</code>, <code>install</code> refuses rather than rewriting.</li>
+        <li><strong>Absolute paths in generated commands.</strong> The generated <code>command</code> string is always bare <code>scut ...</code>, never <code>/usr/local/bin/scut ...</code>. Users who need an absolute path can hand-edit; absolute-path detection in <code>owns()</code> is reserved for a future iteration.</li>
+        <li><strong>Migrating existing user settings.</strong> If a user has a hand-written settings.json with non-scut <code>statusLine</code>, <code>install</code> refuses rather than rewriting.</li>
         <li><strong>Per-event matcher customization via CLI.</strong> The matcher for each event is hard-coded in <code>hookSpecs</code> (e.g. <code>Write|Edit</code> for PostToolUse). Custom matchers require a code change to the registry, not a CLI flag.</li>
         <li><strong>Watching settings.json for drift.</strong> No file watcher; <code>status</code> is a point-in-time read.</li>
         <li><strong>Restoring from backup.</strong> <code>install</code> does not create a <code>settings.json.bak</code>. Users versioning <code>.claude/settings.json</code> in git get the same benefit for free.</li>
-        <li><strong>Validating that <code>botctrl</code> is on PATH.</strong> The generated command assumes <code>botctrl</code> is discoverable when Claude Code spawns the subprocess.</li>
+        <li><strong>Validating that <code>scut</code> is on PATH.</strong> The generated command assumes <code>scut</code> is discoverable when Claude Code spawns the subprocess.</li>
       </ul>
     </section>
 
     <footer>
-      <span class="blink">botctrl</span>
+      <span class="blink">scut</span>
       <span>config-command · claude config</span>
     </footer>
 

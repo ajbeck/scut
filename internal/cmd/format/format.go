@@ -6,10 +6,10 @@ import (
 	"io"
 	"os"
 
-	"github.com/ajbeck/botctrl/internal/format"
+	"github.com/ajbeck/scut/internal/format"
 )
 
-// Cmd is the Kong command group for "botctrl format".
+// Cmd is the Kong command group for "scut format".
 type Cmd struct {
 	Go       goCmd       `cmd:"go" help:"Format Go source files. Reads from stdin if no files specified."`
 	Markdown markdownCmd `cmd:"markdown" help:"Format Markdown files. Reads from stdin if no files specified."`

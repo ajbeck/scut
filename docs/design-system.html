@@ -122,29 +122,25 @@
       <p>Every page is the same three-region shell: a sticky rail on the left, a hero header, and a stack of numbered sections. The footer is one line.</p>
 
       <figure class="diagram">
-        <svg id="diagram-anatomy" viewBox="0 0 760 500" role="img" aria-labelledby="anatomy-title anatomy-desc" preserveAspectRatio="xMidYMid meet">
+        <svg viewBox="0 0 760 500" role="img" aria-labelledby="anatomy-title anatomy-desc" preserveAspectRatio="xMidYMid meet">
           <title id="anatomy-title">Page layout anatomy</title>
           <desc id="anatomy-desc">Schematic of a botctrl docs page: sticky rail on the left containing project label, page name with live dot, numbered table of contents, and theme switcher. Main column on the right containing hero with badges, moniker, lede and stats, followed by numbered sections containing primitives, and a single-line footer.</desc>
           <style>
-            /* All selectors scoped under #diagram-anatomy so the SVG style block
-               does not leak into the host document (SVG <style> is document-scoped
-               by default, which would otherwise let .moniker and .num here clash
-               with the page's .moniker and .stat .num). */
-            #diagram-anatomy .frame      { fill: var(--bg); stroke: var(--rule); stroke-width: 1; }
-            #diagram-anatomy .rail-bg    { fill: var(--bg-sunk); }
-            #diagram-anatomy .divider    { stroke: var(--rule); stroke-width: 1; }
-            #diagram-anatomy .label      { font: 10px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg-mute); letter-spacing: 0.08em; }
-            #diagram-anatomy .label-mute { font: 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg-dim); letter-spacing: 0.10em; text-transform: uppercase; }
-            #diagram-anatomy .label-strong { font: 600 11px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg); }
-            #diagram-anatomy .num        { font: 600 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--primary); }
-            #diagram-anatomy .anchor     { font: 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--primary); }
-            #diagram-anatomy .moniker    { font: 700 20px "Charter","Iowan Old Style","Source Serif Pro",Georgia,serif; fill: var(--fg); }
-            #diagram-anatomy .bracket    { font: 700 20px "Charter","Iowan Old Style","Source Serif Pro",Georgia,serif; fill: var(--fg-dim); }
-            #diagram-anatomy .heading    { font: 600 13px "Charter","Iowan Old Style","Source Serif Pro",Georgia,serif; fill: var(--fg); }
-            #diagram-anatomy .stat-num   { font: 700 18px "Charter","Iowan Old Style","Source Serif Pro",Georgia,serif; fill: var(--fg); }
-            #diagram-anatomy .skeleton   { fill: var(--rule-soft); }
-            #diagram-anatomy .annotation { font: 600 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg-dim); letter-spacing: 0.10em; text-transform: uppercase; }
-            #diagram-anatomy .callout-tint { fill: color-mix(in srgb, var(--type) 8%, var(--bg)); }
+            .frame      { fill: var(--bg); stroke: var(--rule); stroke-width: 1; }
+            .rail-bg    { fill: var(--bg-sunk); }
+            .divider    { stroke: var(--rule); stroke-width: 1; }
+            .label      { font: 10px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg-mute); letter-spacing: 0.08em; }
+            .label-mute { font: 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg-dim); letter-spacing: 0.10em; text-transform: uppercase; }
+            .label-strong { font: 600 11px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg); }
+            .num        { font: 600 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--primary); }
+            .anchor     { font: 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--primary); }
+            .moniker    { font: 700 20px "Charter","Iowan Old Style","Source Serif Pro",Georgia,serif; fill: var(--fg); }
+            .bracket    { font: 700 20px "Charter","Iowan Old Style","Source Serif Pro",Georgia,serif; fill: var(--fg-dim); }
+            .heading    { font: 600 13px "Charter","Iowan Old Style","Source Serif Pro",Georgia,serif; fill: var(--fg); }
+            .stat-num   { font: 700 18px "Charter","Iowan Old Style","Source Serif Pro",Georgia,serif; fill: var(--fg); }
+            .skeleton   { fill: var(--rule-soft); }
+            .annotation { font: 600 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg-dim); letter-spacing: 0.10em; text-transform: uppercase; }
+            .callout-tint { fill: color-mix(in srgb, var(--type) 8%, var(--bg)); }
           </style>
 
           <!-- Outer page frame -->
@@ -703,25 +699,24 @@ cp botctrl/docs/botctrl-docs.js   yourproject/docs/yourproject-docs.js</pre>
       <p>The CSS defines nine accent palettes plus a slate palette, each with ten shades from 50 (lightest) to 950 (darkest). They are deliberately broad so a page can lean on a colour family — e.g. mint for "ok / clean" indicators — without having to redefine local variables.</p>
 
       <figure class="diagram">
-        <svg id="diagram-palette" viewBox="0 0 760 470" role="img" aria-labelledby="palette-title palette-desc" preserveAspectRatio="xMidYMid meet">
+        <svg viewBox="0 0 760 470" role="img" aria-labelledby="palette-title palette-desc" preserveAspectRatio="xMidYMid meet">
           <title id="palette-title">Colour palette swatches</title>
           <desc id="palette-desc">Each row shows one palette family with five representative shades (100, 300, 500, 700, 900) and a usage note. Coral is the primary accent; sunshine highlights selections; sky tints type and note callouts; mint marks success and the live dot; violet colours keywords in code; tangerine colours numbers and INI sections; bubblegum and lagoon are reserved accents; slate provides body type and rules.</desc>
           <style>
-            /* Scoped — see comment on #diagram-anatomy's style block. */
-            #diagram-palette .pal-name { font: 600 12px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg); }
-            #diagram-palette .pal-role { font: 10px "Charter","Iowan Old Style",Georgia,serif; fill: var(--fg-mute); font-style: italic; }
-            #diagram-palette .shade    { font: 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg-dim); text-anchor: middle; letter-spacing: 0.04em; }
-            #diagram-palette .swatch   { stroke: var(--rule); stroke-width: 0.5; }
-            #diagram-palette .col-head { font: 600 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg-dim); text-anchor: middle; letter-spacing: 0.14em; text-transform: uppercase; }
+            .pal-name  { font: 600 12px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg); }
+            .pal-role  { font: 10px "Charter","Iowan Old Style",Georgia,serif; fill: var(--fg-mute); font-style: italic; }
+            .shade     { font: 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg-dim); text-anchor: middle; letter-spacing: 0.04em; }
+            .swatch    { stroke: var(--rule); stroke-width: 0.5; }
+            .header    { font: 600 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg-dim); text-anchor: middle; letter-spacing: 0.14em; text-transform: uppercase; }
           </style>
 
           <!-- Shade column headers -->
-          <text x="260" y="14" class="col-head">100</text>
-          <text x="338" y="14" class="col-head">300</text>
-          <text x="416" y="14" class="col-head">500</text>
-          <text x="494" y="14" class="col-head">700</text>
-          <text x="572" y="14" class="col-head">900</text>
-          <text x="668" y="14" class="col-head">role</text>
+          <text x="260" y="14" class="header">100</text>
+          <text x="338" y="14" class="header">300</text>
+          <text x="416" y="14" class="header">500</text>
+          <text x="494" y="14" class="header">700</text>
+          <text x="572" y="14" class="header">900</text>
+          <text x="668" y="14" class="header">role</text>
 
           <!-- Row template: y starts at 28, height 40, gap 4 -->
           <!-- coral -->

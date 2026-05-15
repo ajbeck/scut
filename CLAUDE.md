@@ -64,6 +64,7 @@ Implementation docs live in `docs/` as standalone HTML files styled by the share
 | [post-tool-use.html](docs/post-tool-use.html)                 | PostToolUse hook deep-dive — input/output fields, decision control, MCP output replacement, code locations             |
 | [status-line.html](docs/status-line.html)                     | Status line command — colour palette, formatting, go-git integration, available input fields                           |
 | [logging.html](docs/logging.html)                             | Structured JSONL logging — flags, file layout, rotation, standardized fields, clean command                            |
+| [design-system.html](docs/design-system.html)                 | The docs design system itself — page anatomy, primitives (rail, hero, code frames, callouts, steps), colour tokens, theming, voice, and how other projects can adopt the pattern |
 
 ### Commit-time documentation check
 
@@ -74,6 +75,7 @@ Implementation docs live in `docs/` as standalone HTML files styled by the share
 - `internal/cmd/claude/hook/posttooluse.go` or `PostToolUseInput`/`PostToolUseOutput` changes → review `post-tool-use.html`
 - `internal/cmd/claude/statusline.go` or `hooks/claudecode/statusline.go` changes → review `status-line.html`
 - `internal/logging/**` or `internal/cmd/logging/**` or `--log`/`--log-level` flag changes → review `logging.html`
+- `docs/botctrl-docs.css` or `docs/botctrl-docs.js` changes → review `design-system.html` (class names and conventions documented there)
 - Any new `docs/*.html` documentation file → add it to the index table above
 
 If a matching document exists and the commit changes behavior it describes (new bindings, new command groups, changed struct tags, altered command tree layout), update the HTML to reflect the current state **in the same commit**.

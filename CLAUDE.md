@@ -42,6 +42,7 @@ Target version is **Go 1.26**. Use these features where appropriate:
 | `mage vet` | Run `go vet` across all packages |
 | `mage fmt` | Run `gofmt -w` on all source files |
 | `mage localDeploy` | Build and copy binary to local bin directory |
+| `mage docsStandalone` | Regenerate `docs/design-system-standalone.html` by inlining CSS/JS into the source HTML |
 
 This applies to all contexts: manual terminal use, CI, agent tool calls, and hook scripts. If you need to run tests for a single package, use `mage test` — do not construct a `go test` invocation yourself.
 
@@ -65,6 +66,7 @@ Implementation docs live in `docs/` as standalone HTML files styled by the share
 | [status-line.html](docs/status-line.html)                     | Status line command — colour palette, formatting, go-git integration, available input fields                           |
 | [logging.html](docs/logging.html)                             | Structured JSONL logging — flags, file layout, rotation, standardized fields, clean command                            |
 | [design-system.html](docs/design-system.html)                 | The docs design system itself — page anatomy, primitives (rail, hero, code frames, callouts, steps), colour tokens, theming, voice, and how other projects can adopt the pattern |
+| [design-system-standalone.html](docs/design-system-standalone.html) | Single-file shareable edition of `design-system.html` with CSS and JS inlined. Generated — do not hand-edit; run `mage docsStandalone` after changing the source HTML, CSS, or JS |
 
 ### Commit-time documentation check
 
@@ -75,7 +77,8 @@ Implementation docs live in `docs/` as standalone HTML files styled by the share
 - `internal/cmd/claude/hook/posttooluse.go` or `PostToolUseInput`/`PostToolUseOutput` changes → review `post-tool-use.html`
 - `internal/cmd/claude/statusline.go` or `hooks/claudecode/statusline.go` changes → review `status-line.html`
 - `internal/logging/**` or `internal/cmd/logging/**` or `--log`/`--log-level` flag changes → review `logging.html`
-- `docs/botctrl-docs.css` or `docs/botctrl-docs.js` changes → review `design-system.html` (class names and conventions documented there)
+- `docs/botctrl-docs.css` or `docs/botctrl-docs.js` changes → review `design-system.html` (class names and conventions documented there), then run `mage docsStandalone` to refresh `design-system-standalone.html`
+- `docs/design-system.html` changes → run `mage docsStandalone` in the same commit to refresh the standalone edition
 - Any new `docs/*.html` documentation file → add it to the index table above
 
 If a matching document exists and the commit changes behavior it describes (new bindings, new command groups, changed struct tags, altered command tree layout), update the HTML to reflect the current state **in the same commit**.

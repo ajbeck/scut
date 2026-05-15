@@ -1,0 +1,1820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Docs Design System (Standalone) — botctrl</title>
+<style>
+/* ================================================================
+   botctrl Docs — editorial design system
+   "Tea & Code": warm paper, sharp serif body, dark code as inset
+   notes, playful palette as printer's ink accents.
+   ================================================================ */
+
+:root {
+  color-scheme: light dark;
+
+  /* Palette tokens. Use sparingly — color is punctuation here. */
+  --coral-50:  #FFF0ED; --coral-100: #FFDDD6; --coral-200: #FFB3A3; --coral-300: #FF8A6F;
+  --coral-400: #FF6347; --coral-500: #E8452C; --coral-600: #C43420; --coral-700: #9A2718;
+  --coral-800: #741D12; --coral-900: #50130D; --coral-950: #300B07;
+
+  --sunshine-50:  #FFFCE5; --sunshine-100: #FFF8BF; --sunshine-200: #FFF080; --sunshine-300: #FFE433;
+  --sunshine-400: #FFD700; --sunshine-500: #E5BF00; --sunshine-600: #BF9F00; --sunshine-700: #997F00;
+  --sunshine-800: #736000; --sunshine-900: #4D4000; --sunshine-950: #2E2600;
+
+  --sky-50:  #E8F4FF; --sky-100: #CCE7FF; --sky-200: #99CFFF; --sky-300: #5CB3FF;
+  --sky-400: #2196F5; --sky-500: #0A7EDB; --sky-600: #0066B8; --sky-700: #004F8F;
+  --sky-800: #003B6B; --sky-900: #002949; --sky-950: #00182B;
+
+  --mint-50:  #E6FFF3; --mint-100: #C0FFE0; --mint-200: #80FFC2; --mint-300: #33F59A;
+  --mint-400: #00D97F; --mint-500: #00B86B; --mint-600: #009959; --mint-700: #007A47;
+  --mint-800: #005C35; --mint-900: #003D24; --mint-950: #002415;
+
+  --violet-50:  #F3EDFF; --violet-100: #E2D5FF; --violet-200: #C6ABFF; --violet-300: #A47DFF;
+  --violet-400: #8B5CF6; --violet-500: #7342DB; --violet-600: #5E33B8; --violet-700: #49278F;
+  --violet-800: #371D6B; --violet-900: #251349; --violet-950: #160B2B;
+
+  --tangerine-50:  #FFF4E5; --tangerine-100: #FFE4BF; --tangerine-200: #FFC880; --tangerine-300: #FFA833;
+  --tangerine-400: #FF9500; --tangerine-500: #E58000; --tangerine-600: #BF6A00; --tangerine-700: #995500;
+  --tangerine-800: #733F00; --tangerine-900: #4D2A00; --tangerine-950: #2E1900;
+
+  --bubblegum-50:  #FFF0F8; --bubblegum-100: #FFDBEE; --bubblegum-200: #FFB3DB; --bubblegum-300: #FF80C5;
+  --bubblegum-400: #FF47AE; --bubblegum-500: #E52D94; --bubblegum-600: #BF2079; --bubblegum-700: #991661;
+  --bubblegum-800: #731049; --bubblegum-900: #4D0B31; --bubblegum-950: #2E061D;
+
+  --lagoon-50:  #E5FFFC; --lagoon-100: #B3FFF5; --lagoon-200: #66FFEB; --lagoon-300: #1AE8D5;
+  --lagoon-400: #00CCB8; --lagoon-500: #00AD9E; --lagoon-600: #008F83; --lagoon-700: #007068;
+  --lagoon-800: #00544E; --lagoon-900: #003935; --lagoon-950: #002220;
+
+  --slate-50:  #F8F9FA; --slate-100: #F1F3F5; --slate-200: #E2E5E9; --slate-300: #C8CDD3;
+  --slate-400: #A1A9B3; --slate-500: #6C757D; --slate-600: #545B62; --slate-700: #40464C;
+  --slate-800: #2D3238; --slate-900: #1A1E23; --slate-950: #0D0F12;
+
+  --success-300: #5CF58A; --success-500: #10B845; --success-700: #07742A;
+  --warning-300: #FCBF3C; --warning-500: #D4920B; --warning-700: #8C6007;
+  --error-300:   #FF6B6B; --error-500:   #D42020; --error-700:   #881212;
+}
+
+/* ----------------------------------------------------------------
+   Theme: light "tea paper" default, dark variant via @media.
+   Code blocks stay dark in both modes — they're the inset voice.
+   ---------------------------------------------------------------- */
+:root {
+  --bg:           #FAF7F0;          /* warm cream paper */
+  --bg-sunk:     #EFE9DA;          /* deeper than paper, visibly distinct for cards */
+  --bg-code:     #1A1E23;          /* slate-900-ish: code is always dark */
+  --bg-code-bar: #14181D;          /* code titlebar */
+  --fg:          #2D3238;          /* charcoal, not pure black */
+  --fg-mute:     #545B62;
+  --fg-dim:      #8a929b;
+  --rule:        #DAD2BD;          /* warm hairline, slightly deeper */
+  --rule-soft:   #E8E1CD;
+  --primary:     var(--coral-600); /* deeper coral for ink-on-paper contrast */
+  --primary-deep: var(--coral-700);
+  --primary-soft: rgba(228, 76, 44, 0.14);  /* visible chip background */
+  --primary-edge: rgba(228, 76, 44, 0.20);  /* faint hairline around chips */
+  --type:        var(--sky-700);
+  --keyword:     var(--violet-700);
+  --string:      var(--mint-700);
+  --number:      var(--tangerine-700);
+  --comment:     var(--slate-500);
+  --aws-accent:  var(--tangerine-600);
+  --decision:    var(--sunshine-700);
+  --success:     var(--success-700);
+  --warning:     var(--warning-700);
+  --error:       var(--error-700);
+
+  /* Token colors used INSIDE dark code blocks — lighter variants for contrast on dark */
+  --code-fg:       #E8E5DA;
+  --code-fg-mute:  #9aa2ab;
+  --tok-keyword:   var(--violet-300);
+  --tok-type:      var(--sky-300);
+  --tok-string:    var(--mint-300);
+  --tok-number:    var(--tangerine-300);
+  --tok-comment:   #6a7079;
+  --tok-ini-section: var(--tangerine-400);
+  --tok-ini-key:     var(--sky-300);
+  --tok-ini-value:   var(--mint-300);
+}
+
+/* Dark theme values. Applied when EITHER:
+   - <html data-theme="dark"> is set explicitly (by botctrl-docs.js), OR
+   - no [data-theme] attribute is present AND the OS is in dark mode
+     (the JS-disabled fallback path). */
+:root[data-theme="dark"] {
+  --bg:          #15171B;
+  --bg-sunk:    #1C1F24;
+  --fg:         #E8E5DA;
+  --fg-mute:    #A8A8A2;
+  --fg-dim:     #6C6F76;
+  --rule:       #2B2F36;
+  --rule-soft:  #1F2329;
+  --primary:    var(--coral-300);
+  --primary-deep: var(--coral-200);
+  --primary-soft: rgba(255, 138, 111, 0.16);
+  --primary-edge: rgba(255, 138, 111, 0.28);
+  --type:       var(--sky-300);
+  --keyword:    var(--violet-300);
+  --string:     var(--mint-300);
+  --number:     var(--tangerine-300);
+  --aws-accent: var(--tangerine-400);
+  --decision:   var(--sunshine-300);
+  --success:    var(--success-300);
+  --warning:    var(--warning-300);
+  --error:      var(--error-300);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --bg:          #15171B;
+    --bg-sunk:    #1C1F24;
+    --fg:         #E8E5DA;
+    --fg-mute:    #A8A8A2;
+    --fg-dim:     #6C6F76;
+    --rule:       #2B2F36;
+    --rule-soft:  #1F2329;
+    --primary:    var(--coral-300);
+    --primary-deep: var(--coral-200);
+    --primary-soft: rgba(255, 138, 111, 0.16);
+    --primary-edge: rgba(255, 138, 111, 0.28);
+    --type:       var(--sky-300);
+    --keyword:    var(--violet-300);
+    --string:     var(--mint-300);
+    --number:     var(--tangerine-300);
+    --aws-accent: var(--tangerine-400);
+    --decision:   var(--sunshine-300);
+    --success:    var(--success-300);
+    --warning:    var(--warning-300);
+    --error:      var(--error-300);
+  }
+}
+
+/* ----------------------------------------------------------------
+   Base
+   ---------------------------------------------------------------- */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "Charter", "Iowan Old Style", "Source Serif Pro", "Hoefler Text", "Palatino", Georgia, ui-serif, serif;
+  font-size: 17px;
+  line-height: 1.72;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern", "liga", "onum";
+}
+
+::selection { background: var(--sunshine-200); color: var(--fg); }
+@media (prefers-color-scheme: dark) { ::selection { background: var(--sunshine-800); color: var(--fg); } }
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--primary) 25%, transparent);
+  transition: border-color 120ms ease, color 120ms ease;
+}
+a:hover { border-bottom-color: var(--primary); color: var(--primary-deep); }
+
+/* Monospace gets a tightly-controlled stack everywhere it appears */
+code, pre, kbd, samp,
+.mono, .term-prompt, .badge, .tag,
+h1 .moniker, .section-anchor, .toc-link, .toc-num,
+.tok-keyword, .tok-type, .tok-string, .tok-number, .tok-comment,
+.signature, .field, .ini-section, .ini-key, .ini-value, .err-case {
+  font-family: "Berkeley Mono", "JetBrains Mono", "IBM Plex Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  font-feature-settings: "ss01", "ss02", "calt", "zero";
+}
+
+/* ----------------------------------------------------------------
+   Layout
+   ---------------------------------------------------------------- */
+.layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  max-width: 1600px;
+  margin: 0 auto;
+  min-height: 100vh;
+}
+
+aside.rail {
+  border-right: 1px solid var(--rule);
+  padding: 3rem 1.5rem 4rem 2rem;
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  overflow-y: auto;
+}
+aside.rail::-webkit-scrollbar { width: 4px; }
+aside.rail::-webkit-scrollbar-track { background: transparent; }
+aside.rail::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 2px; }
+
+.rail-title {
+  font-family: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  margin: 0 0 0.5rem;
+}
+.rail-product {
+  font-family: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.92rem;
+  color: var(--fg);
+  margin: 0 0 1.8rem;
+  display: flex; align-items: baseline; gap: 0.55rem;
+  line-height: 1.4;
+}
+.rail-product .live-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--success);
+  flex: 0 0 auto;
+  transform: translateY(-1px);
+  /* No glow, no animation — just a printed dot */
+}
+
+.toc { list-style: none; padding: 0; margin: 0; }
+.toc-section { margin: 0 0 1.4rem; }
+.toc-section-label {
+  font-family: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  margin: 0 0 0.5rem;
+}
+.toc-link {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  padding: 0.22rem 0;
+  color: var(--fg-mute);
+  font-size: 0.86rem;
+  border-bottom: none;
+  transition: color 120ms ease;
+  text-decoration: none;
+}
+.toc-link:hover { color: var(--primary); border-bottom: none; }
+.toc-num {
+  color: var(--fg-dim);
+  font-size: 0.68rem;
+  flex: 0 0 1.5rem;
+  text-align: right;
+}
+
+main {
+  padding: 4rem 4.5rem 8rem;
+  max-width: 1040px;
+  min-width: 0;
+}
+/* Keep prose paragraphs at a comfortable measure even as the column widens.
+   Block elements (code frames, tables, callouts, phase cards) get the full width. */
+main > section > p,
+main > section > ul,
+main > section > ol,
+main > section > .lede,
+main > section > h3 + p,
+.hero .lede {
+  max-width: 72ch;
+}
+@media (max-width: 1100px) {
+  .layout { grid-template-columns: 1fr; }
+  aside.rail {
+    position: static;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--rule);
+    padding: 2rem 1.5rem;
+  }
+  main { padding: 2.5rem 1.5rem 5rem; }
+}
+@media (max-width: 720px) {
+  main { padding: 2rem 1.2rem 4rem; }
+  body { font-size: 16px; }
+}
+
+/* ----------------------------------------------------------------
+   Hero — editorial, no box, no glow
+   ---------------------------------------------------------------- */
+.hero {
+  margin: 0 0 4rem;
+  padding: 0 0 2.5rem;
+  border-bottom: 1px solid var(--rule);
+}
+.hero-meta {
+  display: flex; flex-wrap: wrap; gap: 0.45rem;
+  margin: 0 0 2rem;
+}
+.badge {
+  display: inline-flex; align-items: center;
+  font-family: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  padding: 0.25rem 0.55rem;
+  border-radius: 2px;
+  border: 1px solid currentColor;
+  text-transform: lowercase;
+  background: color-mix(in srgb, currentColor 8%, var(--bg));
+}
+.badge.primary { color: var(--primary); }
+.badge.swift   { color: var(--tangerine-700); }
+.badge.macos   { color: var(--sky-700); }
+.badge.tests   { color: var(--success); }
+@media (prefers-color-scheme: dark) {
+  .badge.swift { color: var(--tangerine-300); }
+  .badge.macos { color: var(--sky-300); }
+}
+
+h1 {
+  font-family: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-weight: 600;
+  font-size: clamp(2.2rem, 5.5vw, 3.4rem);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  margin: 0 0 1.6rem;
+  color: var(--fg);
+}
+h1 .moniker { color: var(--primary); font-weight: 600; }
+h1 .moniker-bracket { color: var(--fg-dim); font-weight: 400; }
+
+.lede {
+  font-size: 1.2rem;
+  line-height: 1.55;
+  color: var(--fg-mute);
+  max-width: 56ch;
+  margin: 0 0 1.8rem;
+  font-style: italic;
+}
+
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.8rem 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px dashed var(--rule);
+}
+.stat .num {
+  font-family: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 1.4rem;
+  color: var(--primary);
+  font-weight: 500;
+  display: block;
+  line-height: 1.1;
+}
+.stat .label {
+  font-family: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  margin-top: 0.15rem;
+  display: block;
+}
+
+/* ----------------------------------------------------------------
+   Headings — calmer hierarchy
+   ---------------------------------------------------------------- */
+h2 {
+  font-family: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 4rem 0 1.2rem;
+  padding-top: 2.2rem;
+  border-top: 1px solid var(--rule);
+  color: var(--fg);
+  line-height: 1.25;
+}
+h2 .section-anchor {
+  color: var(--primary);
+  margin-right: 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  vertical-align: 0.18em;
+}
+
+h3 {
+  font-family: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 1.02rem;
+  font-weight: 600;
+  margin: 2.6rem 0 0.7rem;
+  color: var(--fg);
+  letter-spacing: -0.005em;
+}
+
+h4 {
+  font-family: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-mute);
+  margin: 1.8rem 0 0.5rem;
+  font-weight: 600;
+}
+
+p { margin: 0 0 1.05rem; }
+ul, ol { margin: 0 0 1.1rem; padding-left: 1.5rem; }
+li { margin: 0.3rem 0; }
+li::marker { color: var(--primary); }
+strong { font-weight: 600; color: var(--fg); }
+em { font-style: italic; color: var(--fg-mute); }
+
+/* ----------------------------------------------------------------
+   Inline code — soft tint, no border, contained.
+   Color tracks --primary-deep which shifts between light/dark modes.
+   ---------------------------------------------------------------- */
+p code, li code, td code, h2 code, h3 code, h4 code, a code {
+  background: var(--primary-soft);
+  color: var(--primary-deep);
+  padding: 0.1em 0.4em;
+  border-radius: 3px;
+  border: 1px solid var(--primary-edge);
+  font-size: 0.82em;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+
+/* ----------------------------------------------------------------
+   Code frames — dark "lab samples" inset into the prose
+   ---------------------------------------------------------------- */
+.code-frame {
+  margin: 1.5rem 0 1.8rem;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg-code);
+  border: 1px solid var(--bg-code);
+}
+.code-titlebar {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.55rem 0.9rem;
+  background: var(--bg-code-bar);
+  border-bottom: 1px solid #252A31;
+}
+.lights { display: flex; gap: 0.32rem; opacity: 0.6; }
+.lights span {
+  width: 9px; height: 9px; border-radius: 50%;
+}
+.lights .l1 { background: var(--coral-400); }
+.lights .l2 { background: var(--sunshine-400); }
+.lights .l3 { background: var(--mint-400); }
+.code-titlebar .filename {
+  color: #9aa2ab;
+  font-size: 0.74rem;
+  font-family: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace;
+  margin-left: 0.35rem;
+}
+.code-titlebar .filename .ext { color: var(--coral-300); }
+.code-titlebar .langtag {
+  margin-left: auto;
+  color: #6c7079;
+  font-family: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.64rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+pre {
+  margin: 0;
+  padding: 1rem 1.2rem 1.1rem;
+  overflow-x: auto;
+  color: var(--code-fg);
+  font-size: 0.82rem;
+  line-height: 1.65;
+  font-family: "Berkeley Mono", "JetBrains Mono", "IBM Plex Mono", "SF Mono", ui-monospace, monospace;
+  font-feature-settings: "ss01", "ss02";
+  tab-size: 4;
+}
+pre code { background: transparent; color: inherit; padding: 0; border: none; font-size: inherit; }
+
+/* Syntax tokens — colors tuned for dark code background regardless of theme */
+.tok-keyword { color: var(--tok-keyword); }
+.tok-type    { color: var(--tok-type); }
+.tok-string  { color: var(--tok-string); }
+.tok-number  { color: var(--tok-number); }
+.tok-comment { color: var(--tok-comment); font-style: italic; }
+.ini-section { color: var(--tok-ini-section); font-weight: 600; }
+.ini-key     { color: var(--tok-ini-key); }
+.ini-value   { color: var(--tok-ini-value); }
+.term-prompt { color: var(--mint-300); user-select: none; }
+
+/* ----------------------------------------------------------------
+   Callouts — colored hairline + light tint, no box
+   ---------------------------------------------------------------- */
+.callout {
+  margin: 1.4rem 0;
+  border-left: 3px solid var(--primary);
+  padding: 0.8rem 1rem 0.8rem 1.1rem;
+  background: color-mix(in srgb, var(--primary) 6%, var(--bg));
+  border-radius: 0 4px 4px 0;
+  font-size: 0.97rem;
+  line-height: 1.6;
+}
+.callout.note    { border-left-color: var(--type);    background: color-mix(in srgb, var(--type) 7%, var(--bg)); }
+.callout.warn    { border-left-color: var(--warning); background: color-mix(in srgb, var(--warning) 9%, var(--bg)); }
+.callout.success { border-left-color: var(--success); background: color-mix(in srgb, var(--success) 8%, var(--bg)); }
+.callout.danger  { border-left-color: var(--error);   background: color-mix(in srgb, var(--error) 8%, var(--bg)); }
+
+.callout strong {
+  font-family: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--primary);
+  margin-right: 0.5rem;
+  display: inline-block;
+  font-weight: 600;
+}
+.callout.note strong    { color: var(--type); }
+.callout.warn strong    { color: var(--warning); }
+.callout.success strong { color: var(--success); }
+.callout.danger strong  { color: var(--error); }
+
+/* ----------------------------------------------------------------
+   API entries (Swift signatures)
+   ---------------------------------------------------------------- */
+.api {
+  margin: 1.5rem 0 2rem;
+  padding: 0 0 0 0.9rem;
+  border-left: 1px solid var(--rule);
+}
+.api-title {
+  font-family: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.92rem;
+  color: var(--fg);
+  margin: 0 0 0.3rem;
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.5rem;
+}
+.api-title .kind {
+  color: var(--keyword);
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-right: 0.3rem;
+}
+.api-title .name { color: var(--primary); font-weight: 600; }
+.api-desc { color: var(--fg-mute); font-size: 0.95rem; margin: 0.3rem 0 0.55rem; line-height: 1.6; }
+
+.signature {
+  display: block;
+  background: var(--bg-code);
+  color: var(--code-fg);
+  padding: 0.65rem 0.9rem;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  margin: 0.45rem 0 0.55rem;
+  overflow-x: auto;
+}
+
+/* ----------------------------------------------------------------
+   Tables
+   ---------------------------------------------------------------- */
+table.fields {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.7rem 0 1.4rem;
+  font-size: 0.92rem;
+}
+table.fields th, table.fields td {
+  text-align: left;
+  padding: 0.55rem 0.7rem 0.55rem 0;
+  border-bottom: 1px solid var(--rule-soft);
+  vertical-align: top;
+}
+table.fields th {
+  font-family: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  font-weight: 600;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 0.7rem;
+}
+table.fields td.field { color: var(--primary); font-family: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace; font-size: 0.86rem; }
+table.fields td.type  { color: var(--type); font-family: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace; font-size: 0.86rem; }
+table.fields td.note  { color: var(--fg-mute); }
+
+/* ----------------------------------------------------------------
+   Error lists (typed error cases)
+   ---------------------------------------------------------------- */
+.errors {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+  display: grid;
+  gap: 0.4rem;
+}
+.errors li {
+  border-left: 2px solid var(--error);
+  padding: 0.55rem 0 0.55rem 0.9rem;
+  display: grid;
+  grid-template-columns: minmax(180px, max-content) 1fr;
+  gap: 0.9rem;
+  align-items: baseline;
+}
+.errors li .err-case {
+  color: var(--error);
+  font-size: 0.85rem;
+}
+.errors li .err-desc {
+  color: var(--fg-mute);
+  font-size: 0.93rem;
+  line-height: 1.55;
+}
+
+/* ----------------------------------------------------------------
+   Numbered steps
+   ---------------------------------------------------------------- */
+.steps { counter-reset: step; padding: 0; list-style: none; }
+.steps > li {
+  counter-increment: step;
+  margin: 0 0 1.8rem;
+  padding-left: 2.4rem;
+  position: relative;
+}
+.steps > li::before {
+  content: counter(step, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  top: 0.08rem;
+  font-family: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.78rem;
+  color: var(--primary);
+  background: var(--primary-soft);
+  border: 1px solid var(--primary-edge);
+  border-radius: 3px;
+  padding: 0.15rem 0.4rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+/* ----------------------------------------------------------------
+   Decision pills
+   ---------------------------------------------------------------- */
+.pills {
+  display: flex; flex-wrap: wrap; gap: 0.4rem;
+  margin: 0.6rem 0 1.4rem;
+}
+.pill {
+  font-family: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.7rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 2px;
+  color: var(--fg);
+  border: 1px solid var(--rule);
+  background: transparent;
+}
+.pill .dot { color: var(--primary); margin-right: 0.3rem; }
+
+/* ----------------------------------------------------------------
+   Phase cards — paper inset, no box-shadow drama
+   ---------------------------------------------------------------- */
+.phase-card {
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 1.2rem 1.4rem;
+  margin: 1.4rem 0;
+  background: var(--bg-sunk);
+  position: relative;
+}
+.phase-card .phase-tag {
+  display: inline-block;
+  color: var(--primary);
+  font-family: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 0.7rem;
+  font-weight: 600;
+}
+.phase-card h3 { margin-top: 0; }
+.phase-card .approx {
+  color: var(--fg-dim);
+  font-family: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+}
+
+/* ----------------------------------------------------------------
+   Footer
+   ---------------------------------------------------------------- */
+footer {
+  margin: 6rem 0 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rule);
+  color: var(--fg-dim);
+  font-size: 0.82rem;
+  font-family: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace;
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem;
+}
+footer .blink::after { content: "_"; animation: blink 1s steps(1) infinite; color: var(--primary); }
+@keyframes blink { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
+
+/* ----------------------------------------------------------------
+   Theme switcher — labeled track with both glyphs always visible
+   ---------------------------------------------------------------- */
+.theme-switcher {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 1.8rem 0 0;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--rule);
+}
+.theme-switcher__label {
+  font-family: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  flex: 1;
+}
+.theme-toggle {
+  appearance: none;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 56px;
+  height: 26px;
+  padding: 0 7px;
+  background: var(--bg-sunk);
+  border: 1px solid var(--rule);
+  border-radius: 13px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  flex: 0 0 auto;
+  transition: border-color 120ms ease;
+}
+.theme-toggle:hover { border-color: var(--primary); }
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.theme-toggle .toggle-glyph {
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+  color: var(--fg-mute);
+  transition: color 180ms ease;
+}
+/* Active-side glyph reads on top of the coral thumb */
+:root[data-theme="light"] .theme-toggle .toggle-glyph--sun,
+:root[data-theme="dark"]  .theme-toggle .toggle-glyph--moon {
+  color: #FAF7F0;
+  font-weight: 600;
+}
+/* Sliding thumb sits BEHIND the glyphs; the active glyph reads white on coral */
+.theme-toggle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--primary);
+  transform: translateY(-50%);
+  transition: left 220ms cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 1;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+:root[data-theme="dark"] .theme-toggle::after {
+  left: calc(100% - 22px);
+}
+
+/* Anchor scroll padding */
+h2[id], h3[id] { scroll-margin-top: 1.5rem; }
+section[id] { scroll-margin-top: 1.5rem; }
+</style>
+<script>
+// botctrl docs — theme toggle with persistence + cross-tab sync.
+// Initial theme is set before paint to avoid FOUC; runs in <head> as a blocking
+// script (deliberately not deferred). The CSS honors [data-theme="dark"]/[="light"]
+// on <html>; when no attribute is set, the @media (prefers-color-scheme) fallback
+// kicks in for JS-disabled environments.
+
+(function () {
+  const STORAGE_KEY = "botctrl-docs-theme";
+  const root = document.documentElement;
+
+  // Resolve initial: stored preference > OS preference > "light".
+  const stored = localStorage.getItem(STORAGE_KEY);
+  const osDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = stored ?? (osDark ? "dark" : "light");
+
+  // Keep tabs in sync when the user toggles in another tab.
+  window.addEventListener("storage", (event) => {
+    if (event.key === STORAGE_KEY && event.newValue) {
+      root.dataset.theme = event.newValue;
+      syncButton();
+    }
+  });
+
+  function syncButton() {
+    const btn = document.querySelector(".theme-toggle");
+    if (!btn) return;
+    const isDark = root.dataset.theme === "dark";
+    btn.setAttribute("aria-checked", String(isDark));
+    btn.setAttribute("aria-label", isDark ? "Switch to light theme" : "Switch to dark theme");
+  }
+
+  function wire() {
+    const btn = document.querySelector(".theme-toggle");
+    if (!btn) return;
+    syncButton();
+    btn.addEventListener("click", () => {
+      const next = root.dataset.theme === "dark" ? "light" : "dark";
+      root.dataset.theme = next;
+      localStorage.setItem(STORAGE_KEY, next);
+      syncButton();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", wire);
+  } else {
+    wire();
+  }
+})();
+</script>
+<style>
+  /* Inline diagram wrapper — kept local to the design-system page so
+     other pages aren't forced to inherit it. If diagrams become a shared
+     primitive, lift this into botctrl-docs.css. */
+  figure.diagram {
+    margin: 1.6rem 0 2rem;
+    padding: 1.2rem 1.4rem;
+    background: var(--bg-sunk);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+  }
+  figure.diagram svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <aside class="rail">
+    <p class="rail-title">// docs · standalone</p>
+    <p class="rail-product"><span class="live-dot" aria-hidden="true"></span>Design System</p>
+
+    <nav class="toc">
+      <div class="toc-section">
+        <p class="toc-section-label">Overview</p>
+        <a class="toc-link" href="#what-this-is"><span class="toc-num">01</span><span>What This Is</span></a>
+        <a class="toc-link" href="#anatomy"><span class="toc-num">02</span><span>Page Anatomy</span></a>
+        <a class="toc-link" href="#quick-start"><span class="toc-num">03</span><span>Quick Start</span></a>
+      </div>
+
+      <div class="toc-section">
+        <p class="toc-section-label">Shell</p>
+        <a class="toc-link" href="#layout"><span class="toc-num">04</span><span>Layout</span></a>
+        <a class="toc-link" href="#rail-and-toc"><span class="toc-num">05</span><span>Rail and TOC</span></a>
+        <a class="toc-link" href="#hero"><span class="toc-num">06</span><span>Hero</span></a>
+        <a class="toc-link" href="#theme-switcher"><span class="toc-num">07</span><span>Theme Switcher</span></a>
+      </div>
+
+      <div class="toc-section">
+        <p class="toc-section-label">Primitives</p>
+        <a class="toc-link" href="#sections"><span class="toc-num">08</span><span>Sections</span></a>
+        <a class="toc-link" href="#field-tables"><span class="toc-num">09</span><span>Field Tables</span></a>
+        <a class="toc-link" href="#code-frames"><span class="toc-num">10</span><span>Code Frames</span></a>
+        <a class="toc-link" href="#syntax-tokens"><span class="toc-num">11</span><span>Syntax Tokens</span></a>
+        <a class="toc-link" href="#callouts"><span class="toc-num">12</span><span>Callouts</span></a>
+        <a class="toc-link" href="#steps"><span class="toc-num">13</span><span>Steps</span></a>
+        <a class="toc-link" href="#footer"><span class="toc-num">14</span><span>Footer</span></a>
+      </div>
+
+      <div class="toc-section">
+        <p class="toc-section-label">System</p>
+        <a class="toc-link" href="#tokens"><span class="toc-num">15</span><span>Design Tokens</span></a>
+        <a class="toc-link" href="#theming"><span class="toc-num">16</span><span>Theming</span></a>
+        <a class="toc-link" href="#voice"><span class="toc-num">17</span><span>Voice and Style</span></a>
+      </div>
+
+      <div class="toc-section">
+        <p class="toc-section-label">Adopt</p>
+        <a class="toc-link" href="#adopting"><span class="toc-num">18</span><span>Adopting in Your Project</span></a>
+        <a class="toc-link" href="#don'ts"><span class="toc-num">19</span><span>Don'ts</span></a>
+      </div>
+    </nav>
+
+    <div class="theme-switcher">
+      <span class="theme-switcher__label">Theme</span>
+      <button class="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle color theme"><span class="toggle-glyph toggle-glyph--sun" aria-hidden="true">☀︎</span><span class="toggle-glyph toggle-glyph--moon" aria-hidden="true">☾</span></button>
+    </div>
+  </aside>
+
+  <main>
+
+    <header class="hero">
+      <div class="hero-meta">
+        <span class="badge primary">v1 guide</span>
+        <span class="badge tests">standalone</span>
+        <span class="badge swift">single file</span>
+      </div>
+      <h1><span class="moniker-bracket">[</span><span class="moniker">DocsDesignSystem</span><span class="moniker-bracket">]</span></h1>
+      <p class="lede">A reusable pattern for technical documentation pages: a flat layout shell, a numbered rail of contents, a hero banner, and a small set of refined primitives — field tables, dark code frames with syntax tokens, callouts, and numbered procedure lists. Built with plain HTML, one CSS file, and one JS file. Drop the assets into any project, follow the markup conventions, and your docs read as part of the same family without a build step.</p>
+
+      <div class="hero-stats">
+        <div class="stat"><span class="num">2</span><span class="label">asset files (CSS, JS)</span></div>
+        <div class="stat"><span class="num">10</span><span class="label">reusable primitives</span></div>
+        <div class="stat"><span class="num">9</span><span class="label">accent palettes</span></div>
+        <div class="stat"><span class="num">0</span><span class="label">build steps</span></div>
+      </div>
+    </header>
+
+    <section id="what-this-is">
+      <h2><span class="section-anchor">// 01</span>What This Is</h2>
+
+      <div class="callout note"><strong>note</strong>This is the <em>single-file</em> edition of the docs design system guide — HTML, CSS, and JS bundled into one file you can save, send, or open offline without any other assets. The CSS and JS live in <code>&lt;style&gt;</code> and <code>&lt;script&gt;</code> blocks inside <code>&lt;head&gt;</code> (necessary for the theme toggle to set the right colour before first paint; putting them at the bottom of the file would cause a flash of unstyled content). The "normal" edition splits them into <code>botctrl-docs.css</code> and <code>botctrl-docs.js</code> so multiple pages share one cache entry — see <code>docs/design-system.html</code> in the botctrl repository.</div>
+
+      <p>The botctrl docs design system is an editorial pattern for engineering documentation — closer to a typeset manual than a generated reference. It is intentionally <em>not</em> a documentation generator. There is no toolchain: every page is a hand-authored HTML file that links to a shared stylesheet and a tiny JS file. The pattern's job is to make those pages feel like one product, not like a folder of disparate notes.</p>
+
+      <p>Design notes the system commits to:</p>
+
+      <ul>
+        <li><strong>Warm paper, dark ink.</strong> Body type sits on a cream paper (<code>#FAF7F0</code>) in a sharp serif (Charter / Iowan Old Style). Code blocks stay dark in both light and dark themes — they are the "inset voice" of the document, like footnotes in a different ink.</li>
+        <li><strong>Mono for structure, serif for prose.</strong> Berkeley Mono / JetBrains Mono for code, badges, TOC numbers, and field names. Serif for everything you read end-to-end. The split is load-bearing — a glance at a paragraph and you already know whether to expect prose or structure.</li>
+        <li><strong>Punctuation, not decoration.</strong> Colour appears as accent (a coral underline, a sunshine selection highlight, a mint clean-state glyph) — never as a wash. Backgrounds are paper or code; everything else is type and rule.</li>
+        <li><strong>Numbered sections, numbered TOC.</strong> Every <code>&lt;h2&gt;</code> carries a <code>// NN</code> anchor; the rail mirrors those numbers. Readers track location by number, not by counting heading levels.</li>
+      </ul>
+
+      <p>The system is small on purpose. There is no grid framework, no utility classes, no JavaScript components — just a handful of named regions and a small kit of compositional primitives. The whole CSS is ~800 lines; the JS does one job (theme toggle with cross-tab sync).</p>
+    </section>
+
+    <section id="anatomy">
+      <h2><span class="section-anchor">// 02</span>Page Anatomy</h2>
+
+      <p>Every page is the same three-region shell: a sticky rail on the left, a hero header, and a stack of numbered sections. The footer is one line.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 760 500" role="img" aria-labelledby="anatomy-title anatomy-desc" preserveAspectRatio="xMidYMid meet">
+          <title id="anatomy-title">Page layout anatomy</title>
+          <desc id="anatomy-desc">Schematic of a botctrl docs page: sticky rail on the left containing project label, page name with live dot, numbered table of contents, and theme switcher. Main column on the right containing hero with badges, moniker, lede and stats, followed by numbered sections containing primitives, and a single-line footer.</desc>
+          <style>
+            /* All class names use a dia- prefix because SVG style is document-scoped:
+               bare names like .moniker, .num, and .label would otherwise override
+               the host page's hero h1 .moniker, .stat .num, and .stat .label. */
+            .dia-frame      { fill: var(--bg); stroke: var(--rule); stroke-width: 1; }
+            .dia-rail-bg    { fill: var(--bg-sunk); }
+            .dia-divider    { stroke: var(--rule); stroke-width: 1; }
+            .dia-label      { font: 10px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg-mute); letter-spacing: 0.08em; }
+            .dia-label-mute { font: 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg-dim); letter-spacing: 0.10em; text-transform: uppercase; }
+            .dia-label-strong { font: 600 11px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg); }
+            .dia-num        { font: 600 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--primary); }
+            .dia-anchor     { font: 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--primary); }
+            .dia-moniker    { font: 700 20px "Charter","Iowan Old Style","Source Serif Pro",Georgia,serif; fill: var(--fg); }
+            .dia-bracket    { font: 700 20px "Charter","Iowan Old Style","Source Serif Pro",Georgia,serif; fill: var(--fg-dim); }
+            .dia-heading    { font: 600 13px "Charter","Iowan Old Style","Source Serif Pro",Georgia,serif; fill: var(--fg); }
+            .dia-stat-num   { font: 700 18px "Charter","Iowan Old Style","Source Serif Pro",Georgia,serif; fill: var(--fg); }
+            .dia-skeleton   { fill: var(--rule-soft); }
+            .dia-annotation { font: 600 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg-dim); letter-spacing: 0.10em; text-transform: uppercase; }
+            .dia-callout-tint { fill: color-mix(in srgb, var(--type) 8%, var(--bg)); }
+          </style>
+
+          <!-- Outer page frame -->
+          <rect x="10" y="20" width="740" height="440" rx="8" class="dia-frame"/>
+
+          <!-- Rail region -->
+          <rect x="11" y="21" width="170" height="438" rx="7" class="dia-rail-bg"/>
+          <line x1="181" y1="21" x2="181" y2="459" class="dia-divider"/>
+
+          <!-- Rail title -->
+          <text x="24" y="44" class="dia-label">// project · area</text>
+
+          <!-- Rail product with live dot -->
+          <circle cx="27" cy="66" r="3" fill="var(--mint-500)"/>
+          <text x="36" y="70" class="dia-label-strong">Page Name</text>
+
+          <!-- TOC group 1 -->
+          <text x="24" y="100" class="dia-label-mute">Overview</text>
+          <text x="24" y="120" class="dia-num">01</text><text x="44" y="120" class="dia-label-strong">Introduction</text>
+          <text x="24" y="138" class="dia-num">02</text><text x="44" y="138" class="dia-label-strong">Anatomy</text>
+          <text x="24" y="156" class="dia-num">03</text><text x="44" y="156" class="dia-label-strong">Quick Start</text>
+
+          <!-- TOC group 2 -->
+          <text x="24" y="186" class="dia-label-mute">Primitives</text>
+          <text x="24" y="206" class="dia-num">04</text><text x="44" y="206" class="dia-label-strong">Layout</text>
+          <text x="24" y="224" class="dia-num">05</text><text x="44" y="224" class="dia-label-strong">Rail and TOC</text>
+          <text x="24" y="242" class="dia-num">06</text><text x="44" y="242" class="dia-label-strong">Hero</text>
+          <text x="24" y="260" class="dia-num">07</text><text x="44" y="260" class="dia-label-strong">Sections</text>
+
+          <!-- Theme switcher (bottom of rail) -->
+          <rect x="24" y="410" width="72" height="22" rx="3" fill="none" stroke="var(--rule)" stroke-width="1"/>
+          <text x="32" y="425" class="dia-label">Theme</text>
+          <circle cx="84" cy="421" r="6" fill="var(--bg)" stroke="var(--rule)" stroke-width="1"/>
+
+          <!-- MAIN: hero -->
+          <g transform="translate(208, 44)">
+            <rect x="0"   y="0"  width="46" height="14" rx="2" fill="var(--primary-soft)" stroke="var(--primary-edge)" stroke-width="0.5"/>
+            <rect x="52"  y="0"  width="56" height="14" rx="2" fill="color-mix(in srgb, var(--success) 12%, var(--bg))" stroke="color-mix(in srgb, var(--success) 20%, var(--bg))" stroke-width="0.5"/>
+            <rect x="114" y="0"  width="58" height="14" rx="2" fill="color-mix(in srgb, var(--tangerine-500) 12%, var(--bg))" stroke="color-mix(in srgb, var(--tangerine-500) 20%, var(--bg))" stroke-width="0.5"/>
+
+            <text x="0"   y="50" class="dia-bracket">[</text>
+            <text x="11"  y="50" class="dia-moniker">PageMoniker</text>
+            <text x="151" y="50" class="dia-bracket">]</text>
+
+            <rect x="0" y="64" width="500" height="5" rx="2" class="dia-skeleton"/>
+            <rect x="0" y="76" width="478" height="5" rx="2" class="dia-skeleton"/>
+            <rect x="0" y="88" width="320" height="5" rx="2" class="dia-skeleton"/>
+
+            <g transform="translate(0, 108)">
+              <text x="0"   y="14" class="dia-stat-num">25</text><text x="0"   y="28" class="dia-label">hook events</text>
+              <text x="120" y="14" class="dia-stat-num">2</text> <text x="120" y="28" class="dia-label">scopes</text>
+              <text x="240" y="14" class="dia-stat-num">9</text> <text x="240" y="28" class="dia-label">primitives</text>
+              <text x="360" y="14" class="dia-stat-num">0</text> <text x="360" y="28" class="dia-label">build steps</text>
+            </g>
+          </g>
+
+          <!-- Hero / body divider -->
+          <line x1="208" y1="208" x2="730" y2="208" class="dia-divider"/>
+
+          <!-- Section 1 -->
+          <text x="208" y="234" class="dia-anchor">// 01</text>
+          <text x="240" y="234" class="dia-heading">First Section</text>
+          <rect x="208" y="248" width="500" height="5" rx="2" class="dia-skeleton"/>
+          <rect x="208" y="260" width="478" height="5" rx="2" class="dia-skeleton"/>
+
+          <!-- Code-frame mini -->
+          <g transform="translate(208, 278)">
+            <rect x="0" y="0" width="500" height="52" rx="4" fill="var(--bg-code)"/>
+            <rect x="0" y="0" width="500" height="14" rx="4" fill="var(--bg-code-bar)"/>
+            <rect x="0" y="10" width="500" height="4" fill="var(--bg-code-bar)"/>
+            <circle cx="12" cy="7" r="2.5" fill="var(--coral-400)"/>
+            <circle cx="22" cy="7" r="2.5" fill="var(--sunshine-400)"/>
+            <circle cx="32" cy="7" r="2.5" fill="var(--mint-400)"/>
+            <rect x="44"  y="3.5" width="60" height="7" fill="#6c7079" opacity="0.6" rx="1"/>
+            <rect x="464" y="3.5" width="28" height="7" fill="#6c7079" opacity="0.6" rx="1"/>
+
+            <rect x="14" y="22" width="80"  height="4" fill="var(--tok-keyword)" rx="1.5"/>
+            <rect x="100" y="22" width="120" height="4" fill="var(--tok-type)"    rx="1.5"/>
+            <rect x="14" y="32" width="200" height="4" fill="var(--tok-string)"  rx="1.5"/>
+            <rect x="14" y="42" width="160" height="4" fill="var(--tok-comment)" rx="1.5"/>
+          </g>
+
+          <!-- Section 2 -->
+          <text x="208" y="352" class="dia-anchor">// 02</text>
+          <text x="240" y="352" class="dia-heading">Second Section</text>
+
+          <!-- Callout mini -->
+          <g transform="translate(208, 366)">
+            <rect x="0" y="0" width="500" height="32" rx="4" class="dia-callout-tint"/>
+            <rect x="0" y="0" width="3"   height="32" fill="var(--type)"/>
+            <text x="14" y="14" font="600 8px Berkeley Mono, monospace" letter-spacing="0.14em" fill="var(--type)">NOTE</text>
+            <rect x="50"  y="10" width="200" height="4" rx="1.5" class="dia-skeleton"/>
+            <rect x="50"  y="20" width="160" height="4" rx="1.5" class="dia-skeleton"/>
+          </g>
+
+          <!-- Footer line -->
+          <line x1="208" y1="428" x2="730" y2="428" class="dia-divider"/>
+          <text x="208" y="446" class="dia-label-strong">project</text>
+          <text x="710" y="446" text-anchor="end" class="dia-label">section · category</text>
+
+          <!-- Outer annotations -->
+          <text x="96"  y="14" text-anchor="middle" class="dia-annotation">rail · 260px</text>
+          <text x="469" y="14" text-anchor="middle" class="dia-annotation">main · fluid (max 1340px)</text>
+          <text x="380" y="478" text-anchor="middle" class="dia-annotation">page max-width · 1600px · centred</text>
+        </svg>
+      </figure>
+
+      <p>The shell is identical across every page in the system. Variation lives inside each section's body — different primitives, different prose — but the surrounding scaffold is constant so a reader who has read one page already knows how to navigate the next.</p>
+    </section>
+
+    <section id="quick-start">
+      <h2><span class="section-anchor">// 03</span>Quick Start</h2>
+
+      <ol class="steps">
+        <li>
+          <p>Copy the two asset files into your project's docs folder:</p>
+          <div class="code-frame">
+            <div class="code-titlebar">
+              <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+              <span class="filename">install<span class="ext">.sh</span></span>
+              <span class="langtag">SHELL</span>
+            </div>
+<pre><span class="tok-comment"># From this repo:</span>
+cp botctrl/docs/botctrl-docs.css  yourproject/docs/yourproject-docs.css
+cp botctrl/docs/botctrl-docs.js   yourproject/docs/yourproject-docs.js</pre>
+          </div>
+          <p>Rename the files to <code>&lt;project&gt;-docs.css</code> / <code>&lt;project&gt;-docs.js</code>. The <code>botctrl-</code> prefix is namespacing the localStorage key the JS uses (see <a href="#theming">section 16</a>); rename the constant inside the JS too.</p>
+        </li>
+        <li>
+          <p>Create your first page using the skeleton below. Save it next to the assets.</p>
+        </li>
+        <li>
+          <p>Open the file directly in a browser — there is no build step. Iterate, save, refresh.</p>
+        </li>
+      </ol>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">page-skeleton<span class="ext">.html</span></span>
+          <span class="langtag">HTML</span>
+        </div>
+<pre><span class="tok-keyword">&lt;!DOCTYPE html&gt;</span>
+<span class="tok-keyword">&lt;html</span> <span class="tok-type">lang</span>=<span class="tok-string">"en"</span><span class="tok-keyword">&gt;</span>
+<span class="tok-keyword">&lt;head&gt;</span>
+<span class="tok-keyword">&lt;meta</span> <span class="tok-type">charset</span>=<span class="tok-string">"utf-8"</span><span class="tok-keyword">&gt;</span>
+<span class="tok-keyword">&lt;meta</span> <span class="tok-type">name</span>=<span class="tok-string">"viewport"</span> <span class="tok-type">content</span>=<span class="tok-string">"width=device-width, initial-scale=1"</span><span class="tok-keyword">&gt;</span>
+<span class="tok-keyword">&lt;title&gt;</span>Your Page Title — yourproject<span class="tok-keyword">&lt;/title&gt;</span>
+<span class="tok-keyword">&lt;link</span> <span class="tok-type">rel</span>=<span class="tok-string">"stylesheet"</span> <span class="tok-type">href</span>=<span class="tok-string">"yourproject-docs.css"</span><span class="tok-keyword">&gt;</span>
+<span class="tok-keyword">&lt;script</span> <span class="tok-type">src</span>=<span class="tok-string">"yourproject-docs.js"</span><span class="tok-keyword">&gt;&lt;/script&gt;</span>
+<span class="tok-keyword">&lt;/head&gt;</span>
+<span class="tok-keyword">&lt;body&gt;</span>
+
+<span class="tok-keyword">&lt;div</span> <span class="tok-type">class</span>=<span class="tok-string">"layout"</span><span class="tok-keyword">&gt;</span>
+  <span class="tok-keyword">&lt;aside</span> <span class="tok-type">class</span>=<span class="tok-string">"rail"</span><span class="tok-keyword">&gt;</span>
+    <span class="tok-comment">&lt;!-- rail-title, rail-product, .toc, .theme-switcher --&gt;</span>
+  <span class="tok-keyword">&lt;/aside&gt;</span>
+
+  <span class="tok-keyword">&lt;main&gt;</span>
+    <span class="tok-keyword">&lt;header</span> <span class="tok-type">class</span>=<span class="tok-string">"hero"</span><span class="tok-keyword">&gt;</span> ... <span class="tok-keyword">&lt;/header&gt;</span>
+
+    <span class="tok-keyword">&lt;section</span> <span class="tok-type">id</span>=<span class="tok-string">"intro"</span><span class="tok-keyword">&gt;</span>
+      <span class="tok-keyword">&lt;h2&gt;&lt;span</span> <span class="tok-type">class</span>=<span class="tok-string">"section-anchor"</span><span class="tok-keyword">&gt;</span>// 01<span class="tok-keyword">&lt;/span&gt;</span>Title<span class="tok-keyword">&lt;/h2&gt;</span>
+      <span class="tok-keyword">&lt;p&gt;</span>Prose, primitives, more prose.<span class="tok-keyword">&lt;/p&gt;</span>
+    <span class="tok-keyword">&lt;/section&gt;</span>
+
+    <span class="tok-keyword">&lt;footer&gt;</span>
+      <span class="tok-keyword">&lt;span</span> <span class="tok-type">class</span>=<span class="tok-string">"blink"</span><span class="tok-keyword">&gt;</span>yourproject<span class="tok-keyword">&lt;/span&gt;</span>
+      <span class="tok-keyword">&lt;span&gt;</span>section · category<span class="tok-keyword">&lt;/span&gt;</span>
+    <span class="tok-keyword">&lt;/footer&gt;</span>
+  <span class="tok-keyword">&lt;/main&gt;</span>
+<span class="tok-keyword">&lt;/div&gt;</span>
+
+<span class="tok-keyword">&lt;/body&gt;</span>
+<span class="tok-keyword">&lt;/html&gt;</span></pre>
+      </div>
+
+      <div class="callout note"><strong>note</strong>Every page in this design system has this same shell. The variation lives inside <code>&lt;section&gt;</code> bodies, never in the surrounding scaffold.</div>
+    </section>
+
+    <section id="layout">
+      <h2><span class="section-anchor">// 04</span>Layout</h2>
+
+      <p>The <code>.layout</code> wrapper is a two-column CSS grid: a 260px sticky rail and a single fluid <code>&lt;main&gt;</code> column. Max page width is 1600px, centered.</p>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">layout<span class="ext">.css</span></span>
+          <span class="langtag">CSS</span>
+        </div>
+<pre><span class="tok-keyword">.layout</span> {
+  display: <span class="tok-string">grid</span>;
+  grid-template-columns: <span class="tok-number">260px</span> minmax(<span class="tok-number">0</span>, <span class="tok-number">1fr</span>);
+  max-width: <span class="tok-number">1600px</span>;
+  margin: <span class="tok-number">0</span> auto;
+  min-height: <span class="tok-number">100vh</span>;
+}</pre>
+      </div>
+
+      <p><code>&lt;main&gt;</code> handles its own inner padding. The grid is left intentionally simple — no breakpoints. Wide screens get more room around the prose; narrow screens scroll the rail with the page rather than collapsing it.</p>
+    </section>
+
+    <section id="rail-and-toc">
+      <h2><span class="section-anchor">// 05</span>Rail and TOC</h2>
+
+      <p>The rail holds three blocks, in order: a section label (<code>// project · area</code>), a product name with a live dot, and a numbered table of contents. The theme switcher sits below the TOC.</p>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">rail<span class="ext">.html</span></span>
+          <span class="langtag">HTML</span>
+        </div>
+<pre><span class="tok-keyword">&lt;aside</span> <span class="tok-type">class</span>=<span class="tok-string">"rail"</span><span class="tok-keyword">&gt;</span>
+  <span class="tok-keyword">&lt;p</span> <span class="tok-type">class</span>=<span class="tok-string">"rail-title"</span><span class="tok-keyword">&gt;</span>// project · area<span class="tok-keyword">&lt;/p&gt;</span>
+  <span class="tok-keyword">&lt;p</span> <span class="tok-type">class</span>=<span class="tok-string">"rail-product"</span><span class="tok-keyword">&gt;</span>
+    <span class="tok-keyword">&lt;span</span> <span class="tok-type">class</span>=<span class="tok-string">"live-dot"</span> <span class="tok-type">aria-hidden</span>=<span class="tok-string">"true"</span><span class="tok-keyword">&gt;&lt;/span&gt;</span>
+    Page Name
+  <span class="tok-keyword">&lt;/p&gt;</span>
+
+  <span class="tok-keyword">&lt;nav</span> <span class="tok-type">class</span>=<span class="tok-string">"toc"</span><span class="tok-keyword">&gt;</span>
+    <span class="tok-keyword">&lt;div</span> <span class="tok-type">class</span>=<span class="tok-string">"toc-section"</span><span class="tok-keyword">&gt;</span>
+      <span class="tok-keyword">&lt;p</span> <span class="tok-type">class</span>=<span class="tok-string">"toc-section-label"</span><span class="tok-keyword">&gt;</span>Overview<span class="tok-keyword">&lt;/p&gt;</span>
+      <span class="tok-keyword">&lt;a</span> <span class="tok-type">class</span>=<span class="tok-string">"toc-link"</span> <span class="tok-type">href</span>=<span class="tok-string">"#intro"</span><span class="tok-keyword">&gt;</span>
+        <span class="tok-keyword">&lt;span</span> <span class="tok-type">class</span>=<span class="tok-string">"toc-num"</span><span class="tok-keyword">&gt;</span>01<span class="tok-keyword">&lt;/span&gt;&lt;span&gt;</span>Introduction<span class="tok-keyword">&lt;/span&gt;</span>
+      <span class="tok-keyword">&lt;/a&gt;</span>
+    <span class="tok-keyword">&lt;/div&gt;</span>
+  <span class="tok-keyword">&lt;/nav&gt;</span>
+
+  <span class="tok-keyword">&lt;div</span> <span class="tok-type">class</span>=<span class="tok-string">"theme-switcher"</span><span class="tok-keyword">&gt;</span> ... <span class="tok-keyword">&lt;/div&gt;</span>
+<span class="tok-keyword">&lt;/aside&gt;</span></pre>
+      </div>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Class</th><th>Purpose</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">.rail-title</td>
+            <td class="note">Section/category label</td>
+            <td class="note">Plain-text monospace; use a leading <code>// </code> for editorial voice</td>
+          </tr>
+          <tr>
+            <td class="field">.rail-product</td>
+            <td class="note">Page name</td>
+            <td class="note">Includes <code>.live-dot</code> — a small mint pulse indicating "this page is current"</td>
+          </tr>
+          <tr>
+            <td class="field">.toc-section</td>
+            <td class="note">A group of TOC links</td>
+            <td class="note">Use one section per logical group (Overview, Implementation, Notes, etc.)</td>
+          </tr>
+          <tr>
+            <td class="field">.toc-section-label</td>
+            <td class="note">Group heading</td>
+            <td class="note">Small caps monospace</td>
+          </tr>
+          <tr>
+            <td class="field">.toc-link</td>
+            <td class="note">A single TOC entry</td>
+            <td class="note">Contains a <code>.toc-num</code> (2-digit zero-padded) followed by the link text</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>The number a <code>.toc-num</code> shows should match the <code>// NN</code> anchor on the corresponding <code>&lt;h2&gt;</code>. If you renumber sections, renumber both. There is no automated check — the convention is enforced by your eyes.</p>
+    </section>
+
+    <section id="hero">
+      <h2><span class="section-anchor">// 06</span>Hero</h2>
+
+      <p>The hero is the page's masthead: a row of badges, an outsized moniker title, a multi-sentence lede, and a row of stats. It sets the tone and answers "what is this page about?" in under five seconds.</p>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">hero<span class="ext">.html</span></span>
+          <span class="langtag">HTML</span>
+        </div>
+<pre><span class="tok-keyword">&lt;header</span> <span class="tok-type">class</span>=<span class="tok-string">"hero"</span><span class="tok-keyword">&gt;</span>
+  <span class="tok-keyword">&lt;div</span> <span class="tok-type">class</span>=<span class="tok-string">"hero-meta"</span><span class="tok-keyword">&gt;</span>
+    <span class="tok-keyword">&lt;span</span> <span class="tok-type">class</span>=<span class="tok-string">"badge primary"</span><span class="tok-keyword">&gt;</span>v1 docs<span class="tok-keyword">&lt;/span&gt;</span>
+    <span class="tok-keyword">&lt;span</span> <span class="tok-type">class</span>=<span class="tok-string">"badge tests"</span><span class="tok-keyword">&gt;</span>category<span class="tok-keyword">&lt;/span&gt;</span>
+    <span class="tok-keyword">&lt;span</span> <span class="tok-type">class</span>=<span class="tok-string">"badge swift"</span><span class="tok-keyword">&gt;</span>language<span class="tok-keyword">&lt;/span&gt;</span>
+  <span class="tok-keyword">&lt;/div&gt;</span>
+  <span class="tok-keyword">&lt;h1&gt;</span>
+    <span class="tok-keyword">&lt;span</span> <span class="tok-type">class</span>=<span class="tok-string">"moniker-bracket"</span><span class="tok-keyword">&gt;</span>[<span class="tok-keyword">&lt;/span&gt;</span>
+    <span class="tok-keyword">&lt;span</span> <span class="tok-type">class</span>=<span class="tok-string">"moniker"</span><span class="tok-keyword">&gt;</span>PageMoniker<span class="tok-keyword">&lt;/span&gt;</span>
+    <span class="tok-keyword">&lt;span</span> <span class="tok-type">class</span>=<span class="tok-string">"moniker-bracket"</span><span class="tok-keyword">&gt;</span>]<span class="tok-keyword">&lt;/span&gt;</span>
+  <span class="tok-keyword">&lt;/h1&gt;</span>
+  <span class="tok-keyword">&lt;p</span> <span class="tok-type">class</span>=<span class="tok-string">"lede"</span><span class="tok-keyword">&gt;</span>One- or two-sentence summary. Use real prose, not a tagline.<span class="tok-keyword">&lt;/p&gt;</span>
+
+  <span class="tok-keyword">&lt;div</span> <span class="tok-type">class</span>=<span class="tok-string">"hero-stats"</span><span class="tok-keyword">&gt;</span>
+    <span class="tok-keyword">&lt;div</span> <span class="tok-type">class</span>=<span class="tok-string">"stat"</span><span class="tok-keyword">&gt;&lt;span</span> <span class="tok-type">class</span>=<span class="tok-string">"num"</span><span class="tok-keyword">&gt;</span>25<span class="tok-keyword">&lt;/span&gt;&lt;span</span> <span class="tok-type">class</span>=<span class="tok-string">"label"</span><span class="tok-keyword">&gt;</span>things<span class="tok-keyword">&lt;/span&gt;&lt;/div&gt;</span>
+    <span class="tok-keyword">&lt;div</span> <span class="tok-type">class</span>=<span class="tok-string">"stat"</span><span class="tok-keyword">&gt;&lt;span</span> <span class="tok-type">class</span>=<span class="tok-string">"num"</span><span class="tok-keyword">&gt;</span>4<span class="tok-keyword">&lt;/span&gt;&lt;span</span> <span class="tok-type">class</span>=<span class="tok-string">"label"</span><span class="tok-keyword">&gt;</span>concepts<span class="tok-keyword">&lt;/span&gt;&lt;/div&gt;</span>
+  <span class="tok-keyword">&lt;/div&gt;</span>
+<span class="tok-keyword">&lt;/header&gt;</span></pre>
+      </div>
+
+      <h3>Badges</h3>
+
+      <p>Badges are small all-caps tags. Variants tint the text, not the background:</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Class</th><th>Colour</th><th>Typical use</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="field">.badge.primary</td><td class="type">coral</td><td class="note">Version or maturity (<code>v1 docs</code>, <code>v0 spec</code>)</td></tr>
+          <tr><td class="field">.badge.swift</td><td class="type">tangerine</td><td class="note">Implementation language or runtime</td></tr>
+          <tr><td class="field">.badge.tests</td><td class="type">success green</td><td class="note">Category or stage tag</td></tr>
+          <tr><td class="field">.badge.macos</td><td class="type">sky blue</td><td class="note">Platform marker</td></tr>
+        </tbody>
+      </table>
+
+      <p>Class names hint at original use but nothing stops you from using <code>.badge.swift</code> on a Go page — the colour is what matters. Three badges per hero is the typical maximum.</p>
+
+      <h3>The moniker</h3>
+
+      <p>The <code>&lt;h1&gt;</code> uses the <code>[Name]</code> bracket-moniker form. Pick a single PascalCase word that names the subject (the package, the command, the system). The brackets are styled separately so they fade into the background.</p>
+
+      <h3>Lede</h3>
+
+      <p>Full sentences, ideally one to three. The lede should let a reader who closes the tab immediately still take away the right idea of what the page is about. Avoid taglines or marketing language.</p>
+
+      <h3>Hero stats</h3>
+
+      <p>Four single-fact statistics with a big number and a small label. Stats should describe the page's subject in numeric terms — <em>2 formatters · 8 dispatch steps · 3 testing layers · 3 extensions handled</em>. They are a hook, not a metrics dashboard; if a number isn't memorable or load-bearing, leave it out.</p>
+    </section>
+
+    <section id="theme-switcher">
+      <h2><span class="section-anchor">// 07</span>Theme Switcher</h2>
+
+      <p>The switcher is a single button at the bottom of the rail. It has two glyphs (sun and moon) that the CSS reveals based on the active theme. The JS in <code>botctrl-docs.js</code> wires the click handler and persists the choice in <code>localStorage</code>.</p>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">switcher<span class="ext">.html</span></span>
+          <span class="langtag">HTML</span>
+        </div>
+<pre><span class="tok-keyword">&lt;div</span> <span class="tok-type">class</span>=<span class="tok-string">"theme-switcher"</span><span class="tok-keyword">&gt;</span>
+  <span class="tok-keyword">&lt;span</span> <span class="tok-type">class</span>=<span class="tok-string">"theme-switcher__label"</span><span class="tok-keyword">&gt;</span>Theme<span class="tok-keyword">&lt;/span&gt;</span>
+  <span class="tok-keyword">&lt;button</span> <span class="tok-type">class</span>=<span class="tok-string">"theme-toggle"</span> <span class="tok-type">type</span>=<span class="tok-string">"button"</span> <span class="tok-type">role</span>=<span class="tok-string">"switch"</span>
+          <span class="tok-type">aria-checked</span>=<span class="tok-string">"false"</span> <span class="tok-type">aria-label</span>=<span class="tok-string">"Toggle color theme"</span><span class="tok-keyword">&gt;</span>
+    <span class="tok-keyword">&lt;span</span> <span class="tok-type">class</span>=<span class="tok-string">"toggle-glyph toggle-glyph--sun"</span> <span class="tok-type">aria-hidden</span>=<span class="tok-string">"true"</span><span class="tok-keyword">&gt;</span>☀︎<span class="tok-keyword">&lt;/span&gt;</span>
+    <span class="tok-keyword">&lt;span</span> <span class="tok-type">class</span>=<span class="tok-string">"toggle-glyph toggle-glyph--moon"</span> <span class="tok-type">aria-hidden</span>=<span class="tok-string">"true"</span><span class="tok-keyword">&gt;</span>☾<span class="tok-keyword">&lt;/span&gt;</span>
+  <span class="tok-keyword">&lt;/button&gt;</span>
+<span class="tok-keyword">&lt;/div&gt;</span></pre>
+      </div>
+
+      <p>Three behaviours are stitched together:</p>
+
+      <ol class="steps">
+        <li><strong>No-JS fallback.</strong> CSS reads <code>@media (prefers-color-scheme: dark)</code> when no <code>[data-theme]</code> attribute is on <code>&lt;html&gt;</code>, so disabled-JS users still get a sensible theme.</li>
+        <li><strong>Pre-paint resolution.</strong> The JS runs <em>before</em> first paint (deliberately not deferred) and sets <code>html[data-theme]</code> from <code>localStorage</code> → OS preference → "light". This prevents a flash of unstyled theme.</li>
+        <li><strong>Cross-tab sync.</strong> A <code>storage</code> event listener watches for the toggle being flipped in another tab and updates the current document live.</li>
+      </ol>
+    </section>
+
+    <section id="sections">
+      <h2><span class="section-anchor">// 08</span>Sections</h2>
+
+      <p>Sections are the body of every page. Each one gets an <code>id</code> matching its TOC anchor, an <code>&lt;h2&gt;</code> with a <code>// NN</code> section anchor, and any number of primitives inside.</p>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">section<span class="ext">.html</span></span>
+          <span class="langtag">HTML</span>
+        </div>
+<pre><span class="tok-keyword">&lt;section</span> <span class="tok-type">id</span>=<span class="tok-string">"my-topic"</span><span class="tok-keyword">&gt;</span>
+  <span class="tok-keyword">&lt;h2&gt;&lt;span</span> <span class="tok-type">class</span>=<span class="tok-string">"section-anchor"</span><span class="tok-keyword">&gt;</span>// 04<span class="tok-keyword">&lt;/span&gt;</span>My Topic<span class="tok-keyword">&lt;/h2&gt;</span>
+
+  <span class="tok-keyword">&lt;p&gt;</span>An opening paragraph explaining the topic.<span class="tok-keyword">&lt;/p&gt;</span>
+
+  <span class="tok-keyword">&lt;h3&gt;</span>A Subhead<span class="tok-keyword">&lt;/h3&gt;</span>
+  <span class="tok-keyword">&lt;p&gt;</span>More prose, primitives, etc.<span class="tok-keyword">&lt;/p&gt;</span>
+<span class="tok-keyword">&lt;/section&gt;</span></pre>
+      </div>
+
+      <p>Subheads use plain <code>&lt;h3&gt;</code> with no section anchor. Three levels of heading (<code>h1</code> hero, <code>h2</code> section, <code>h3</code> subhead) cover every page in the system — going deeper is a sign the section is too big.</p>
+    </section>
+
+    <section id="field-tables">
+      <h2><span class="section-anchor">// 09</span>Field Tables</h2>
+
+      <p><code>table.fields</code> is the workhorse primitive — used for parameter lists, struct fields, configuration options, command flags, comparison matrices, almost anything tabular. Three- or four-column layouts are typical.</p>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">fields<span class="ext">.html</span></span>
+          <span class="langtag">HTML</span>
+        </div>
+<pre><span class="tok-keyword">&lt;table</span> <span class="tok-type">class</span>=<span class="tok-string">"fields"</span><span class="tok-keyword">&gt;</span>
+  <span class="tok-keyword">&lt;thead&gt;</span>
+    <span class="tok-keyword">&lt;tr&gt;&lt;th&gt;</span>Field<span class="tok-keyword">&lt;/th&gt;&lt;th&gt;</span>Type<span class="tok-keyword">&lt;/th&gt;&lt;th&gt;</span>Description<span class="tok-keyword">&lt;/th&gt;&lt;/tr&gt;</span>
+  <span class="tok-keyword">&lt;/thead&gt;</span>
+  <span class="tok-keyword">&lt;tbody&gt;</span>
+    <span class="tok-keyword">&lt;tr&gt;</span>
+      <span class="tok-keyword">&lt;td</span> <span class="tok-type">class</span>=<span class="tok-string">"field"</span><span class="tok-keyword">&gt;</span>session_id<span class="tok-keyword">&lt;/td&gt;</span>
+      <span class="tok-keyword">&lt;td</span> <span class="tok-type">class</span>=<span class="tok-string">"type"</span><span class="tok-keyword">&gt;</span>string<span class="tok-keyword">&lt;/td&gt;</span>
+      <span class="tok-keyword">&lt;td</span> <span class="tok-type">class</span>=<span class="tok-string">"note"</span><span class="tok-keyword">&gt;</span>Stable UUID for the session<span class="tok-keyword">&lt;/td&gt;</span>
+    <span class="tok-keyword">&lt;/tr&gt;</span>
+  <span class="tok-keyword">&lt;/tbody&gt;</span>
+<span class="tok-keyword">&lt;/table&gt;</span></pre>
+      </div>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Cell class</th><th>Rendering</th><th>Use for</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="field">.field</td><td class="type">monospace, full opacity</td><td class="note">Identifiers — field names, flag names, file paths</td></tr>
+          <tr><td class="field">.type</td><td class="type">monospace, sky blue</td><td class="note">Type names, enum values, kinds</td></tr>
+          <tr><td class="field">.note</td><td class="type">serif, body weight</td><td class="note">Descriptions and prose</td></tr>
+        </tbody>
+      </table>
+
+      <p>Mix the cell classes freely — a "Field / Type / Description" table puts <code>.field</code> in column 1, <code>.type</code> in column 2, and <code>.note</code> in column 3, but a "Class / Purpose / Notes" table might use <code>.field</code> in column 1 and <code>.note</code> in both 2 and 3. Pick the class that fits the content, not the column position.</p>
+    </section>
+
+    <section id="code-frames">
+      <h2><span class="section-anchor">// 10</span>Code Frames</h2>
+
+      <p>Code samples sit inside a <code>.code-frame</code> wrapper with a titlebar that looks like a macOS window chrome — three "lights" (in palette coral / sunshine / mint), a filename with an extension highlight, and a right-aligned language tag.</p>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">code-frame<span class="ext">.html</span></span>
+          <span class="langtag">HTML</span>
+        </div>
+<pre><span class="tok-keyword">&lt;div</span> <span class="tok-type">class</span>=<span class="tok-string">"code-frame"</span><span class="tok-keyword">&gt;</span>
+  <span class="tok-keyword">&lt;div</span> <span class="tok-type">class</span>=<span class="tok-string">"code-titlebar"</span><span class="tok-keyword">&gt;</span>
+    <span class="tok-keyword">&lt;div</span> <span class="tok-type">class</span>=<span class="tok-string">"lights"</span><span class="tok-keyword">&gt;</span>
+      <span class="tok-keyword">&lt;span</span> <span class="tok-type">class</span>=<span class="tok-string">"l1"</span><span class="tok-keyword">&gt;&lt;/span&gt;</span>
+      <span class="tok-keyword">&lt;span</span> <span class="tok-type">class</span>=<span class="tok-string">"l2"</span><span class="tok-keyword">&gt;&lt;/span&gt;</span>
+      <span class="tok-keyword">&lt;span</span> <span class="tok-type">class</span>=<span class="tok-string">"l3"</span><span class="tok-keyword">&gt;&lt;/span&gt;</span>
+    <span class="tok-keyword">&lt;/div&gt;</span>
+    <span class="tok-keyword">&lt;span</span> <span class="tok-type">class</span>=<span class="tok-string">"filename"</span><span class="tok-keyword">&gt;</span>example<span class="tok-keyword">&lt;span</span> <span class="tok-type">class</span>=<span class="tok-string">"ext"</span><span class="tok-keyword">&gt;</span>.go<span class="tok-keyword">&lt;/span&gt;&lt;/span&gt;</span>
+    <span class="tok-keyword">&lt;span</span> <span class="tok-type">class</span>=<span class="tok-string">"langtag"</span><span class="tok-keyword">&gt;</span>GO<span class="tok-keyword">&lt;/span&gt;</span>
+  <span class="tok-keyword">&lt;/div&gt;</span>
+&lt;pre&gt;<span class="tok-comment">// code goes here, with token spans (see next section)</span>&lt;/pre&gt;
+<span class="tok-keyword">&lt;/div&gt;</span></pre>
+      </div>
+
+      <div class="callout note"><strong>note</strong>Filenames split into the base name and an <code>&lt;span class="ext"&gt;</code> wrapping the extension. The extension is tinted coral so the file type pops at a glance. Use this even for non-source files: <code>install<span style="color: var(--coral-300)">.sh</span></code>, <code>tree<span style="color: var(--coral-300)">.txt</span></code>.</div>
+
+      <p>Common language tags: <code>GO</code>, <code>JSON</code>, <code>HTML</code>, <code>CSS</code>, <code>SHELL</code>, <code>ASCII</code>, <code>TREE</code>, <code>INI</code>, <code>TEXT</code>. Pick the one closest to the content; <code>ASCII</code> is the catch-all for diagrams and listings.</p>
+    </section>
+
+    <section id="syntax-tokens">
+      <h2><span class="section-anchor">// 11</span>Syntax Tokens</h2>
+
+      <p>Syntax highlighting is hand-applied with token spans inside the <code>&lt;pre&gt;</code> block. There is no JS highlighter and no build step — every coloured run of text is a <code>&lt;span class="tok-..."&gt;</code> in the HTML source. This sounds onerous; in practice it gives precise control over emphasis and stays readable in plain HTML view.</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Class</th><th>Colour</th><th>Use for</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="field">.tok-keyword</td><td class="type">violet</td><td class="note">Language keywords (<code>func</code>, <code>type</code>, <code>return</code>, HTML tag delimiters)</td></tr>
+          <tr><td class="field">.tok-type</td><td class="type">sky blue</td><td class="note">Type names, struct names, attribute names</td></tr>
+          <tr><td class="field">.tok-string</td><td class="type">mint green</td><td class="note">String literals, attribute values</td></tr>
+          <tr><td class="field">.tok-number</td><td class="type">tangerine</td><td class="note">Numeric literals, hex values, units</td></tr>
+          <tr><td class="field">.tok-comment</td><td class="type">slate (italic)</td><td class="note">Comments — any flavour</td></tr>
+          <tr><td class="field">.ini-section</td><td class="type">tangerine (bold)</td><td class="note">INI / TOML section headers</td></tr>
+          <tr><td class="field">.ini-key</td><td class="type">sky blue</td><td class="note">INI / TOML keys</td></tr>
+          <tr><td class="field">.ini-value</td><td class="type">mint green</td><td class="note">INI / TOML values</td></tr>
+          <tr><td class="field">.term-prompt</td><td class="type">mint (non-selectable)</td><td class="note">Shell prompt characters (<code>$</code>, <code>%</code>) that should not be copied</td></tr>
+        </tbody>
+      </table>
+
+      <p>You can render any language with this small set — Go, JSON, HTML, CSS, shell, INI, Python, Rust. The token vocabulary is intentionally small. If you find yourself wanting a 9th colour, you almost certainly want to colour something else differently, not introduce a new token.</p>
+    </section>
+
+    <section id="callouts">
+      <h2><span class="section-anchor">// 12</span>Callouts</h2>
+
+      <p>A callout is a left-edged tinted block for asides — a warning, a clarifying note, an invariant the reader must not miss. The label is a small monospace caps run inside <code>&lt;strong&gt;</code>; the body is regular prose.</p>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">callouts<span class="ext">.html</span></span>
+          <span class="langtag">HTML</span>
+        </div>
+<pre><span class="tok-keyword">&lt;div</span> <span class="tok-type">class</span>=<span class="tok-string">"callout"</span><span class="tok-keyword">&gt;&lt;strong&gt;</span>tip<span class="tok-keyword">&lt;/strong&gt;</span>Default coral accent.<span class="tok-keyword">&lt;/div&gt;</span>
+<span class="tok-keyword">&lt;div</span> <span class="tok-type">class</span>=<span class="tok-string">"callout note"</span><span class="tok-keyword">&gt;&lt;strong&gt;</span>note<span class="tok-keyword">&lt;/strong&gt;</span>Sky-blue accent.<span class="tok-keyword">&lt;/div&gt;</span>
+<span class="tok-keyword">&lt;div</span> <span class="tok-type">class</span>=<span class="tok-string">"callout warn"</span><span class="tok-keyword">&gt;&lt;strong&gt;</span>warn<span class="tok-keyword">&lt;/strong&gt;</span>Sunshine accent.<span class="tok-keyword">&lt;/div&gt;</span>
+<span class="tok-keyword">&lt;div</span> <span class="tok-type">class</span>=<span class="tok-string">"callout success"</span><span class="tok-keyword">&gt;&lt;strong&gt;</span>ok<span class="tok-keyword">&lt;/strong&gt;</span>Success-green accent.<span class="tok-keyword">&lt;/div&gt;</span>
+<span class="tok-keyword">&lt;div</span> <span class="tok-type">class</span>=<span class="tok-string">"callout danger"</span><span class="tok-keyword">&gt;&lt;strong&gt;</span>danger<span class="tok-keyword">&lt;/strong&gt;</span>Error-red accent.<span class="tok-keyword">&lt;/div&gt;</span></pre>
+      </div>
+
+      <div class="callout"><strong>tip</strong>This is what the default coral variant looks like — use it sparingly for editorial asides that don't fit the typed categories.</div>
+
+      <div class="callout note"><strong>note</strong>The <code>note</code> variant is the workhorse — clarifications, "here's what to remember", invariants worth highlighting. Most pages will use this and only this.</div>
+
+      <div class="callout warn"><strong>warn</strong>The <code>warn</code> variant marks footguns and gotchas — behaviours that surprise readers, things that can go wrong if you ignore the advice.</div>
+
+      <div class="callout success"><strong>ok</strong>The <code>success</code> variant marks confirmed-good states — useful in checklist-style content ("this is the right shape") but rare overall.</div>
+
+      <div class="callout danger"><strong>danger</strong>The <code>danger</code> variant is for "do not do this" — destructive operations, security mistakes, never-rolls-back states. Use it rarely or it loses force.</div>
+
+      <p>The label inside <code>&lt;strong&gt;</code> is conventionally a single short word (<em>note, warn, tip, danger, ok, invariant, rule</em>) — the visual treatment makes it read as a chip, so longer phrases look wrong. The body is normal prose and can run multiple sentences.</p>
+    </section>
+
+    <section id="steps">
+      <h2><span class="section-anchor">// 13</span>Steps</h2>
+
+      <p><code>&lt;ol class="steps"&gt;</code> renders an ordered list as a numbered procedure — large coral numerals on the left, indented body content on the right. Use it for any sequence the reader is expected to follow in order: installation, dispatch flows, migration paths.</p>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">steps<span class="ext">.html</span></span>
+          <span class="langtag">HTML</span>
+        </div>
+<pre><span class="tok-keyword">&lt;ol</span> <span class="tok-type">class</span>=<span class="tok-string">"steps"</span><span class="tok-keyword">&gt;</span>
+  <span class="tok-keyword">&lt;li&gt;</span>Read input from stdin.<span class="tok-keyword">&lt;/li&gt;</span>
+  <span class="tok-keyword">&lt;li&gt;</span>Decode JSON into the typed struct.<span class="tok-keyword">&lt;/li&gt;</span>
+  <span class="tok-keyword">&lt;li&gt;</span>Apply the operation; write JSON output.<span class="tok-keyword">&lt;/li&gt;</span>
+<span class="tok-keyword">&lt;/ol&gt;</span></pre>
+      </div>
+
+      <p>Items can be short single sentences or longer multi-paragraph blocks containing prose, code frames, and nested structures. CSS auto-numbers from 1 — there is no manual numbering inside the list.</p>
+    </section>
+
+    <section id="footer">
+      <h2><span class="section-anchor">// 14</span>Footer</h2>
+
+      <p>The footer is a single line: a blinking product mark on the left and a section/category descriptor on the right. It is the page's signature and does not need to carry navigation.</p>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">footer<span class="ext">.html</span></span>
+          <span class="langtag">HTML</span>
+        </div>
+<pre><span class="tok-keyword">&lt;footer&gt;</span>
+  <span class="tok-keyword">&lt;span</span> <span class="tok-type">class</span>=<span class="tok-string">"blink"</span><span class="tok-keyword">&gt;</span>yourproject<span class="tok-keyword">&lt;/span&gt;</span>
+  <span class="tok-keyword">&lt;span&gt;</span>page-slug · category<span class="tok-keyword">&lt;/span&gt;</span>
+<span class="tok-keyword">&lt;/footer&gt;</span></pre>
+      </div>
+
+      <p>The <code>.blink</code> class animates the project name with a slow cursor-style fade — the same animation idea as the rail's <code>.live-dot</code>. Use it only on the project name, not on arbitrary text.</p>
+    </section>
+
+    <section id="tokens">
+      <h2><span class="section-anchor">// 15</span>Design Tokens</h2>
+
+      <p>The CSS defines nine accent palettes plus a slate palette, each with ten shades from 50 (lightest) to 950 (darkest). They are deliberately broad so a page can lean on a colour family — e.g. mint for "ok / clean" indicators — without having to redefine local variables.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 760 470" role="img" aria-labelledby="palette-title palette-desc" preserveAspectRatio="xMidYMid meet">
+          <title id="palette-title">Colour palette swatches</title>
+          <desc id="palette-desc">Each row shows one palette family with five representative shades (100, 300, 500, 700, 900) and a usage note. Coral is the primary accent; sunshine highlights selections; sky tints type and note callouts; mint marks success and the live dot; violet colours keywords in code; tangerine colours numbers and INI sections; bubblegum and lagoon are reserved accents; slate provides body type and rules.</desc>
+          <style>
+            /* dia- prefix on every class — see comment on the anatomy SVG style block. */
+            .dia-pal-name { font: 600 12px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg); }
+            .dia-pal-role { font: 10px "Charter","Iowan Old Style",Georgia,serif; fill: var(--fg-mute); font-style: italic; }
+            .dia-swatch   { stroke: var(--rule); stroke-width: 0.5; }
+            .dia-col-head { font: 600 9px "Berkeley Mono","JetBrains Mono",ui-monospace,monospace; fill: var(--fg-dim); text-anchor: middle; letter-spacing: 0.14em; text-transform: uppercase; }
+          </style>
+
+          <!-- Shade column headers -->
+          <text x="260" y="14" class="dia-col-head">100</text>
+          <text x="338" y="14" class="dia-col-head">300</text>
+          <text x="416" y="14" class="dia-col-head">500</text>
+          <text x="494" y="14" class="dia-col-head">700</text>
+          <text x="572" y="14" class="dia-col-head">900</text>
+          <text x="668" y="14" class="dia-col-head">role</text>
+
+          <!-- Row template: y starts at 28, height 40, gap 4 -->
+          <!-- coral -->
+          <g transform="translate(0, 28)">
+            <text x="20"  y="22" class="dia-pal-name">coral</text>
+            <rect x="232" y="6" width="56" height="28" fill="var(--coral-100)" class="dia-swatch" rx="3"/>
+            <rect x="310" y="6" width="56" height="28" fill="var(--coral-300)" class="dia-swatch" rx="3"/>
+            <rect x="388" y="6" width="56" height="28" fill="var(--coral-500)" class="dia-swatch" rx="3"/>
+            <rect x="466" y="6" width="56" height="28" fill="var(--coral-700)" class="dia-swatch" rx="3"/>
+            <rect x="544" y="6" width="56" height="28" fill="var(--coral-900)" class="dia-swatch" rx="3"/>
+            <text x="612" y="24" class="dia-pal-role">primary · links · accents</text>
+          </g>
+
+          <!-- sunshine -->
+          <g transform="translate(0, 76)">
+            <text x="20"  y="22" class="dia-pal-name">sunshine</text>
+            <rect x="232" y="6" width="56" height="28" fill="var(--sunshine-100)" class="dia-swatch" rx="3"/>
+            <rect x="310" y="6" width="56" height="28" fill="var(--sunshine-300)" class="dia-swatch" rx="3"/>
+            <rect x="388" y="6" width="56" height="28" fill="var(--sunshine-500)" class="dia-swatch" rx="3"/>
+            <rect x="466" y="6" width="56" height="28" fill="var(--sunshine-700)" class="dia-swatch" rx="3"/>
+            <rect x="544" y="6" width="56" height="28" fill="var(--sunshine-900)" class="dia-swatch" rx="3"/>
+            <text x="612" y="24" class="dia-pal-role">selection · decisions</text>
+          </g>
+
+          <!-- sky -->
+          <g transform="translate(0, 124)">
+            <text x="20"  y="22" class="dia-pal-name">sky</text>
+            <rect x="232" y="6" width="56" height="28" fill="var(--sky-100)" class="dia-swatch" rx="3"/>
+            <rect x="310" y="6" width="56" height="28" fill="var(--sky-300)" class="dia-swatch" rx="3"/>
+            <rect x="388" y="6" width="56" height="28" fill="var(--sky-500)" class="dia-swatch" rx="3"/>
+            <rect x="466" y="6" width="56" height="28" fill="var(--sky-700)" class="dia-swatch" rx="3"/>
+            <rect x="544" y="6" width="56" height="28" fill="var(--sky-900)" class="dia-swatch" rx="3"/>
+            <text x="612" y="24" class="dia-pal-role">types in code · note callouts</text>
+          </g>
+
+          <!-- mint -->
+          <g transform="translate(0, 172)">
+            <text x="20"  y="22" class="dia-pal-name">mint</text>
+            <rect x="232" y="6" width="56" height="28" fill="var(--mint-100)" class="dia-swatch" rx="3"/>
+            <rect x="310" y="6" width="56" height="28" fill="var(--mint-300)" class="dia-swatch" rx="3"/>
+            <rect x="388" y="6" width="56" height="28" fill="var(--mint-500)" class="dia-swatch" rx="3"/>
+            <rect x="466" y="6" width="56" height="28" fill="var(--mint-700)" class="dia-swatch" rx="3"/>
+            <rect x="544" y="6" width="56" height="28" fill="var(--mint-900)" class="dia-swatch" rx="3"/>
+            <text x="612" y="24" class="dia-pal-role">strings · success · live dot</text>
+          </g>
+
+          <!-- violet -->
+          <g transform="translate(0, 220)">
+            <text x="20"  y="22" class="dia-pal-name">violet</text>
+            <rect x="232" y="6" width="56" height="28" fill="var(--violet-100)" class="dia-swatch" rx="3"/>
+            <rect x="310" y="6" width="56" height="28" fill="var(--violet-300)" class="dia-swatch" rx="3"/>
+            <rect x="388" y="6" width="56" height="28" fill="var(--violet-500)" class="dia-swatch" rx="3"/>
+            <rect x="466" y="6" width="56" height="28" fill="var(--violet-700)" class="dia-swatch" rx="3"/>
+            <rect x="544" y="6" width="56" height="28" fill="var(--violet-900)" class="dia-swatch" rx="3"/>
+            <text x="612" y="24" class="dia-pal-role">keywords in code</text>
+          </g>
+
+          <!-- tangerine -->
+          <g transform="translate(0, 268)">
+            <text x="20"  y="22" class="dia-pal-name">tangerine</text>
+            <rect x="232" y="6" width="56" height="28" fill="var(--tangerine-100)" class="dia-swatch" rx="3"/>
+            <rect x="310" y="6" width="56" height="28" fill="var(--tangerine-300)" class="dia-swatch" rx="3"/>
+            <rect x="388" y="6" width="56" height="28" fill="var(--tangerine-500)" class="dia-swatch" rx="3"/>
+            <rect x="466" y="6" width="56" height="28" fill="var(--tangerine-700)" class="dia-swatch" rx="3"/>
+            <rect x="544" y="6" width="56" height="28" fill="var(--tangerine-900)" class="dia-swatch" rx="3"/>
+            <text x="612" y="24" class="dia-pal-role">numbers · INI sections</text>
+          </g>
+
+          <!-- bubblegum -->
+          <g transform="translate(0, 316)">
+            <text x="20"  y="22" class="dia-pal-name">bubblegum</text>
+            <rect x="232" y="6" width="56" height="28" fill="var(--bubblegum-100)" class="dia-swatch" rx="3"/>
+            <rect x="310" y="6" width="56" height="28" fill="var(--bubblegum-300)" class="dia-swatch" rx="3"/>
+            <rect x="388" y="6" width="56" height="28" fill="var(--bubblegum-500)" class="dia-swatch" rx="3"/>
+            <rect x="466" y="6" width="56" height="28" fill="var(--bubblegum-700)" class="dia-swatch" rx="3"/>
+            <rect x="544" y="6" width="56" height="28" fill="var(--bubblegum-900)" class="dia-swatch" rx="3"/>
+            <text x="612" y="24" class="dia-pal-role">reserved · editorial accent</text>
+          </g>
+
+          <!-- lagoon -->
+          <g transform="translate(0, 364)">
+            <text x="20"  y="22" class="dia-pal-name">lagoon</text>
+            <rect x="232" y="6" width="56" height="28" fill="var(--lagoon-100)" class="dia-swatch" rx="3"/>
+            <rect x="310" y="6" width="56" height="28" fill="var(--lagoon-300)" class="dia-swatch" rx="3"/>
+            <rect x="388" y="6" width="56" height="28" fill="var(--lagoon-500)" class="dia-swatch" rx="3"/>
+            <rect x="466" y="6" width="56" height="28" fill="var(--lagoon-700)" class="dia-swatch" rx="3"/>
+            <rect x="544" y="6" width="56" height="28" fill="var(--lagoon-900)" class="dia-swatch" rx="3"/>
+            <text x="612" y="24" class="dia-pal-role">reserved · alternate cool tone</text>
+          </g>
+
+          <!-- slate -->
+          <g transform="translate(0, 412)">
+            <text x="20"  y="22" class="dia-pal-name">slate</text>
+            <rect x="232" y="6" width="56" height="28" fill="var(--slate-100)" class="dia-swatch" rx="3"/>
+            <rect x="310" y="6" width="56" height="28" fill="var(--slate-300)" class="dia-swatch" rx="3"/>
+            <rect x="388" y="6" width="56" height="28" fill="var(--slate-500)" class="dia-swatch" rx="3"/>
+            <rect x="466" y="6" width="56" height="28" fill="var(--slate-700)" class="dia-swatch" rx="3"/>
+            <rect x="544" y="6" width="56" height="28" fill="var(--slate-900)" class="dia-swatch" rx="3"/>
+            <text x="612" y="24" class="dia-pal-role">body type · rules · muted UI</text>
+          </g>
+        </svg>
+      </figure>
+
+      <p>Each palette also carries shades 50, 200, 400, 600, 800, and 950 — not shown above. Reach for them when a more precise tonal step is needed.</p>
+
+      <p>Semantic tokens (<code>--bg</code>, <code>--fg</code>, <code>--primary</code>, <code>--rule</code>, etc.) reference the palette tokens above and are remapped between light and dark themes. <strong>Reference semantic tokens in your own additions; only reach into the raw palette when nothing semantic fits.</strong></p>
+
+      <div class="code-frame">
+        <div class="code-titlebar">
+          <div class="lights"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+          <span class="filename">semantic-tokens<span class="ext">.css</span></span>
+          <span class="langtag">CSS</span>
+        </div>
+<pre><span class="tok-comment">/* Light theme */</span>
+--bg:           <span class="tok-number">#FAF7F0</span>;          <span class="tok-comment">/* warm cream paper */</span>
+--bg-sunk:      <span class="tok-number">#EFE9DA</span>;          <span class="tok-comment">/* card / sunken surface */</span>
+--bg-code:      <span class="tok-number">#1A1E23</span>;          <span class="tok-comment">/* always dark */</span>
+--fg:           <span class="tok-number">#2D3238</span>;          <span class="tok-comment">/* charcoal body type */</span>
+--fg-mute:      <span class="tok-number">#545B62</span>;
+--rule:         <span class="tok-number">#DAD2BD</span>;          <span class="tok-comment">/* warm hairline */</span>
+--primary:      <span class="tok-keyword">var</span>(--coral-600);
+--type:         <span class="tok-keyword">var</span>(--sky-700);
+--keyword:      <span class="tok-keyword">var</span>(--violet-700);
+--string:       <span class="tok-keyword">var</span>(--mint-700);
+--number:       <span class="tok-keyword">var</span>(--tangerine-700);</pre>
+      </div>
+    </section>
+
+    <section id="theming">
+      <h2><span class="section-anchor">// 16</span>Theming</h2>
+
+      <p>Three theme states are supported, in this priority order:</p>
+
+      <ol class="steps">
+        <li><strong>Explicit user choice</strong> — the theme switcher sets <code>html[data-theme="light"]</code> or <code>html[data-theme="dark"]</code> and persists the choice in <code>localStorage</code>.</li>
+        <li><strong>OS preference</strong> — when no <code>data-theme</code> attribute is set and JS hasn't run, the CSS <code>@media (prefers-color-scheme: dark)</code> block applies the dark palette automatically.</li>
+        <li><strong>Light default</strong> — falls through to the cream-paper light theme.</li>
+      </ol>
+
+      <p>The JS is small (~50 lines) and runs synchronously in the document head. It:</p>
+
+      <ul>
+        <li>Resolves the initial theme from <code>localStorage</code> → OS preference → "light" <em>before</em> first paint.</li>
+        <li>Wires the <code>.theme-toggle</code> button to flip the attribute and persist the choice.</li>
+        <li>Listens to the <code>storage</code> event so a toggle in one tab updates every other tab live.</li>
+      </ul>
+
+      <p>If you fork the JS, change the <code>STORAGE_KEY</code> constant to your project name so different projects on the same origin don't share theme state.</p>
+
+      <div class="callout warn"><strong>warn</strong>The script is intentionally <em>not</em> deferred. Loading it as a regular <code>&lt;script src&gt;</code> in <code>&lt;head&gt;</code> blocks parsing for a few milliseconds but eliminates the flash-of-wrong-theme that defer-loaded theme scripts produce. Keep the placement.</div>
+    </section>
+
+    <section id="voice">
+      <h2><span class="section-anchor">// 17</span>Voice and Style</h2>
+
+      <p>The design system has a voice. Match it or the pages drift apart.</p>
+
+      <ul>
+        <li><strong>Full sentences in prose.</strong> The lede, paragraphs, and callout bodies are written end-to-end. Fragments work in <code>.note</code> cells and footers, not in body copy.</li>
+        <li><strong>Lowercase identifier-style monospace.</strong> Filenames, flag names, command names appear in <code>&lt;code&gt;</code> with their natural casing — <code>botctrl claude config install</code>, <code>--scope=project</code>. No marketing capitalisation.</li>
+        <li><strong>Numbers in stat blocks should be memorable.</strong> Four facts that characterise the page, not four random metrics.</li>
+        <li><strong>"Reports whether" for booleans</strong> when describing functions or fields — borrowed from Effective Go's doc convention.</li>
+        <li><strong>Cross-link with <code>&lt;a href="other-page.html#section-id"&gt;</code>.</strong> Pages should reference each other liberally — readers travel between docs more than they scroll within one.</li>
+        <li><strong>Editorial em-dashes.</strong> The serif body type carries em-dashes well — use them for parenthetical asides rather than parentheses where possible.</li>
+        <li><strong>No emoji.</strong> The system already uses colour as accent; emoji compete with it visually and don't match the editorial tone.</li>
+      </ul>
+    </section>
+
+    <section id="adopting">
+      <h2><span class="section-anchor">// 18</span>Adopting in Your Project</h2>
+
+      <h3>Minimum-effort adoption</h3>
+
+      <ol class="steps">
+        <li>Copy <code>botctrl-docs.css</code> and <code>botctrl-docs.js</code> into your project's docs folder. Rename to <code>&lt;project&gt;-docs.css</code> / <code>.js</code>.</li>
+        <li>In the JS, change <code>STORAGE_KEY</code> from <code>"botctrl-docs-theme"</code> to <code>"&lt;project&gt;-docs-theme"</code>.</li>
+        <li>Copy one existing page (e.g. <code>kong-base-setup.html</code> from the full botctrl docs folder) as a template and overwrite the content.</li>
+        <li>Update the rail title (<code>// project · area</code>) and the footer project name on every new page.</li>
+      </ol>
+
+      <p>That's it. You'll have working documentation in a few minutes with the full design system intact.</p>
+
+      <h3>Light customisation</h3>
+
+      <p>Three points where projects commonly diverge without breaking the system:</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Change</th><th>Where</th><th>Safe?</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="field">Primary accent colour</td><td class="note">Remap <code>--primary</code> to a different palette in the <code>:root</code> block</td><td class="type">yes</td></tr>
+          <tr><td class="field">Body typeface</td><td class="note">Change the <code>body { font-family: ... }</code> stack</td><td class="type">yes (stay serif)</td></tr>
+          <tr><td class="field">Monospace typeface</td><td class="note">Change the shared mono stack at the top of the file</td><td class="type">yes</td></tr>
+          <tr><td class="field">Hero stat layout</td><td class="note">Adjust <code>.hero-stats { grid-template-columns: ... }</code></td><td class="type">yes</td></tr>
+          <tr><td class="field">Section numbering</td><td class="note">Pure HTML — change the numerals in the <code>// NN</code> anchors and TOC nums</td><td class="type">yes</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Hosting</h3>
+
+      <p>The output is a folder of static HTML files. Every project that already has a <code>docs/</code> folder can host them as-is:</p>
+
+      <ul>
+        <li><strong>GitHub Pages</strong> — point Pages at the docs folder; the files render directly.</li>
+        <li><strong>S3 / Cloudflare / Netlify</strong> — upload the folder; no build pipeline required.</li>
+        <li><strong>Local browsing</strong> — open the HTML file directly. The asset references are relative; everything just works.</li>
+        <li><strong>Inside an IDE</strong> — most editors render the HTML in a live preview.</li>
+      </ul>
+
+      <h3>What to keep verbatim</h3>
+
+      <p>To stay compatible with future updates to the system (and to keep visual consistency across projects), these conventions are load-bearing:</p>
+
+      <ul>
+        <li>The class names — <code>.layout</code>, <code>.rail</code>, <code>.hero</code>, <code>.code-frame</code>, <code>.callout</code>, <code>.fields</code>, <code>.steps</code>, plus all the token classes.</li>
+        <li>The page skeleton (rail → main → hero → sections → footer order).</li>
+        <li>The <code>// NN</code> section-anchor pattern matching the TOC <code>.toc-num</code>.</li>
+        <li>The titlebar structure inside <code>.code-frame</code> (lights → filename + ext → langtag).</li>
+        <li>The callout label-inside-<code>&lt;strong&gt;</code> convention.</li>
+      </ul>
+
+      <p>Free to vary: colours, typeface, sub-section structure, the words you put in badges, the content of stat blocks, the granularity of TOC groupings.</p>
+    </section>
+
+    <section id="don'ts">
+      <h2><span class="section-anchor">// 19</span>Don'ts</h2>
+
+      <p>Things that look reasonable but fight the system:</p>
+
+      <ul>
+        <li><strong>Don't introduce a build step.</strong> The whole appeal is "save the file, refresh the browser." A bundler, MDX, or static-site generator forfeits that.</li>
+        <li><strong>Don't add a fourth heading level.</strong> If a section needs <code>h4</code>, it's probably two sections.</li>
+        <li><strong>Don't render code without a code frame.</strong> Bare <code>&lt;pre&gt;</code> outside <code>.code-frame</code> loses the titlebar context — the language, the filename, the "this is code" framing.</li>
+        <li><strong>Don't omit the token spans inside code.</strong> Plain code reads as a flat grey block; the token highlighting carries enormous information density.</li>
+        <li><strong>Don't use callouts as decoration.</strong> Three callouts per section means none of them mean anything. One per section, at most.</li>
+        <li><strong>Don't reflow the layout for mobile.</strong> The system is designed for laptop+ screens. Mobile gets a single-column scroll and that is fine — better than a broken responsive layout that looks half-right on every viewport.</li>
+        <li><strong>Don't add a search bar.</strong> The numbered TOC is the navigation. If the site grows past what a TOC can cover, that's a sign the docs need to be split, not that the design needs a search bar.</li>
+        <li><strong>Don't break the warm-paper aesthetic.</strong> Pure white backgrounds and Inter / Roboto type collapse the personality. The cream paper and Charter serif are the system.</li>
+      </ul>
+    </section>
+
+    <footer>
+      <span class="blink">botctrl</span>
+      <span>design-system · standalone · single file</span>
+    </footer>
+
+  </main>
+
+</div>
+
+</body>
+</html>

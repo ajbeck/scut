@@ -79,10 +79,11 @@
           <span class="langtag">GO</span>
         </div>
 <pre><span class="tok-keyword">type</span> <span class="tok-type">cli</span> <span class="tok-keyword">struct</span> {
-    Version versionFlag    `name:<span class="tok-string">"version"</span> help:<span class="tok-string">"Print version and exit."</span> short:<span class="tok-string">"v"</span>`
-    Claude  claude.Cmd     `cmd:<span class="tok-string">"claude"</span> help:<span class="tok-string">"Claude Code agent commands — hooks, status line, and configuration."</span>`
-    Format  formatcmd.Cmd  `cmd:<span class="tok-string">"format"</span> help:<span class="tok-string">"Format source code files."</span>`
-    Logging loggingcmd.Cmd `cmd:<span class="tok-string">"logging"</span> help:<span class="tok-string">"Manage scut log files."</span>`
+    VersionFlag versionFlag    `name:<span class="tok-string">"version"</span> help:<span class="tok-string">"Print version and exit."</span> short:<span class="tok-string">"v"</span>`
+    Version     versioncmd.Cmd `cmd:<span class="tok-string">"version"</span> help:<span class="tok-string">"Print version and exit."</span>`
+    Claude      claude.Cmd     `cmd:<span class="tok-string">"claude"</span> help:<span class="tok-string">"Claude Code agent commands — hooks, status line, and configuration."</span>`
+    Format      formatcmd.Cmd  `cmd:<span class="tok-string">"format"</span> help:<span class="tok-string">"Format source code files."</span>`
+    Logging     loggingcmd.Cmd `cmd:<span class="tok-string">"logging"</span> help:<span class="tok-string">"Manage scut log files."</span>`
 }
 
 <span class="tok-keyword">func</span> main() {
@@ -222,9 +223,11 @@ ctx.FatalIfErrorf(ctx.Run(logger))
 <span class="tok-keyword">func</span> (c *<span class="tok-type">myCmd</span>) Run(stdin <span class="tok-type">io.Reader</span>, stdout <span class="tok-type">io.Writer</span>, log *<span class="tok-type">slog.Logger</span>) <span class="tok-type">error</span> {</pre>
       </div>
 
-      <h3>Version Flag</h3>
+      <h3>Version Output</h3>
 
-      <p>The <code>--version</code> / <code>-v</code> flag uses Kong's <code>BeforeReset</code> lifecycle hook. When the flag is set, <code>BeforeReset</code> fires before any command resolution — it prints the version string and exits. This avoids requiring a dedicated <code>version</code> subcommand.</p>
+      <p><code>scut version</code> is a root leaf command implemented by <code>internal/cmd/version.Cmd</code>. Its <code>Run(stdout io.Writer)</code> method prints <code>internal/version.String()</code>, keeping command output testable through the normal Kong dependency injection path.</p>
+
+      <p>The compatibility <code>--version</code> / <code>-v</code> flag remains available and uses Kong's <code>BeforeReset</code> lifecycle hook. When the flag is set, <code>BeforeReset</code> fires before command resolution, prints the same version string from <code>kong.Vars</code>, and exits.</p>
 
       <h3>Kong Vars</h3>
 
@@ -236,7 +239,7 @@ ctx.FatalIfErrorf(ctx.Run(logger))
 
       <h3>Layout</h3>
 
-      <p>Commands live under <code>internal/cmd/</code> organized by agent, then by capability:</p>
+      <p>Commands live under <code>internal/cmd/</code> organized by agent, then by capability. Root-level utility commands use their own package directly under <code>internal/cmd/</code>:</p>
 
       <div class="code-frame">
         <div class="code-titlebar">
@@ -249,7 +252,8 @@ internal/cmd/claude/claude.go          <span class="tok-comment"># "scut claude"
 internal/cmd/claude/hook/hook.go       <span class="tok-comment"># "scut claude hook" subcommands</span>
 internal/cmd/claude/config/config.go   <span class="tok-comment"># "scut claude config" subcommands (install, uninstall, status)</span>
 internal/cmd/format/format.go          <span class="tok-comment"># "scut format" group (formatter commands)</span>
-internal/cmd/logging/logging.go        <span class="tok-comment"># "scut logging" group (clean command)</span></pre>
+internal/cmd/logging/logging.go        <span class="tok-comment"># "scut logging" group (clean command)</span>
+internal/cmd/version/version.go        <span class="tok-comment"># "scut version" root leaf command</span></pre>
       </div>
 
       <p>Each level exports a <code>Cmd</code> struct that the parent embeds with a <code>cmd:""</code> tag.</p>
@@ -268,7 +272,11 @@ internal/cmd/logging/logging.go        <span class="tok-comment"># "scut logging
    │      │     │        │
    cli    │     │        └─ preToolUseCmd (leaf — has Run())
           │     └─ hook.Cmd struct field
-          └─ claude.Cmd struct field</pre>
+          └─ claude.Cmd struct field
+
+scut version
+   │     │
+   cli   └─ version.Cmd root leaf command (has Run())</pre>
       </div>
 
       <ul>

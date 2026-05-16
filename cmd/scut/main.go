@@ -12,15 +12,17 @@ import (
 	"github.com/ajbeck/scut/internal/cmd/claude"
 	formatcmd "github.com/ajbeck/scut/internal/cmd/format"
 	loggingcmd "github.com/ajbeck/scut/internal/cmd/logging"
+	versioncmd "github.com/ajbeck/scut/internal/cmd/version"
 	"github.com/ajbeck/scut/internal/logging"
 	"github.com/ajbeck/scut/internal/version"
 )
 
 type cli struct {
-	Version versionFlag    `name:"version" help:"Print version and exit." short:"v"`
-	Claude  claude.Cmd     `cmd:"claude" help:"Claude Code agent commands — hooks, status line, and configuration."`
-	Format  formatcmd.Cmd  `cmd:"format" help:"Format source code files."`
-	Logging loggingcmd.Cmd `cmd:"logging" help:"Manage scut log files."`
+	VersionFlag versionFlag    `name:"version" help:"Print version and exit." short:"v"`
+	Version     versioncmd.Cmd `cmd:"version" help:"Print version and exit."`
+	Claude      claude.Cmd     `cmd:"claude" help:"Claude Code agent commands — hooks, status line, and configuration."`
+	Format      formatcmd.Cmd  `cmd:"format" help:"Format source code files."`
+	Logging     loggingcmd.Cmd `cmd:"logging" help:"Manage scut log files."`
 }
 
 // versionFlag is a kong flag type that prints the version and exits.

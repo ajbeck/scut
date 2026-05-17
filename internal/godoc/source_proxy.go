@@ -28,6 +28,25 @@ type ProxyFetcher struct {
 
 var versionPattern = regexp.MustCompile(`"Version"\s*:\s*"([^"]+)"`)
 
+func proxyURLsFromEnv(value string) []string {
+	if value == "" {
+		return []string{"https://proxy.golang.org"}
+	}
+	var urls []string
+	for _, entry := range strings.FieldsFunc(value, func(r rune) bool { return r == ',' || r == '|' }) {
+		entry = strings.TrimSpace(entry)
+		switch entry {
+		case "", "direct":
+			continue
+		case "off":
+			return urls
+		default:
+			urls = append(urls, entry)
+		}
+	}
+	return urls
+}
+
 func (f ProxyFetcher) Fetch(ctx context.Context, pkg string, opts Options) (PackageSource, error) {
 	if f.ProxyURL == "" {
 		return PackageSource{}, ErrSourceNotApplicable

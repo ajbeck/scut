@@ -574,6 +574,11 @@ func matchDocName(query string, name string, opts Options) bool</pre>
       </ol>
 
       <div class="callout warn"><strong>constraint</strong>Do not add sumdb, full comma-vs-pipe semantics, public direct Git, or <code>GOVCS</code> parsing here unless the tests and design are expanded first.</div>
+
+      <div class="callout">
+        <h3>Implementation note</h3>
+        <p>Task 7 kept proxy fallback deliberately small. <code>GOPROXY</code> is parsed into a simple ordered URL list, empty entries are skipped, <code>direct</code> is skipped as deferred, and <code>off</code> stops proxy URL collection. Production assembly creates one <code>ProxyFetcher</code> per URL so the existing resolver can continue from a proxy miss to the next configured proxy without changing checksum, direct VCS, or full comma-versus-pipe semantics.</p>
+      </div>
     </section>
 
     <section id="task-8">

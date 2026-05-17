@@ -19,22 +19,23 @@ var ErrPackageRequired = errors.New("package is required")
 
 // Client orchestrates source resolution, parsing, and formatting.
 type Client struct {
-	Resolver Resolver
+	Resolver     Resolver
+	PackageIndex PackageIndex
+	Current      CurrentPackage
 }
 
 func (c Client) Doc(ctx context.Context, opts Options) (string, error) {
-	if opts.Package == "" {
-		return "", ErrPackageRequired
-	}
-	source, err := c.Resolver.Fetch(ctx, opts.Package, opts)
+	resolved, err := LookupResolver{
+		Resolver:     c.Resolver,
+		PackageIndex: c.PackageIndex,
+		Current:      c.Current,
+	}.Resolve(ctx, opts)
 	if err != nil {
 		return "", err
 	}
+	source := resolved.Source
 
-	mode := doc.Mode(0)
-	if opts.Unexported {
-		mode |= doc.AllDecls
-	}
+	mode := doc.AllDecls
 	if opts.Src {
 		mode |= doc.PreserveAST
 	}
@@ -43,7 +44,7 @@ func (c Client) Doc(ctx context.Context, opts Options) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return FormatPackage(parsed.Package, parsed.Fset, parsed.Aliases, opts)
+	return FormatLookup(parsed, resolved.Lookup, opts)
 }
 
 // NewDefaultClient assembles production source fetchers.
@@ -80,7 +81,21 @@ func NewDefaultClient(fs afero.Fs) (*Client, error) {
 		},
 	)
 
-	return &Client{Resolver: Resolver{Fetchers: fetchers}}, nil
+	return &Client{
+		Resolver: Resolver{Fetchers: fetchers},
+		PackageIndex: LocalPackageIndex{
+			FS:         fs,
+			ModuleDir:  moduleDir,
+			ModulePath: modulePath,
+			GOROOT:     runtime.GOROOT(),
+			ModCache:   cacheDir,
+		},
+		Current: CurrentPackage{
+			WorkDir:    wd,
+			ModuleDir:  moduleDir,
+			ModulePath: modulePath,
+		},
+	}, nil
 }
 
 func readCurrentModule(fs afero.Fs, start string) (string, string, map[string]module.Version) {

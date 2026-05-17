@@ -3,7 +3,6 @@ package gotools
 
 import (
 	"context"
-	"errors"
 	"io"
 	"strings"
 
@@ -18,14 +17,14 @@ type Cmd struct {
 }
 
 type docCmd struct {
-	Package string `arg:"" optional:"" name:"package" help:"Package import path or local package path."`
-	Symbol  string `arg:"" optional:"" name:"symbol" help:"Optional package symbol to show."`
-	All     bool   `help:"Show all documentation for the package."`
-	Short   bool   `help:"Show one-line representation for each symbol."`
-	Src     bool   `help:"Show full source for the selected symbol."`
-	U       bool   `short:"u" help:"Show unexported symbols as well as exported symbols."`
-	C       bool   `short:"c" help:"Respect case when matching symbols."`
-	Version string `name:"module-version" help:"Module version query for external packages." default:"latest"`
+	Args    []string `arg:"" optional:"" name:"lookup" help:"Optional package, symbol, or package symbol lookup."`
+	All     bool     `help:"Show all documentation for the package."`
+	Short   bool     `help:"Show one-line representation for each symbol."`
+	Src     bool     `help:"Show full source for the selected symbol."`
+	U       bool     `short:"u" help:"Show unexported symbols as well as exported symbols."`
+	C       bool     `short:"c" help:"Respect case when matching symbols."`
+	Cmd     bool     `help:"Show symbols with package docs even if package is a command."`
+	Version string   `name:"module-version" help:"Module version query for external packages." default:"latest"`
 }
 
 type docClient interface {
@@ -37,24 +36,20 @@ var newDocClient = func(fs afero.Fs) (docClient, error) {
 }
 
 func (c *docCmd) Run(stdout io.Writer, fs afero.Fs) error {
-	if c.Package == "" {
-		return errors.New("package is required")
-	}
-
 	client, err := newDocClient(fs)
 	if err != nil {
 		return err
 	}
 
 	out, err := client.Doc(context.Background(), godoc.Options{
-		Package:       c.Package,
-		Symbol:        c.Symbol,
+		Args:          c.Args,
 		Version:       c.Version,
 		All:           c.All,
 		Short:         c.Short,
 		Src:           c.Src,
 		Unexported:    c.U,
 		CaseSensitive: c.C,
+		Cmd:           c.Cmd,
 	})
 	if err != nil {
 		return err

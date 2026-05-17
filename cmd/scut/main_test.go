@@ -57,7 +57,7 @@ func TestGotoolsDocCommandParses(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Parse() error = %v", err)
 	}
-	if got, want := ctx.Command(), "gotools doc <package>"; got != want {
+	if got, want := ctx.Command(), "gotools doc <lookup>"; got != want {
 		t.Errorf("Command() = %q, want %q", got, want)
 	}
 }

@@ -49,7 +49,7 @@
         <a class="toc-link" href="#task-6"><span class="toc-num">10</span><span>Proxy Sources ✓</span></a>
         <a class="toc-link" href="#task-7"><span class="toc-num">11</span><span>Private Git ✓</span></a>
         <a class="toc-link" href="#task-8"><span class="toc-num">12</span><span>Orchestration ✓</span></a>
-        <a class="toc-link" href="#task-9"><span class="toc-num">13</span><span>CLI Wiring</span></a>
+        <a class="toc-link" href="#task-9"><span class="toc-num">13</span><span>CLI Wiring ✓</span></a>
       </div>
 
       <div class="toc-section">
@@ -80,7 +80,7 @@
         <div class="stat"><span class="num">1</span><span class="label">new command group</span></div>
         <div class="stat"><span class="num">5</span><span class="label">source routes</span></div>
         <div class="stat"><span class="num">0</span><span class="label">shell-outs</span></div>
-        <div class="stat"><span class="num">8/9</span><span class="label">tasks completed</span></div>
+        <div class="stat"><span class="num">9/9</span><span class="label">tasks completed</span></div>
       </div>
     </header>
 
@@ -550,6 +550,8 @@ public proxy   github.com/foo/bar     -> ProxyFetcher</pre>
       <h2><span class="section-anchor">// 13</span>Task 9 — CLI Wiring</h2>
 
       <p>Replace the command placeholder with the real engine. The command should remain thin: parse flags, construct options, call <code>Client.Doc</code>, write stdout.</p>
+
+      <div class="callout note"><strong>completed</strong>Replaced the placeholder command with real <code>godoc.NewDefaultClient</code> wiring. The command maps package, symbol, <code>--all</code>, <code>--short</code>, <code>--src</code>, <code>-u</code>, <code>-c</code>, and <code>--module-version</code> into <code>godoc.Options</code>, receives <code>afero.Fs</code> through Kong injection, and writes exactly one trailing newline. Verified with <code>mage test</code> before committing.</div>
 
       <ol class="steps">
         <li>Update <code>internal/cmd/gotools/gotools_test.go</code> to inject a fake client or fake source fetcher.</li>

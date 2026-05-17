@@ -292,6 +292,8 @@ scut gotools doc encoding/json Marshal
         <li><strong>Group nodes</strong> (claude, hook) are exported <code>Cmd</code> structs with <code>cmd:""</code> tagged fields for their children. They have no <code>Run()</code> method.</li>
         <li><strong>Leaf commands</strong> (pre-tool-use, session-start, etc.) are unexported structs with a <code>Run(...) error</code> method. They are the actual execution targets.</li>
       </ul>
+
+      <p><code>scut gotools doc</code> follows the same thin-leaf pattern: Kong parses the package and optional symbol arguments plus flags such as <code>--all</code>, <code>--short</code>, <code>--src</code>, <code>-u</code>, <code>-c</code>, and <code>--module-version</code>. Its <code>Run(stdout io.Writer, fs afero.Fs)</code> method maps those fields into <code>internal/godoc.Options</code>, constructs the default documentation client, and writes one newline-terminated result to stdout.</p>
     </section>
 
     <section id="adding-commands">

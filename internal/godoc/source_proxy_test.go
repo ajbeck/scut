@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -57,6 +58,55 @@ func TestProxyFetcherFallsBackAcrossConfiguredProxies(t *testing.T) {
 	}
 	if got, want := source.Module.Version, "v1.2.3"; got != want {
 		t.Fatalf("Module.Version = %q, want %q", got, want)
+	}
+}
+
+func TestProxyFetcherReturnsContextCancellation(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	fetcher := ProxyFetcher{ProxyURL: "https://proxy.example.com"}
+
+	_, err := fetcher.Fetch(ctx, "github.com/acme/tool", Options{})
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("Fetch() error = %v, want context.Canceled", err)
+	}
+}
+
+func TestProxyFetcherReturnsMalformedProxyURL(t *testing.T) {
+	fetcher := ProxyFetcher{ProxyURL: "://bad proxy url"}
+
+	_, err := fetcher.Fetch(context.Background(), "github.com/acme/tool", Options{})
+	if err == nil {
+		t.Fatal("Fetch() error = nil, want malformed URL error")
+	}
+	if errors.Is(err, ErrSourceNotApplicable) {
+		t.Fatalf("Fetch() error = %v, want concrete malformed URL error", err)
+	}
+}
+
+func TestProxyFetcherDoesNotFallBackAfterServerError(t *testing.T) {
+	serverError := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "boom", http.StatusInternalServerError)
+	}))
+	t.Cleanup(serverError.Close)
+	hit := newModuleProxyServer(t, "github.com/acme/tool", "v1.2.3", map[string]string{
+		"tool.go": "package tool\n",
+	})
+	t.Cleanup(hit.Close)
+	resolver := Resolver{Fetchers: []SourceFetcher{
+		ProxyFetcher{Client: hit.Client(), ProxyURL: serverError.URL},
+		ProxyFetcher{Client: hit.Client(), ProxyURL: hit.URL},
+	}}
+
+	_, err := resolver.Fetch(context.Background(), "github.com/acme/tool", Options{})
+	if err == nil {
+		t.Fatal("Fetch() error = nil, want server error")
+	}
+	if errors.Is(err, ErrSourceNotApplicable) {
+		t.Fatalf("Fetch() error = %v, want concrete server error", err)
+	}
+	if !strings.Contains(err.Error(), "500") {
+		t.Fatalf("Fetch() error = %v, want 500 status", err)
 	}
 }
 

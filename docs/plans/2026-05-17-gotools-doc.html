@@ -42,7 +42,7 @@
         <p class="toc-section-label">Implementation</p>
         <a class="toc-link" href="#file-layout"><span class="toc-num">04</span><span>File Layout</span></a>
         <a class="toc-link" href="#task-1"><span class="toc-num">05</span><span>Command Shape ✓</span></a>
-        <a class="toc-link" href="#task-2"><span class="toc-num">06</span><span>Parser</span></a>
+        <a class="toc-link" href="#task-2"><span class="toc-num">06</span><span>Parser ✓</span></a>
         <a class="toc-link" href="#task-3"><span class="toc-num">07</span><span>Formatter</span></a>
         <a class="toc-link" href="#task-4"><span class="toc-num">08</span><span>Local Sources</span></a>
         <a class="toc-link" href="#task-5"><span class="toc-num">09</span><span>Module Cache</span></a>
@@ -80,7 +80,7 @@
         <div class="stat"><span class="num">1</span><span class="label">new command group</span></div>
         <div class="stat"><span class="num">5</span><span class="label">source routes</span></div>
         <div class="stat"><span class="num">0</span><span class="label">shell-outs</span></div>
-        <div class="stat"><span class="num">1/9</span><span class="label">tasks completed</span></div>
+        <div class="stat"><span class="num">2/9</span><span class="label">tasks completed</span></div>
       </div>
     </header>
 
@@ -362,6 +362,8 @@ scut gotools doc ./internal/godoc Client --src</pre>
       <h2><span class="section-anchor">// 06</span>Task 2 — Parser</h2>
 
       <p>Build the core package parser from source bytes. This is the point where we intentionally diverge from <code>go/build.ImportDir</code> and <code>parser.ParseDir</code>, because those APIs assume an OS filesystem path.</p>
+
+      <div class="callout note"><strong>completed</strong>Added <code>internal/godoc</code> parser types and <code>ParsePackage</code>, parsing source bytes with <code>parser.ParseFile</code>, building docs with <code>doc.NewFromFiles</code>, collecting import aliases, skipping syntactically invalid files, and returning <code>ErrNoParseableFiles</code> when nothing can be parsed. Verified with <code>mage test</code> before committing.</div>
 
       <ol class="steps">
         <li>Create <code>internal/godoc/types.go</code> with <code>Options</code>, <code>SourceFile</code>, <code>PackageSource</code>, and <code>ImportAliases</code>.</li>

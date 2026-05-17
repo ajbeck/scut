@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Plan — scut gotools doc</title>
-<link rel="stylesheet" href="../scut-docs.css">
-<script src="../scut-docs.js"></script>
+<link rel="stylesheet" href="../../scut-docs.css">
+<script src="../../scut-docs.js"></script>
 <style>
   figure.diagram {
     margin: 1.6rem 0 2rem;
@@ -324,7 +324,7 @@ scut gotools doc ./internal/godoc Client --src</pre>
 
       <p>Add the root command group and a minimal <code>doc</code> leaf command before implementing lookup behavior. This keeps parser and command wiring failures separate from resolver failures.</p>
 
-      <div class="callout note"><strong>completed</strong>Implemented <code>scut gotools doc</code> as a Kong command skeleton with package and symbol arguments, resolver-related flags, placeholder output, root parser coverage, command-level tests, and <a href="../kong-base-setup.html">Kong Base Setup</a> documentation updates. Verified with <code>mage test</code> before committing.</div>
+      <div class="callout note"><strong>completed</strong>Implemented <code>scut gotools doc</code> as a Kong command skeleton with package and symbol arguments, resolver-related flags, placeholder output, root parser coverage, command-level tests, and <a href="../../kong-base-setup.html">Kong Base Setup</a> documentation updates. Verified with <code>mage test</code> before committing.</div>
 
       <ol class="steps">
         <li>Add a failing parser test for <code>scut gotools doc encoding/json</code> in <code>cmd/scut/main_test.go</code>.</li>
@@ -629,7 +629,7 @@ GOPRIVATE=github.com/private/* GITHUB_TOKEN=*** ./bin/scut gotools doc github.co
 
       <p>Expected result: all Mage targets pass; stdlib smoke test prints <code>encoding/json.Marshal</code> docs; external module smoke test resolves from cache or proxy and prints the package header; private-module smoke test resolves through Git when valid credentials are present.</p>
 
-      <div class="callout note"><strong>docs</strong>Because this changes <code>cmd/scut/main.go</code> and adds <code>internal/cmd/**</code>, update <a href="../kong-base-setup.html">Kong Base Setup</a> in the same implementation branch. If the command behavior changes after this plan, update the HTML docs in the same commit as the behavior change.</div>
+      <div class="callout note"><strong>docs</strong>Because this changes <code>cmd/scut/main.go</code> and adds <code>internal/cmd/**</code>, update <a href="../../kong-base-setup.html">Kong Base Setup</a> in the same implementation branch. If the command behavior changes after this plan, update the HTML docs in the same commit as the behavior change.</div>
     </section>
 
     <section id="future-work">

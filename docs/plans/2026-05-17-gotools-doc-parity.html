@@ -596,6 +596,11 @@ func matchDocName(query string, name string, opts Options) bool</pre>
         <li>Run <code>mage test</code> after docs edits to keep the branch green.</li>
         <li>Commit with <code>docs: document gotools doc parity syntax</code>.</li>
       </ol>
+
+      <div class="callout">
+        <h3>Implementation note</h3>
+        <p>Task 8 updated <code>docs/kong-base-setup.html</code> only. The documentation now lists the supported zero-, one-, and two-argument lookup forms, describes local-only suffix shorthand boundaries, documents <code>--cmd</code> and package-main symbol hiding, and states that output targets <code>go doc</code>-style human-readable terminal text. CSS and JavaScript assets were not changed, so the standalone design-system document did not need regeneration.</p>
+      </div>
     </section>
 
     <section id="verification">

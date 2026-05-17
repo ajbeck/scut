@@ -28,6 +28,8 @@ type ProxyFetcher struct {
 
 var versionPattern = regexp.MustCompile(`"Version"\s*:\s*"([^"]+)"`)
 
+var errProxyMiss = errors.New("module proxy miss")
+
 func proxyURLsFromEnv(value string) []string {
 	if value == "" {
 		return []string{"https://proxy.golang.org"}
@@ -55,11 +57,17 @@ func (f ProxyFetcher) Fetch(ctx context.Context, pkg string, opts Options) (Pack
 	for _, modPath := range f.moduleCandidates(ctx, client, pkg) {
 		version, err := f.resolveVersion(ctx, client, modPath, opts.Version)
 		if err != nil {
-			continue
+			if errors.Is(err, errProxyMiss) {
+				continue
+			}
+			return PackageSource{}, err
 		}
 		source, err := f.fetchZip(ctx, client, modPath, version, pkg)
 		if err != nil {
-			continue
+			if errors.Is(err, errProxyMiss) || errors.Is(err, ErrNoGoFiles) {
+				continue
+			}
+			return PackageSource{}, err
 		}
 		if f.CacheFS != nil && f.CacheDir != "" {
 			_ = WriteCache(f.CacheFS, f.CacheDir, ResolvedModule{
@@ -166,6 +174,9 @@ func (f ProxyFetcher) proxyGet(ctx context.Context, client *http.Client, modPath
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		if resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusGone {
+			return nil, errProxyMiss
+		}
 		return nil, fmt.Errorf("module proxy returned %s", resp.Status)
 	}
 	return io.ReadAll(resp.Body)

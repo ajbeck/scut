@@ -8,11 +8,57 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path"
+	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/spf13/afero"
 )
+
+func TestProxyURLsFromEnv(t *testing.T) {
+	tests := []struct {
+		name string
+		env  string
+		want []string
+	}{
+		{name: "default", want: []string{"https://proxy.golang.org"}},
+		{name: "single", env: "https://proxy.example.com", want: []string{"https://proxy.example.com"}},
+		{name: "fallbacks", env: "https://one.example.com,https://two.example.com", want: []string{"https://one.example.com", "https://two.example.com"}},
+		{name: "skips_empty_and_direct", env: "https://one.example.com,,direct|https://two.example.com", want: []string{"https://one.example.com", "https://two.example.com"}},
+		{name: "off_stops", env: "https://one.example.com,off,https://two.example.com", want: []string{"https://one.example.com"}},
+		{name: "off_only", env: "off"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := proxyURLsFromEnv(tt.env)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Fatalf("proxyURLsFromEnv(%q) = %#v, want %#v", tt.env, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestProxyFetcherFallsBackAcrossConfiguredProxies(t *testing.T) {
+	miss := httptest.NewServer(http.NotFoundHandler())
+	t.Cleanup(miss.Close)
+	hit := newModuleProxyServer(t, "github.com/acme/tool", "v1.2.3", map[string]string{
+		"tool.go": "package tool\n",
+	})
+	t.Cleanup(hit.Close)
+	resolver := Resolver{Fetchers: []SourceFetcher{
+		ProxyFetcher{Client: hit.Client(), ProxyURL: miss.URL},
+		ProxyFetcher{Client: hit.Client(), ProxyURL: hit.URL},
+	}}
+
+	source, err := resolver.Fetch(context.Background(), "github.com/acme/tool", Options{})
+	if err != nil {
+		t.Fatalf("Fetch() error = %v", err)
+	}
+	if got, want := source.Module.Version, "v1.2.3"; got != want {
+		t.Fatalf("Module.Version = %q, want %q", got, want)
+	}
+}
 
 func TestProxyFetcherResolvesLatestAndExtractsPackage(t *testing.T) {
 	proxy := newModuleProxyServer(t, "github.com/acme/tool", "v1.2.3", map[string]string{

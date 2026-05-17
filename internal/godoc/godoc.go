@@ -74,13 +74,15 @@ func NewDefaultClient(fs afero.Fs) (*Client, error) {
 			CacheFS:      fs,
 			CacheDir:     cacheDir,
 		},
-		ProxyFetcher{
-			ProxyURL:     defaultProxyURL(),
+	)
+	for _, proxyURL := range proxyURLsFromEnv(os.Getenv("GOPROXY")) {
+		fetchers = append(fetchers, ProxyFetcher{
+			ProxyURL:     proxyURL,
 			DiscoveryURL: defaultDiscoveryURL,
 			CacheFS:      fs,
 			CacheDir:     cacheDir,
-		},
-	)
+		})
+	}
 
 	return &Client{
 		Resolver: Resolver{Fetchers: fetchers},
@@ -151,18 +153,6 @@ func defaultModuleCacheDir() string {
 		return filepath.Join(home, "go", "pkg", "mod")
 	}
 	return ""
-}
-
-func defaultProxyURL() string {
-	proxy := os.Getenv("GOPROXY")
-	if proxy == "" {
-		return "https://proxy.golang.org"
-	}
-	proxy = strings.FieldsFunc(proxy, func(r rune) bool { return r == ',' || r == '|' })[0]
-	if proxy == "" || proxy == "direct" || proxy == "off" {
-		return "https://proxy.golang.org"
-	}
-	return proxy
 }
 
 func defaultDiscoveryURL(importPath string) string {

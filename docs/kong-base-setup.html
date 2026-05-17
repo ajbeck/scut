@@ -55,7 +55,7 @@
 
       <div class="hero-stats">
         <div class="stat"><span class="num">3</span><span class="label">parse-time bindings</span></div>
-        <div class="stat"><span class="num">5</span><span class="label">command groups</span></div>
+        <div class="stat"><span class="num">6</span><span class="label">command groups</span></div>
         <div class="stat"><span class="num">10</span><span class="label">struct tags documented</span></div>
         <div class="stat"><span class="num">1</span><span class="label">entrypoint</span></div>
       </div>
@@ -83,6 +83,7 @@
     Version     versioncmd.Cmd `cmd:<span class="tok-string">"version"</span> help:<span class="tok-string">"Print version and exit."</span>`
     Claude      claude.Cmd     `cmd:<span class="tok-string">"claude"</span> help:<span class="tok-string">"Claude Code agent commands — hooks, status line, and configuration."</span>`
     Format      formatcmd.Cmd  `cmd:<span class="tok-string">"format"</span> help:<span class="tok-string">"Format source code files."</span>`
+    Gotools     gotoolscmd.Cmd `cmd:<span class="tok-string">"gotools"</span> help:<span class="tok-string">"Go tool-inspired commands for agents."</span>`
     Logging     loggingcmd.Cmd `cmd:<span class="tok-string">"logging"</span> help:<span class="tok-string">"Manage scut log files."</span>`
 }
 
@@ -252,6 +253,7 @@ internal/cmd/claude/claude.go          <span class="tok-comment"># "scut claude"
 internal/cmd/claude/hook/hook.go       <span class="tok-comment"># "scut claude hook" subcommands</span>
 internal/cmd/claude/config/config.go   <span class="tok-comment"># "scut claude config" subcommands (install, uninstall, status)</span>
 internal/cmd/format/format.go          <span class="tok-comment"># "scut format" group (formatter commands)</span>
+internal/cmd/gotools/gotools.go        <span class="tok-comment"># "scut gotools" group (Go tool-inspired commands)</span>
 internal/cmd/logging/logging.go        <span class="tok-comment"># "scut logging" group (clean command)</span>
 internal/cmd/version/version.go        <span class="tok-comment"># "scut version" root leaf command</span></pre>
       </div>
@@ -276,7 +278,14 @@ internal/cmd/version/version.go        <span class="tok-comment"># "scut version
 
 scut version
    │     │
-   cli   └─ version.Cmd root leaf command (has Run())</pre>
+   cli   └─ version.Cmd root leaf command (has Run())
+
+scut gotools doc encoding/json Marshal
+   │      │    │        │             │
+   cli    │    │        │             └─ symbol argument
+          │    │        └─ package argument
+          │    └─ docCmd leaf command (has Run())
+          └─ gotools.Cmd struct field</pre>
       </div>
 
       <ul>

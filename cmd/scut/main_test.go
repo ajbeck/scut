@@ -42,3 +42,22 @@ func TestVersionCommand(t *testing.T) {
 		t.Errorf("version command wrote %q, want %q", got, want)
 	}
 }
+
+func TestGotoolsDocCommandParses(t *testing.T) {
+	var c cli
+	var stdout bytes.Buffer
+	parser := kong.Must(&c,
+		kong.Name("scut"),
+		kong.Vars{"version": versionmeta.String()},
+		kong.BindTo(&stdout, (*io.Writer)(nil)),
+		kong.BindTo(afero.NewMemMapFs(), (*afero.Fs)(nil)),
+	)
+
+	ctx, err := parser.Parse([]string{"gotools", "doc", "encoding/json"})
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+	if got, want := ctx.Command(), "gotools doc <package>"; got != want {
+		t.Errorf("Command() = %q, want %q", got, want)
+	}
+}

@@ -551,6 +551,11 @@ func matchDocName(query string, name string, opts Options) bool</pre>
         <li>Run <code>mage test</code>.</li>
         <li>Commit with <code>patch: resolve docs from local replacements</code>.</li>
       </ol>
+
+      <div class="callout">
+        <h3>Implementation note</h3>
+        <p>Task 6 resolved local replacements through a dedicated <code>ReplaceSourceFetcher</code>. Current module parsing now records only local replacement directives with no replacement version, resolves relative paths against the module root, and ignores remote replacement targets. The fetcher uses longest module-prefix matching, reads the replacement checkout directly, and rejects package paths that would escape the replacement root before falling through to module cache and network fetchers.</p>
+      </div>
     </section>
 
     <section id="task-7">

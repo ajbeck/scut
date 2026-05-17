@@ -107,6 +107,46 @@ func TestLocalSourceFetcherSkipsImportPath(t *testing.T) {
 	}
 }
 
+func TestReplaceSourceFetcherLoadsPackageFromLocalReplacement(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	writeTestFile(t, fs, "/workspace/lib/sub/doc.go", []byte("package sub\n"))
+
+	fetcher := ReplaceSourceFetcher{
+		FS: fs,
+		Replacements: map[string]string{
+			"example.com/lib": "/workspace/lib",
+		},
+	}
+	source, err := fetcher.Fetch(context.Background(), "example.com/lib/sub", Options{})
+	if err != nil {
+		t.Fatalf("Fetch() error = %v", err)
+	}
+
+	if got, want := source.ImportPath, "example.com/lib/sub"; got != want {
+		t.Fatalf("ImportPath = %q, want %q", got, want)
+	}
+	if got, want := source.Dir, filepath.Join("/workspace/lib", "sub"); got != want {
+		t.Fatalf("Dir = %q, want %q", got, want)
+	}
+	if got, want := len(source.Files), 1; got != want {
+		t.Fatalf("len(Files) = %d, want %d", got, want)
+	}
+}
+
+func TestReplaceSourceFetcherRejectsPackageOutsideReplacementRoot(t *testing.T) {
+	fetcher := ReplaceSourceFetcher{
+		FS: afero.NewMemMapFs(),
+		Replacements: map[string]string{
+			"example.com/lib": "/workspace/lib",
+		},
+	}
+
+	_, err := fetcher.Fetch(context.Background(), "example.com/lib/../other", Options{})
+	if !errors.Is(err, ErrOutsideModule) {
+		t.Fatalf("Fetch() error = %v, want ErrOutsideModule", err)
+	}
+}
+
 func TestStdlibSourceFetcherLoadsPackage(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	writeTestFile(t, fs, "/goroot/src/encoding/json/encode.go", []byte("package json\n"))

@@ -57,6 +57,59 @@ func (f LocalSourceFetcher) Fetch(_ context.Context, pkg string, _ Options) (Pac
 	}, nil
 }
 
+// ReplaceSourceFetcher loads packages from local go.mod replace directives.
+type ReplaceSourceFetcher struct {
+	FS           afero.Fs
+	Replacements map[string]string
+}
+
+func (f ReplaceSourceFetcher) Fetch(_ context.Context, pkg string, _ Options) (PackageSource, error) {
+	modPath, root, ok := f.resolveReplacement(pkg)
+	if !ok {
+		return PackageSource{}, ErrSourceNotApplicable
+	}
+
+	subPath := strings.TrimPrefix(pkg, modPath)
+	subPath = strings.TrimPrefix(subPath, "/")
+	root = filepath.Clean(root)
+	dir := filepath.Clean(filepath.Join(root, filepath.FromSlash(subPath)))
+	rel, err := filepath.Rel(root, dir)
+	if err != nil {
+		return PackageSource{}, fmt.Errorf("resolving replacement package path: %w", err)
+	}
+	if rel != "." && !filepath.IsLocal(rel) {
+		return PackageSource{}, ErrOutsideModule
+	}
+
+	files, err := readGoFiles(f.FS, dir)
+	if err != nil {
+		if errors.Is(err, ErrNoGoFiles) {
+			return PackageSource{}, ErrSourceNotApplicable
+		}
+		return PackageSource{}, err
+	}
+	return PackageSource{
+		ImportPath: pkg,
+		Dir:        dir,
+		Files:      files,
+	}, nil
+}
+
+func (f ReplaceSourceFetcher) resolveReplacement(pkg string) (string, string, bool) {
+	var bestPath string
+	var bestRoot string
+	for modPath, root := range f.Replacements {
+		if pkg != modPath && !strings.HasPrefix(pkg, modPath+"/") {
+			continue
+		}
+		if len(modPath) > len(bestPath) {
+			bestPath = modPath
+			bestRoot = root
+		}
+	}
+	return bestPath, bestRoot, bestPath != ""
+}
+
 // StdlibSourceFetcher loads packages from GOROOT/src.
 type StdlibSourceFetcher struct {
 	FS     afero.Fs

@@ -2,6 +2,7 @@ package godoc
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 )
@@ -156,6 +157,46 @@ func TestResolverStopsAtFirstHit(t *testing.T) {
 	}
 	if second.called {
 		t.Fatal("second fetcher was called after first hit")
+	}
+}
+
+func TestResolverReturnsPackageNotFoundWhenEveryFetcherMisses(t *testing.T) {
+	resolver := Resolver{Fetchers: []SourceFetcher{
+		&fakeSourceFetcher{name: "local", err: ErrSourceNotApplicable},
+		&fakeSourceFetcher{name: "stdlib", err: ErrSourceNotApplicable},
+	}}
+
+	_, err := resolver.Fetch(context.Background(), "example.com/missing", Options{})
+	if err == nil {
+		t.Fatal("Fetch() error = nil, want package not found")
+	}
+	if !errors.Is(err, ErrPackageNotFound) {
+		t.Fatalf("Fetch() error = %v, want ErrPackageNotFound", err)
+	}
+	if strings.Contains(err.Error(), ErrSourceNotApplicable.Error()) {
+		t.Fatalf("Fetch() error exposes source fetcher sentinel: %v", err)
+	}
+	if !strings.Contains(err.Error(), "example.com/missing") {
+		t.Fatalf("Fetch() error = %v, want requested package", err)
+	}
+}
+
+func TestResolverStopsAtConcreteFetcherError(t *testing.T) {
+	boom := errors.New("network failed")
+	first := &fakeSourceFetcher{name: "local", err: ErrSourceNotApplicable}
+	second := &fakeSourceFetcher{name: "proxy", err: boom}
+	third := &fakeSourceFetcher{name: "git", source: PackageSource{ImportPath: "example.com/pkg"}}
+	resolver := Resolver{Fetchers: []SourceFetcher{first, second, third}}
+
+	_, err := resolver.Fetch(context.Background(), "example.com/pkg", Options{})
+	if !errors.Is(err, boom) {
+		t.Fatalf("Fetch() error = %v, want concrete fetcher error", err)
+	}
+	if !first.called || !second.called {
+		t.Fatalf("expected first and second fetchers to be called, first=%v second=%v", first.called, second.called)
+	}
+	if third.called {
+		t.Fatal("third fetcher was called after concrete error")
 	}
 }
 

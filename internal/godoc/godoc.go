@@ -53,7 +53,7 @@ func NewDefaultClient(fs afero.Fs) (*Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("resolving working directory: %w", err)
 	}
-	moduleDir, modulePath, deps := readCurrentModule(fs, wd)
+	moduleDir, modulePath, deps, replacements := readCurrentModule(fs, wd)
 	cacheDir := defaultModuleCacheDir()
 
 	fetchers := []SourceFetcher{}
@@ -66,6 +66,7 @@ func NewDefaultClient(fs afero.Fs) (*Client, error) {
 	}
 	fetchers = append(fetchers,
 		StdlibSourceFetcher{FS: fs, GOROOT: runtime.GOROOT()},
+		ReplaceSourceFetcher{FS: fs, Replacements: replacements},
 		ModCacheFetcher{FS: fs, CacheDir: cacheDir, Deps: deps},
 		GitFetcher{
 			GOPRIVATE:    os.Getenv("GOPRIVATE"),
@@ -98,7 +99,7 @@ func NewDefaultClient(fs afero.Fs) (*Client, error) {
 	}, nil
 }
 
-func readCurrentModule(fs afero.Fs, start string) (string, string, map[string]module.Version) {
+func readCurrentModule(fs afero.Fs, start string) (string, string, map[string]module.Version, map[string]string) {
 	dir := filepath.Clean(start)
 	for {
 		modPath := filepath.Join(dir, "go.mod")
@@ -106,21 +107,37 @@ func readCurrentModule(fs afero.Fs, start string) (string, string, map[string]mo
 		if err == nil {
 			file, err := modfile.Parse(modPath, data, nil)
 			if err != nil || file.Module == nil {
-				return "", "", nil
+				return "", "", nil, nil
 			}
 			deps := make(map[string]module.Version, len(file.Require))
 			for _, req := range file.Require {
 				deps[req.Mod.Path] = req.Mod
 			}
-			return dir, file.Module.Mod.Path, deps
+			replacements := localReplacements(dir, file)
+			return dir, file.Module.Mod.Path, deps, replacements
 		}
 
 		parent := filepath.Dir(dir)
 		if parent == dir {
-			return "", "", nil
+			return "", "", nil, nil
 		}
 		dir = parent
 	}
+}
+
+func localReplacements(moduleDir string, file *modfile.File) map[string]string {
+	replacements := make(map[string]string)
+	for _, replace := range file.Replace {
+		if replace.New.Version != "" || !isLocalPackageArg(replace.New.Path) {
+			continue
+		}
+		dir := replace.New.Path
+		if !filepath.IsAbs(dir) {
+			dir = filepath.Join(moduleDir, dir)
+		}
+		replacements[replace.Old.Path] = filepath.Clean(dir)
+	}
+	return replacements
 }
 
 func defaultModuleCacheDir() string {

@@ -3,8 +3,11 @@ package godoc
 import (
 	"context"
 	"errors"
+	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spf13/afero"
 )
 
 func TestClientDocFetchesParsesAndFormats(t *testing.T) {
@@ -122,6 +125,33 @@ type Widget struct {
 	}
 	if strings.Contains(out, "hidden string") {
 		t.Fatalf("output leaked unexported field:\n%s", out)
+	}
+}
+
+func TestReadCurrentModuleCollectsLocalReplacements(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	writeTestFile(t, fs, "/workspace/app/go.mod", []byte(`module example.com/app
+
+require example.com/lib v1.2.3
+replace example.com/lib => ../lib
+replace example.com/remote => example.com/fork v1.0.0
+`))
+
+	moduleDir, modulePath, deps, replacements := readCurrentModule(fs, "/workspace/app/pkg")
+	if got, want := moduleDir, "/workspace/app"; got != want {
+		t.Fatalf("moduleDir = %q, want %q", got, want)
+	}
+	if got, want := modulePath, "example.com/app"; got != want {
+		t.Fatalf("modulePath = %q, want %q", got, want)
+	}
+	if got, want := deps["example.com/lib"].Version, "v1.2.3"; got != want {
+		t.Fatalf("dependency version = %q, want %q", got, want)
+	}
+	if got, want := replacements["example.com/lib"], filepath.Join("/workspace", "lib"); got != want {
+		t.Fatalf("replacement = %q, want %q", got, want)
+	}
+	if _, ok := replacements["example.com/remote"]; ok {
+		t.Fatal("remote replacement was collected, want only local replacements")
 	}
 }
 

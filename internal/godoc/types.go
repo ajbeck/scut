@@ -5,6 +5,8 @@ import (
 	"go/ast"
 	"go/doc"
 	"go/token"
+
+	"golang.org/x/mod/module"
 )
 
 // Options describes a documentation lookup request.
@@ -30,6 +32,8 @@ type PackageSource struct {
 	ImportPath string
 	Dir        string
 	Files      []SourceFile
+	Module     module.Version
+	Version    string
 }
 
 // ImportAliases maps local import aliases to import paths.

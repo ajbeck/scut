@@ -2,10 +2,14 @@
 package gotools
 
 import (
+	"context"
 	"errors"
-	"fmt"
 	"io"
 	"strings"
+
+	"github.com/spf13/afero"
+
+	"github.com/ajbeck/scut/internal/godoc"
 )
 
 // Cmd is the Kong command group for "scut gotools".
@@ -24,16 +28,37 @@ type docCmd struct {
 	Version string `name:"module-version" help:"Module version query for external packages." default:"latest"`
 }
 
-func (c *docCmd) Run(stdout io.Writer) error {
+type docClient interface {
+	Doc(context.Context, godoc.Options) (string, error)
+}
+
+var newDocClient = func(fs afero.Fs) (docClient, error) {
+	return godoc.NewDefaultClient(fs)
+}
+
+func (c *docCmd) Run(stdout io.Writer, fs afero.Fs) error {
 	if c.Package == "" {
 		return errors.New("package is required")
 	}
 
-	args := []string{c.Package}
-	if c.Symbol != "" {
-		args = append(args, c.Symbol)
+	client, err := newDocClient(fs)
+	if err != nil {
+		return err
 	}
 
-	_, err := fmt.Fprintf(stdout, "gotools doc placeholder: %s\n", strings.Join(args, " "))
+	out, err := client.Doc(context.Background(), godoc.Options{
+		Package:       c.Package,
+		Symbol:        c.Symbol,
+		Version:       c.Version,
+		All:           c.All,
+		Short:         c.Short,
+		Src:           c.Src,
+		Unexported:    c.U,
+		CaseSensitive: c.C,
+	})
+	if err != nil {
+		return err
+	}
+	_, err = io.WriteString(stdout, strings.TrimRight(out, "\n")+"\n")
 	return err
 }

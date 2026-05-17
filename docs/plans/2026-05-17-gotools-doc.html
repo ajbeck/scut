@@ -46,7 +46,7 @@
         <a class="toc-link" href="#task-3"><span class="toc-num">07</span><span>Formatter ✓</span></a>
         <a class="toc-link" href="#task-4"><span class="toc-num">08</span><span>Local Sources ✓</span></a>
         <a class="toc-link" href="#task-5"><span class="toc-num">09</span><span>Module Cache ✓</span></a>
-        <a class="toc-link" href="#task-6"><span class="toc-num">10</span><span>Proxy Sources</span></a>
+        <a class="toc-link" href="#task-6"><span class="toc-num">10</span><span>Proxy Sources ✓</span></a>
         <a class="toc-link" href="#task-7"><span class="toc-num">11</span><span>Private Git</span></a>
         <a class="toc-link" href="#task-8"><span class="toc-num">12</span><span>Orchestration</span></a>
         <a class="toc-link" href="#task-9"><span class="toc-num">13</span><span>CLI Wiring</span></a>
@@ -80,7 +80,7 @@
         <div class="stat"><span class="num">1</span><span class="label">new command group</span></div>
         <div class="stat"><span class="num">5</span><span class="label">source routes</span></div>
         <div class="stat"><span class="num">0</span><span class="label">shell-outs</span></div>
-        <div class="stat"><span class="num">5/9</span><span class="label">tasks completed</span></div>
+        <div class="stat"><span class="num">6/9</span><span class="label">tasks completed</span></div>
       </div>
     </header>
 
@@ -448,6 +448,8 @@ scut gotools doc ./internal/godoc Client --src</pre>
       <h2><span class="section-anchor">// 10</span>Task 6 — Proxy Sources</h2>
 
       <p>Implement public module proxy resolution. This is the first external-source path and must stay isolated enough that private Git support can be added as another fetcher without changing parser or formatter code.</p>
+
+      <div class="callout note"><strong>completed</strong>Added <code>ProxyFetcher</code> and shared <code>?go-get=1</code> discovery parsing. The fetcher resolves <code>latest</code> and explicit versions through a configured single proxy, tries meta discovery before prefix probing, downloads module zips, extracts package files into <code>afero.NewMemMapFs()</code>, and performs best-effort cache write-back through <code>WriteCache</code>. Verified with <code>mage test</code> before committing.</div>
 
       <ol class="steps">
         <li>Create <code>ProxyFetcher</code> with injectable <code>*http.Client</code> and <code>ProxyURL</code>.</li>

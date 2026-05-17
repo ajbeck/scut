@@ -271,6 +271,63 @@ func Float64() float64 { return 0 }
 	}
 }
 
+func TestLookupResolverReportsSymbolMissAcrossSuffixCandidates(t *testing.T) {
+	resolver := LookupResolver{
+		Resolver: Resolver{Fetchers: []SourceFetcher{&mapSourceFetcher{sources: map[string]PackageSource{
+			"crypto/rand": {
+				ImportPath: "crypto/rand",
+				Files: []SourceFile{{
+					Name: "rand.go",
+					Data: []byte(`package rand
+
+func Read() {}
+`),
+				}},
+			},
+			"math/rand": {
+				ImportPath: "math/rand",
+				Files: []SourceFile{{
+					Name: "rand.go",
+					Data: []byte(`package rand
+
+func Float64() float64 { return 0 }
+`),
+				}},
+			},
+		}}}},
+		PackageIndex: staticPackageIndex{matches: map[string][]IndexedPackage{
+			"rand": {
+				{ImportPath: "crypto/rand"},
+				{ImportPath: "math/rand"},
+			},
+		}},
+	}
+
+	_, err := resolver.Resolve(context.Background(), Options{Args: []string{"rand.Missing"}})
+	if err == nil {
+		t.Fatal("Resolve() error = nil, want symbol miss")
+	}
+	assertErrorContains(t, err, "no symbol Missing")
+	assertErrorContains(t, err, "crypto/rand")
+	assertErrorContains(t, err, "math/rand")
+	assertErrorNotContains(t, err, "source fetcher not applicable")
+}
+
+func TestLookupResolverReportsPackageMissForPackageOnlyLookup(t *testing.T) {
+	resolver := LookupResolver{
+		Resolver: Resolver{Fetchers: []SourceFetcher{&mapSourceFetcher{sources: map[string]PackageSource{}}}},
+	}
+
+	_, err := resolver.Resolve(context.Background(), Options{Args: []string{"example.com/missing"}})
+	if err == nil {
+		t.Fatal("Resolve() error = nil, want package miss")
+	}
+	if !strings.Contains(err.Error(), "package example.com/missing not found") {
+		t.Fatalf("Resolve() error = %v, want package not found", err)
+	}
+	assertErrorNotContains(t, err, "source fetcher not applicable")
+}
+
 type mapSourceFetcher struct {
 	sources map[string]PackageSource
 }
@@ -327,6 +384,20 @@ func sameCandidate(a, b LookupCandidate) bool {
 
 func contains(s, substr string) bool {
 	return strings.Contains(s, substr)
+}
+
+func assertErrorContains(t *testing.T, err error, want string) {
+	t.Helper()
+	if err == nil || !strings.Contains(err.Error(), want) {
+		t.Fatalf("error = %v, want containing %q", err, want)
+	}
+}
+
+func assertErrorNotContains(t *testing.T, err error, want string) {
+	t.Helper()
+	if err != nil && strings.Contains(err.Error(), want) {
+		t.Fatalf("error = %v, want not containing %q", err, want)
+	}
 }
 
 var _ SourceFetcher = (*mapSourceFetcher)(nil)

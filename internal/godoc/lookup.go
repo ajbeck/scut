@@ -70,7 +70,11 @@ func (r LookupResolver) Resolve(ctx context.Context, opts Options) (ResolvedLook
 	}
 
 	var attempts []string
+	var missedSymbol *SymbolLookup
 	for _, candidate := range candidates {
+		if candidate.Symbol != nil {
+			missedSymbol = candidate.Symbol
+		}
 		if candidate.Kind == LookupSuffix {
 			resolved, ok, err := r.resolveSuffixCandidate(ctx, candidate, opts, attempts)
 			if err != nil {
@@ -95,7 +99,14 @@ func (r LookupResolver) Resolve(ctx context.Context, opts Options) (ResolvedLook
 		attempts = resolved.Attempts
 	}
 
-	return ResolvedLookup{}, fmt.Errorf("no documentation found for %q", strings.Join(lookupArgs(opts), " "))
+	if missedSymbol == nil {
+		return ResolvedLookup{}, PackageNotFoundError{Package: strings.Join(lookupArgs(opts), " ")}
+	}
+	return ResolvedLookup{}, LookupNotFoundError{
+		Symbol:   missedSymbol,
+		Query:    strings.Join(lookupArgs(opts), " "),
+		Attempts: attempts,
+	}
 }
 
 func (r LookupResolver) resolveSuffixCandidate(ctx context.Context, candidate LookupCandidate, opts Options, attempts []string) (ResolvedLookup, bool, error) {
@@ -124,7 +135,7 @@ func (r LookupResolver) resolveSuffixCandidate(ctx context.Context, candidate Lo
 func (r LookupResolver) resolvePackageCandidate(ctx context.Context, candidate LookupCandidate, pkg string, opts Options, attempts []string) (ResolvedLookup, bool, error) {
 	source, err := r.Resolver.Fetch(ctx, pkg, opts)
 	if err != nil {
-		if errors.Is(err, ErrSourceNotApplicable) {
+		if errors.Is(err, ErrPackageNotFound) || errors.Is(err, ErrSourceNotApplicable) {
 			return ResolvedLookup{Attempts: attempts}, false, nil
 		}
 		return ResolvedLookup{}, false, err
@@ -145,7 +156,11 @@ func (r LookupResolver) resolvePackageCandidate(ctx context.Context, candidate L
 	if candidate.ContinueOnSymbolMiss {
 		return ResolvedLookup{Attempts: attempts}, false, nil
 	}
-	return ResolvedLookup{}, false, fmt.Errorf("symbol %q not found in package %s", lookup.Symbol.Name, source.ImportPath)
+	return ResolvedLookup{}, false, LookupNotFoundError{
+		Symbol:   lookup.Symbol,
+		Query:    strings.Join(lookupArgs(opts), " "),
+		Attempts: attempts,
+	}
 }
 
 func (r LookupResolver) candidatePackage(candidate LookupCandidate) string {

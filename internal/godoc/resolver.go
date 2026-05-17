@@ -26,5 +26,5 @@ func (r Resolver) Fetch(ctx context.Context, pkg string, opts Options) (PackageS
 		}
 		return PackageSource{}, err
 	}
-	return PackageSource{}, ErrSourceNotApplicable
+	return PackageSource{}, PackageNotFoundError{Package: pkg}
 }

@@ -47,6 +47,11 @@ func ParsePackage(importPath string, files []SourceFile, mode doc.Mode) (*Parsed
 func collectAliases(aliases ImportAliases, file *ast.File) {
 	for _, spec := range file.Imports {
 		if spec.Name == nil {
+			path, err := strconv.Unquote(spec.Path.Value)
+			if err != nil {
+				continue
+			}
+			aliases[defaultImportAlias(path)] = path
 			continue
 		}
 		if spec.Name.Name == "." || spec.Name.Name == "_" {

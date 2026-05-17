@@ -43,7 +43,7 @@
         <a class="toc-link" href="#file-layout"><span class="toc-num">04</span><span>File Layout</span></a>
         <a class="toc-link" href="#task-1"><span class="toc-num">05</span><span>Command Shape ✓</span></a>
         <a class="toc-link" href="#task-2"><span class="toc-num">06</span><span>Parser ✓</span></a>
-        <a class="toc-link" href="#task-3"><span class="toc-num">07</span><span>Formatter</span></a>
+        <a class="toc-link" href="#task-3"><span class="toc-num">07</span><span>Formatter ✓</span></a>
         <a class="toc-link" href="#task-4"><span class="toc-num">08</span><span>Local Sources</span></a>
         <a class="toc-link" href="#task-5"><span class="toc-num">09</span><span>Module Cache</span></a>
         <a class="toc-link" href="#task-6"><span class="toc-num">10</span><span>Proxy Sources</span></a>
@@ -80,7 +80,7 @@
         <div class="stat"><span class="num">1</span><span class="label">new command group</span></div>
         <div class="stat"><span class="num">5</span><span class="label">source routes</span></div>
         <div class="stat"><span class="num">0</span><span class="label">shell-outs</span></div>
-        <div class="stat"><span class="num">2/9</span><span class="label">tasks completed</span></div>
+        <div class="stat"><span class="num">3/9</span><span class="label">tasks completed</span></div>
       </div>
     </header>
 
@@ -378,6 +378,8 @@ scut gotools doc ./internal/godoc Client --src</pre>
       <h2><span class="section-anchor">// 07</span>Task 3 — Formatter</h2>
 
       <p>Adapt the proven shape from the roboduck formatter, but remove roboduck-specific command text and keep the API local to <code>internal/godoc</code>.</p>
+
+      <div class="callout note"><strong>completed</strong>Added <code>FormatPackage</code> with default, <code>--short</code>, <code>--all</code>, symbol, method, const, var, case-sensitive, <code>--src</code>, constructor/method summary, and alias-hint behavior. Alias hints now emit <code>scut gotools doc &lt;import&gt; &lt;symbol&gt;</code>, and parser alias collection covers both named imports and default import names. Verified with <code>mage test</code> before committing.</div>
 
       <table class="fields">
         <thead>

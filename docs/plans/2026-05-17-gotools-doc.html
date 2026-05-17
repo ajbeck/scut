@@ -48,7 +48,7 @@
         <a class="toc-link" href="#task-5"><span class="toc-num">09</span><span>Module Cache ✓</span></a>
         <a class="toc-link" href="#task-6"><span class="toc-num">10</span><span>Proxy Sources ✓</span></a>
         <a class="toc-link" href="#task-7"><span class="toc-num">11</span><span>Private Git ✓</span></a>
-        <a class="toc-link" href="#task-8"><span class="toc-num">12</span><span>Orchestration</span></a>
+        <a class="toc-link" href="#task-8"><span class="toc-num">12</span><span>Orchestration ✓</span></a>
         <a class="toc-link" href="#task-9"><span class="toc-num">13</span><span>CLI Wiring</span></a>
       </div>
 
@@ -80,7 +80,7 @@
         <div class="stat"><span class="num">1</span><span class="label">new command group</span></div>
         <div class="stat"><span class="num">5</span><span class="label">source routes</span></div>
         <div class="stat"><span class="num">0</span><span class="label">shell-outs</span></div>
-        <div class="stat"><span class="num">7/9</span><span class="label">tasks completed</span></div>
+        <div class="stat"><span class="num">8/9</span><span class="label">tasks completed</span></div>
       </div>
     </header>
 
@@ -519,6 +519,8 @@ scut gotools doc ./internal/godoc Client --src</pre>
       <h2><span class="section-anchor">// 12</span>Task 8 — Orchestration</h2>
 
       <p>Add the high-level <code>Client</code> and resolver router. This is where the source route order becomes explicit.</p>
+
+      <div class="callout note"><strong>completed</strong>Added <code>Client.Doc</code>, <code>Resolver</code>, <code>SourceFetcher</code>, and <code>NewDefaultClient</code>. The client validates package input, resolves sources, parses with <code>doc.AllDecls</code> and <code>doc.PreserveAST</code> when requested, and formats output. Default assembly wires local, stdlib, module-cache, private Git, and proxy fetchers in route order without shelling out. Verified with <code>mage test</code> before committing.</div>
 
       <div class="code-frame">
         <div class="code-titlebar">

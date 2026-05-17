@@ -11,6 +11,7 @@ import (
 
 // Options describes a documentation lookup request.
 type Options struct {
+	Args          []string
 	Package       string
 	Symbol        string
 	Version       string
@@ -19,6 +20,7 @@ type Options struct {
 	Src           bool
 	Unexported    bool
 	CaseSensitive bool
+	Cmd           bool
 }
 
 // SourceFile is a Go source file loaded from any supported source.

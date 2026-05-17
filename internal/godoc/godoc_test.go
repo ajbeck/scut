@@ -2,7 +2,6 @@ package godoc
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"testing"
 )
@@ -37,12 +36,26 @@ func New() {}
 	}
 }
 
-func TestClientDocRequiresPackage(t *testing.T) {
-	client := Client{}
+func TestClientDocDefaultsToCurrentPackage(t *testing.T) {
+	fetcher := &fakeSourceFetcher{
+		source: PackageSource{
+			ImportPath: "example.com/current",
+			Files: []SourceFile{{
+				Name: "current.go",
+				Data: []byte(`// Package current is the working package.
+package current
+`),
+			}},
+		},
+	}
+	client := Client{Resolver: Resolver{Fetchers: []SourceFetcher{fetcher}}}
 
-	_, err := client.Doc(context.Background(), Options{})
-	if !errors.Is(err, ErrPackageRequired) {
-		t.Fatalf("Doc() error = %v, want ErrPackageRequired", err)
+	out, err := client.Doc(context.Background(), Options{})
+	if err != nil {
+		t.Fatalf("Doc() error = %v", err)
+	}
+	if !strings.Contains(out, "Package current is the working package") {
+		t.Fatalf("output missing current package docs:\n%s", out)
 	}
 }
 
@@ -76,6 +89,38 @@ func hidden() {
 
 	if !strings.Contains(out, `println("kept")`) {
 		t.Fatalf("source body was not preserved:\n%s", out)
+	}
+}
+
+func TestClientDocParsesAllDeclsForDefaultVisibilityFiltering(t *testing.T) {
+	fetcher := &fakeSourceFetcher{
+		source: PackageSource{
+			ImportPath: "example.com/widgets",
+			Files: []SourceFile{{
+				Name: "widgets.go",
+				Data: []byte(`package widgets
+
+// Widget stores visible and hidden state.
+type Widget struct {
+	Name string
+	hidden string
+}
+`),
+			}},
+		},
+	}
+	client := Client{Resolver: Resolver{Fetchers: []SourceFetcher{fetcher}}}
+
+	out, err := client.Doc(context.Background(), Options{Args: []string{"example.com/widgets", "Widget"}})
+	if err != nil {
+		t.Fatalf("Doc() error = %v", err)
+	}
+
+	if !strings.Contains(out, "// Has unexported fields.") {
+		t.Fatalf("output missing go doc unexported field marker:\n%s", out)
+	}
+	if strings.Contains(out, "hidden string") {
+		t.Fatalf("output leaked unexported field:\n%s", out)
 	}
 }
 

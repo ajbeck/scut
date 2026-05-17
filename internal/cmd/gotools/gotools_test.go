@@ -3,7 +3,7 @@ package gotools
 import (
 	"bytes"
 	"context"
-	"strings"
+	"reflect"
 	"testing"
 
 	"github.com/spf13/afero"
@@ -11,19 +11,22 @@ import (
 	"github.com/ajbeck/scut/internal/godoc"
 )
 
-func TestDocCmdRequiresPackage(t *testing.T) {
+func TestDocCmdAllowsNoArguments(t *testing.T) {
+	fake := &fakeDocClient{output: "current package docs"}
+	restore := replaceDocClientFactory(t, fake)
+	defer restore()
+
 	cmd := &docCmd{}
 	var stdout bytes.Buffer
 
-	err := cmd.Run(&stdout, afero.NewMemMapFs())
-	if err == nil {
-		t.Fatal("Run() error = nil, want package-required error")
+	if err := cmd.Run(&stdout, afero.NewMemMapFs()); err != nil {
+		t.Fatalf("Run() error = %v", err)
 	}
-	if !strings.Contains(err.Error(), "package is required") {
-		t.Fatalf("Run() error = %q, want package-required error", err)
+	if got, want := stdout.String(), "current package docs\n"; got != want {
+		t.Fatalf("stdout = %q, want %q", got, want)
 	}
-	if got := stdout.String(); got != "" {
-		t.Fatalf("stdout = %q, want empty", got)
+	if len(fake.opts.Args) != 0 {
+		t.Fatalf("options Args = %#v, want empty", fake.opts.Args)
 	}
 }
 
@@ -33,13 +36,13 @@ func TestDocCmdMapsOptionsAndWritesOneTrailingNewline(t *testing.T) {
 	defer restore()
 
 	cmd := &docCmd{
-		Package: "encoding/json",
-		Symbol:  "Marshal",
+		Args:    []string{"encoding/json", "Marshal"},
 		All:     true,
 		Short:   true,
 		Src:     true,
 		U:       true,
 		C:       true,
+		Cmd:     true,
 		Version: "v1.2.3",
 	}
 	var stdout bytes.Buffer
@@ -51,16 +54,16 @@ func TestDocCmdMapsOptionsAndWritesOneTrailingNewline(t *testing.T) {
 		t.Fatalf("stdout = %q, want %q", got, want)
 	}
 	want := godoc.Options{
-		Package:       "encoding/json",
-		Symbol:        "Marshal",
+		Args:          []string{"encoding/json", "Marshal"},
 		Version:       "v1.2.3",
 		All:           true,
 		Short:         true,
 		Src:           true,
 		Unexported:    true,
 		CaseSensitive: true,
+		Cmd:           true,
 	}
-	if fake.opts != want {
+	if !reflect.DeepEqual(fake.opts, want) {
 		t.Fatalf("options = %#v, want %#v", fake.opts, want)
 	}
 }

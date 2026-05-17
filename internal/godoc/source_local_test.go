@@ -28,6 +28,24 @@ func TestReadGoFilesExcludesTestsAndDirectories(t *testing.T) {
 	}
 }
 
+func TestReadGoFilesExcludesIgnoredBuildFiles(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	writeTestFile(t, fs, "/repo/pkg/doc.go", []byte("package pkg\n"))
+	writeTestFile(t, fs, "/repo/pkg/tool.go", []byte("//go:build ignore\n\npackage main\n"))
+
+	files, err := readGoFiles(fs, "/repo/pkg")
+	if err != nil {
+		t.Fatalf("readGoFiles() error = %v", err)
+	}
+
+	if got, want := len(files), 1; got != want {
+		t.Fatalf("len(files) = %d, want %d", got, want)
+	}
+	if got, want := files[0].Name, filepath.Join("/repo/pkg", "doc.go"); got != want {
+		t.Fatalf("files[0].Name = %q, want %q", got, want)
+	}
+}
+
 func TestReadGoFilesReturnsNoGoFiles(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	writeTestFile(t, fs, "/repo/pkg/README.md", []byte("docs\n"))

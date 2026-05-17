@@ -44,7 +44,7 @@
         <a class="toc-link" href="#task-1"><span class="toc-num">05</span><span>Command Shape ✓</span></a>
         <a class="toc-link" href="#task-2"><span class="toc-num">06</span><span>Parser ✓</span></a>
         <a class="toc-link" href="#task-3"><span class="toc-num">07</span><span>Formatter ✓</span></a>
-        <a class="toc-link" href="#task-4"><span class="toc-num">08</span><span>Local Sources</span></a>
+        <a class="toc-link" href="#task-4"><span class="toc-num">08</span><span>Local Sources ✓</span></a>
         <a class="toc-link" href="#task-5"><span class="toc-num">09</span><span>Module Cache</span></a>
         <a class="toc-link" href="#task-6"><span class="toc-num">10</span><span>Proxy Sources</span></a>
         <a class="toc-link" href="#task-7"><span class="toc-num">11</span><span>Private Git</span></a>
@@ -80,7 +80,7 @@
         <div class="stat"><span class="num">1</span><span class="label">new command group</span></div>
         <div class="stat"><span class="num">5</span><span class="label">source routes</span></div>
         <div class="stat"><span class="num">0</span><span class="label">shell-outs</span></div>
-        <div class="stat"><span class="num">3/9</span><span class="label">tasks completed</span></div>
+        <div class="stat"><span class="num">4/9</span><span class="label">tasks completed</span></div>
       </div>
     </header>
 
@@ -411,6 +411,8 @@ scut gotools doc ./internal/godoc Client --src</pre>
       <h2><span class="section-anchor">// 08</span>Task 4 — Local Sources</h2>
 
       <p>Implement local package loading behind <code>afero.Fs</code>. Tests should use <code>afero.NewMemMapFs()</code>; production wiring uses the existing root binding <code>afero.NewOsFs()</code>.</p>
+
+      <div class="callout note"><strong>completed</strong>Added <code>LocalSourceFetcher</code>, <code>StdlibSourceFetcher</code>, shared <code>readGoFiles</code>, and source-loading sentinels. Local paths are constrained to the configured module directory, stdlib packages read from <code>GOROOT/src</code>, and source file reads go through <code>afero.Fs</code> while excluding directories and <code>_test.go</code> files. Verified with <code>mage test</code> before committing.</div>
 
       <ol class="steps">
         <li>Create <code>LocalSourceFetcher</code> for <code>./</code> and <code>../</code> paths inside the current module.</li>

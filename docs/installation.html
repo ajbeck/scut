@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Installation — scut</title>
+<link rel="stylesheet" href="scut-docs.css">
+<script src="scut-docs.js"></script>
+</head>
+<body>
+
+<div class="layout">
+
+  <aside class="rail">
+    <p class="rail-title">// scut · operations</p>
+    <p class="rail-product"><span class="live-dot" aria-hidden="true"></span>Installation</p>
+
+    <nav class="toc">
+      <a class="toc-link" href="#overview"><span class="toc-num">01</span><span>Overview</span></a>
+      <a class="toc-link" href="#script"><span class="toc-num">02</span><span>Install Script</span></a>
+      <a class="toc-link" href="#assets"><span class="toc-num">03</span><span>Release Assets</span></a>
+      <a class="toc-link" href="#source"><span class="toc-num">04</span><span>Source Installs</span></a>
+      <a class="toc-link" href="#release-flow"><span class="toc-num">05</span><span>Release Flow</span></a>
+    </nav>
+
+    <div class="theme-switcher">
+      <span class="theme-switcher__label">Theme</span>
+      <button class="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle color theme"><span class="toggle-glyph toggle-glyph--sun" aria-hidden="true">☀︎</span><span class="toggle-glyph toggle-glyph--moon" aria-hidden="true">☾</span></button>
+    </div>
+  </aside>
+
+  <main>
+
+    <header class="hero">
+      <div class="hero-meta">
+        <span class="badge primary">install</span>
+        <span class="badge tests">checksums</span>
+        <span class="badge swift">github releases</span>
+      </div>
+      <h1><span class="moniker-bracket">[</span><span class="moniker">install</span><span class="moniker-bracket">]</span></h1>
+      <p class="lede"><code>scut</code> ships as GitHub Release tarballs for macOS and Linux. The install script selects the current platform, downloads the matching artifact, verifies it against <code>checksums.txt</code>, and places the binary on the user's <code>PATH</code>.</p>
+    </header>
+
+    <section id="overview">
+      <h2><span class="section-anchor">// 01</span>Overview</h2>
+
+      <p>The primary install path is release-based. Released binaries have their version injected from the immutable <code>vM.m.p</code> git tag. Source installs use Go build information when available, so <code>go install github.com/ajbeck/scut@vM.m.p</code> reports that module version. Local builds keep the default development version unless a build sets linker flags through Mage.</p>
+
+      <div class="callout note"><strong>note</strong>The release workflow also deploys the documentation site from the same <code>main</code> commit used for the release, so the hosted install instructions match the published artifacts.</div>
+    </section>
+
+    <section id="script">
+      <h2><span class="section-anchor">// 02</span>Install Script</h2>
+
+      <div class="code-frame">
+        <div class="code-title">
+          <span class="filename">install<span class="ext">.sh</span></span>
+        </div>
+<pre>curl -fsSL https://raw.githubusercontent.com/ajbeck/scut/main/install.sh | sh</pre>
+      </div>
+
+      <p>The default destination is <code>~/.local/bin/scut</code>. Pass <code>--version</code> to pin a release and <code>--bin-dir</code> to choose another install directory:</p>
+
+      <div class="callout note"><strong>note</strong><code>~/.local/bin</code> is the per-user executable location from the XDG Base Directory convention. Use <code>--bin-dir /usr/local/bin</code> when you intentionally want a system-wide install managed by an administrator.</div>
+
+      <div class="code-frame">
+        <div class="code-title">
+          <span class="filename">pinned install</span>
+        </div>
+<pre>curl -fsSL https://raw.githubusercontent.com/ajbeck/scut/main/install.sh | sh -s -- --version v0.2.0 --bin-dir /usr/local/bin</pre>
+      </div>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Flag</th><th>Behavior</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field"><code>--version VERSION</code></td>
+            <td class="note">Install a specific GitHub Release. The leading <code>v</code> is optional.</td>
+          </tr>
+          <tr>
+            <td class="field"><code>--bin-dir DIR</code></td>
+            <td class="note">Install <code>scut</code> into the given directory instead of <code>~/.local/bin</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="assets">
+      <h2><span class="section-anchor">// 03</span>Release Assets</h2>
+
+      <p>Each stable release publishes one tarball per platform plus a checksum manifest:</p>
+
+      <div class="code-frame">
+        <div class="code-title">
+          <span class="filename">release assets</span>
+        </div>
+<pre>scut-v0.2.0-darwin-amd64.tar.gz
+scut-v0.2.0-darwin-arm64.tar.gz
+scut-v0.2.0-linux-amd64.tar.gz
+scut-v0.2.0-linux-arm64.tar.gz
+checksums.txt</pre>
+      </div>
+
+      <p>The tarballs contain a single executable named <code>scut</code>. The install script chooses the artifact from <code>uname -s</code> and <code>uname -m</code>, downloads <code>checksums.txt</code>, and refuses to install when the SHA-256 digest does not match.</p>
+    </section>
+
+    <section id="source">
+      <h2><span class="section-anchor">// 04</span>Source Installs</h2>
+
+      <p>Go users can still install from source:</p>
+
+      <div class="code-frame">
+        <div class="code-title">
+          <span class="filename">go install</span>
+        </div>
+<pre>go install github.com/ajbeck/scut@latest</pre>
+      </div>
+
+      <p>For local development, use Mage so the JSON v2 experiment and build metadata are set consistently:</p>
+
+      <div class="code-frame">
+        <div class="code-title">
+          <span class="filename">local build</span>
+        </div>
+<pre>mage build</pre>
+      </div>
+    </section>
+
+    <section id="release-flow">
+      <h2><span class="section-anchor">// 05</span>Release Flow</h2>
+
+      <ol class="steps">
+        <li>Code lands on <code>main</code>.</li>
+        <li>The <code>Release</code> workflow is manually dispatched with a stable semver version.</li>
+        <li>The workflow checks out <code>main</code>, creates immutable <code>vM.m.p</code>, and updates movable <code>vM.m</code> and <code>vM</code> tags.</li>
+        <li>The reusable build workflow builds all platform artifacts with <code>RELEASE_VERSION=vM.m.p</code>.</li>
+        <li>The release job creates the GitHub Release and uploads tarballs plus <code>checksums.txt</code>.</li>
+        <li>The docs job deploys <code>docs/</code> from the same release commit to GitHub Pages.</li>
+      </ol>
+    </section>
+
+    <footer>
+      <span class="blink">scut</span>
+      <span>operations · installation</span>
+    </footer>
+
+  </main>
+</div>
+
+</body>
+</html>

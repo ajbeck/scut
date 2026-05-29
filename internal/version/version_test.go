@@ -1,6 +1,9 @@
 package version
 
-import "testing"
+import (
+	"runtime/debug"
+	"testing"
+)
 
 func TestString(t *testing.T) {
 	tests := []struct {
@@ -60,5 +63,43 @@ func TestString(t *testing.T) {
 				t.Errorf("String() = %q, want %q", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestStringUsesBuildInfoVersionForDefaultVersion(t *testing.T) {
+	origVersion, origMeta, origRead := Version, BuildMetadata, readBuildInfo
+	t.Cleanup(func() {
+		Version = origVersion
+		BuildMetadata = origMeta
+		readBuildInfo = origRead
+	})
+
+	Version = defaultVersion
+	BuildMetadata = ""
+	readBuildInfo = func() (*debug.BuildInfo, bool) {
+		return &debug.BuildInfo{Main: debug.Module{Version: "v1.2.3"}}, true
+	}
+
+	if got := String(); got != "v1.2.3" {
+		t.Errorf("String() = %q, want %q", got, "v1.2.3")
+	}
+}
+
+func TestStringIgnoresDevelBuildInfoVersion(t *testing.T) {
+	origVersion, origMeta, origRead := Version, BuildMetadata, readBuildInfo
+	t.Cleanup(func() {
+		Version = origVersion
+		BuildMetadata = origMeta
+		readBuildInfo = origRead
+	})
+
+	Version = defaultVersion
+	BuildMetadata = ""
+	readBuildInfo = func() (*debug.BuildInfo, bool) {
+		return &debug.BuildInfo{Main: debug.Module{Version: "(devel)"}}, true
+	}
+
+	if got := String(); got != defaultVersion {
+		t.Errorf("String() = %q, want %q", got, defaultVersion)
 	}
 }

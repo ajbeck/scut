@@ -5,16 +5,34 @@ CLI tool for LLM agents. Provides a consistent interface for agent authors to in
 ## Installation
 
 ```bash
+curl -fsSL https://raw.githubusercontent.com/ajbeck/scut/main/install.sh | sh
+```
+
+By default, the installer downloads the latest GitHub Release for your platform,
+verifies `checksums.txt`, and installs `scut` to `~/.local/bin`.
+
+Install a specific version or destination:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ajbeck/scut/main/install.sh | sh -s -- --version v0.2.0 --bin-dir /usr/local/bin
+```
+
+Go users can also install from source:
+
+```bash
 go install github.com/ajbeck/scut@latest
 ```
 
-Or build from source:
+Or build locally:
 
 ```bash
 mage build
 ```
 
 The binary is written to `bin/scut`.
+
+See [docs/installation.html](docs/installation.html) for release assets,
+supported platforms, and install-script behavior.
 
 ## Hooks
 

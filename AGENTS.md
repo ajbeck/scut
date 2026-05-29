@@ -66,6 +66,7 @@ Implementation docs live in `docs/` as standalone HTML files styled by the share
 | [status-line.html](docs/status-line.html)                     | Status line command — colour palette, formatting, go-git integration, available input fields                           |
 | [logging.html](docs/logging.html)                             | Structured JSONL logging — flags, file layout, rotation, standardized fields, clean command                            |
 | [config-command.html](docs/config-command.html)               | `claude config install`/`uninstall`/`status` — settings.json model, merge semantics, ownership rules, registry, scope resolution, error sentinels |
+| [installation.html](docs/installation.html)                   | Install script, release assets, checksum verification, source installs, and release workflow                                                      |
 | [design-system.html](docs/design-system.html)                 | The docs design system itself — page anatomy, primitives (rail, hero, code frames, callouts, steps), colour tokens, theming, voice, and how other projects can adopt the pattern |
 | [design-system-standalone.html](docs/design-system-standalone.html) | Single-file shareable edition of `design-system.html` with CSS and JS inlined. Generated — do not hand-edit; run `mage docsStandalone` after changing the source HTML, CSS, or JS |
 

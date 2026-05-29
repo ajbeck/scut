@@ -1,6 +1,6 @@
 module github.com/ajbeck/scut
 
-go 1.26.1
+go 1.26.3
 
 require (
 	github.com/alecthomas/kong v1.14.0

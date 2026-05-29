@@ -27,3 +27,9 @@ Thumbs.db
 
 # Claude Code
 .claude/settings.local.json
+
+# Codex Settings
+.codex/config.toml
+
+# Clawpatch
+.clawpatch/

@@ -27,14 +27,15 @@
         <p class="toc-section-label">Implementation</p>
         <a class="toc-link" href="#dispatch-flow"><span class="toc-num">04</span><span>Dispatch Flow</span></a>
         <a class="toc-link" href="#byte-formatters"><span class="toc-num">05</span><span>Byte Formatters</span></a>
-        <a class="toc-link" href="#file-io"><span class="toc-num">06</span><span>File I/O via afero.Fs</span></a>
-        <a class="toc-link" href="#adding-formatter"><span class="toc-num">07</span><span>Adding a New Formatter</span></a>
+        <a class="toc-link" href="#ignore-files"><span class="toc-num">06</span><span>Ignore Files</span></a>
+        <a class="toc-link" href="#file-io"><span class="toc-num">07</span><span>File I/O via afero.Fs</span></a>
+        <a class="toc-link" href="#adding-formatter"><span class="toc-num">08</span><span>Adding a New Formatter</span></a>
       </div>
 
       <div class="toc-section">
         <p class="toc-section-label">Notes</p>
-        <a class="toc-link" href="#testing"><span class="toc-num">08</span><span>Testing</span></a>
-        <a class="toc-link" href="#code"><span class="toc-num">09</span><span>Code</span></a>
+        <a class="toc-link" href="#testing"><span class="toc-num">09</span><span>Testing</span></a>
+        <a class="toc-link" href="#code"><span class="toc-num">10</span><span>Code</span></a>
       </div>
     </nav>
 
@@ -53,12 +54,12 @@
         <span class="badge swift">go 1.26</span>
       </div>
       <h1><span class="moniker-bracket">[</span><span class="moniker">Post Tool Use</span><span class="moniker-bracket">]</span></h1>
-      <p class="lede"><code>scut claude hook post-tool-use</code> — fires after a Claude Code tool call succeeds. Silently formats files written by Claude, applying <code>gofmt</code> for Go source and goldmark-prettier-markdown for Markdown. Formatting is in-place; the hook never blocks tool results or injects context.</p>
+      <p class="lede"><code>scut claude hook post-tool-use</code> — fires after a Claude Code tool call succeeds. Formats files written by Claude, applying <code>gofmt</code> for Go source and goldmark-prettier-markdown for Markdown. Formatting is in-place, respects root <code>.prettierignore</code> and <code>.scutignore</code> files, and reports formatted files back to Claude via <code>additionalContext</code>.</p>
 
       <div class="hero-stats">
         <div class="stat"><span class="num">2</span><span class="label">formatters</span></div>
-        <div class="stat"><span class="num">8</span><span class="label">dispatch steps</span></div>
-        <div class="stat"><span class="num">3</span><span class="label">testing layers</span></div>
+        <div class="stat"><span class="num">9</span><span class="label">dispatch steps</span></div>
+        <div class="stat"><span class="num">4</span><span class="label">testing layers</span></div>
         <div class="stat"><span class="num">3</span><span class="label">extensions handled</span></div>
       </div>
     </header>
@@ -66,7 +67,7 @@
     <section id="overview">
       <h2><span class="section-anchor">// 01</span>Overview</h2>
 
-      <p>Fires after a Claude Code tool call succeeds. The hook silently formats files written by Claude — applying <code>gofmt</code> for Go source and goldmark-prettier-markdown for Markdown. Formatting happens in-place; the hook never blocks tool results or injects context.</p>
+      <p>Fires after a Claude Code tool call succeeds. The hook formats files written by Claude — applying <code>gofmt</code> for Go source and goldmark-prettier-markdown for Markdown. Formatting happens in-place, skips ignored paths, and injects a short <code>additionalContext</code> message when it changes a file so Claude knows the file on disk may differ from the original tool input.</p>
     </section>
 
     <section id="input">
@@ -140,17 +141,22 @@
           <tr>
             <td class="field">additionalContext</td>
             <td class="type">*string</td>
-            <td class="note">Text injected into Claude's context</td>
+            <td class="note">Legacy top-level context field; formatter notifications use <code>hookSpecificOutput.additionalContext</code></td>
           </tr>
           <tr>
             <td class="field">updatedMCPToolOutput</td>
             <td class="type">json.RawMessage</td>
             <td class="note">Replacement output for MCP tools — Claude sees this instead of the original response</td>
           </tr>
+          <tr>
+            <td class="field">hookSpecificOutput</td>
+            <td class="type">*PostToolUseHookOutput</td>
+            <td class="note">Nested event-specific output with <code>hookEventName</code>, <code>additionalContext</code>, and optional <code>updatedToolOutput</code></td>
+          </tr>
         </tbody>
       </table>
 
-      <p>The current implementation always returns an empty <code>PostToolUseOutput{}</code>. Formatting is silent — Claude never knows it happened.</p>
+      <p>When formatting changes a file, the implementation returns <code>hookSpecificOutput.additionalContext</code> with <code>hookEventName</code> set to <code>PostToolUse</code>. Skips and unchanged files still return an empty <code>PostToolUseOutput{}</code>.</p>
     </section>
 
     <section id="dispatch-flow">
@@ -160,11 +166,12 @@
         <li>Decode <code>PostToolUseInput</code> from stdin</li>
         <li>Extract <code>file_path</code> via <code>in.FilePath()</code> — bail if empty</li>
         <li><code>fs.Stat(fp)</code> — bail if file doesn't exist</li>
+        <li>Check root <code>.prettierignore</code> and <code>.scutignore</code> files — bail if the path is ignored</li>
         <li>Switch on <code>filepath.Ext(fp)</code> to select a formatter — bail if no match</li>
         <li><code>afero.ReadFile(fs, fp)</code> — bail on error</li>
         <li>Call formatter — bail if result is <code>nil</code> (declined) or unchanged</li>
         <li><code>afero.WriteFile(fs, fp, formatted, info.Mode())</code> — preserves original file permissions</li>
-        <li>Write empty <code>PostToolUseOutput{}</code> to stdout</li>
+        <li>Write <code>PostToolUseOutput{}</code> to stdout, including nested <code>additionalContext</code> only when the hook changed the file</li>
       </ol>
 
       <div class="callout note"><strong>note</strong>Every bail path writes an empty output and returns nil. The hook never errors on formatting failures — it silently skips.</div>
@@ -198,14 +205,22 @@
       <p>Returning <code>nil, nil</code> means "decline to format" — the command skips the write.</p>
     </section>
 
+    <section id="ignore-files">
+      <h2><span class="section-anchor">// 06</span>Ignore Files</h2>
+
+      <p>Ignore handling lives in <code>internal/formatignore</code>. The hook walks upward from the target file directory and uses the first directory containing <code>.git</code>, <code>.prettierignore</code>, or <code>.scutignore</code> as the formatter root. It then loads root <code>.prettierignore</code> followed by root <code>.scutignore</code>; both files use gitignore-style patterns through go-git's <code>plumbing/format/gitignore</code> matcher, and later patterns win.</p>
+
+      <div class="callout note"><strong>note</strong><code>.scutignore</code> is loaded after <code>.prettierignore</code>, so it can add scut-specific exclusions or re-include paths with <code>!</code> patterns.</div>
+    </section>
+
     <section id="file-io">
-      <h2><span class="section-anchor">// 06</span>File I/O via afero.Fs</h2>
+      <h2><span class="section-anchor">// 07</span>File I/O via afero.Fs</h2>
 
       <p>The command receives <code>afero.Fs</code> via Kong dependency injection (see <a href="kong-base-setup.html">kong-base-setup</a>). In production this is <code>afero.OsFs</code> (real filesystem). In tests it's <code>afero.MemMapFs</code> (in-memory), which allows seeding files and verifying writes without touching disk.</p>
     </section>
 
     <section id="adding-formatter">
-      <h2><span class="section-anchor">// 07</span>Adding a New Formatter</h2>
+      <h2><span class="section-anchor">// 08</span>Adding a New Formatter</h2>
 
       <ol class="steps">
         <li>Add a <code>func Format&lt;Name&gt;(src []byte) ([]byte, error)</code> function to <code>internal/format/format.go</code> (or a sibling file in the same package)</li>
@@ -216,9 +231,9 @@
     </section>
 
     <section id="testing">
-      <h2><span class="section-anchor">// 08</span>Testing</h2>
+      <h2><span class="section-anchor">// 09</span>Testing</h2>
 
-      <p>Three layers, each independently testable:</p>
+      <p>Four layers, each independently testable:</p>
 
       <table class="fields">
         <thead>
@@ -238,9 +253,15 @@
             <td class="note">None — pure bytes</td>
           </tr>
           <tr>
+            <td class="field">Ignore matching</td>
+            <td class="type">internal/formatignore/formatignore_test.go</td>
+            <td class="note">Root discovery, merge order, directory patterns, glob patterns</td>
+            <td class="note"><code>afero.MemMapFs</code></td>
+          </tr>
+          <tr>
             <td class="field">Command dispatch</td>
             <td class="type">internal/cmd/claude/hook/posttooluse_test.go</td>
-            <td class="note">Extension routing, file I/O, end-to-end</td>
+            <td class="note">Extension routing, ignore skips, file I/O, end-to-end</td>
             <td class="note"><code>afero.MemMapFs</code></td>
           </tr>
         </tbody>
@@ -248,7 +269,7 @@
     </section>
 
     <section id="code">
-      <h2><span class="section-anchor">// 09</span>Code</h2>
+      <h2><span class="section-anchor">// 10</span>Code</h2>
 
       <table class="fields">
         <thead>
@@ -262,6 +283,10 @@
           <tr>
             <td class="note">Formatters (<code>FormatGo</code>, <code>FormatMarkdown</code>)</td>
             <td class="field">internal/format/format.go</td>
+          </tr>
+          <tr>
+            <td class="note">Ignore files</td>
+            <td class="field">internal/formatignore/formatignore.go</td>
           </tr>
           <tr>
             <td class="note">Types (<code>PostToolUseInput</code>, <code>PostToolUseOutput</code>, <code>FilePath()</code>)</td>

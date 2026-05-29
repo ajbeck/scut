@@ -482,13 +482,21 @@ type PreToolUseOutput struct {
 	HookSpecificOutput PreToolUseHookOutput `json:"hookSpecificOutput"`
 }
 
+// PostToolUseHookOutput contains PostToolUse-specific output fields.
+type PostToolUseHookOutput struct {
+	HookEventName     EventName       `json:"hookEventName"`
+	AdditionalContext *string         `json:"additionalContext,omitempty"`
+	UpdatedToolOutput json.RawMessage `json:"updatedToolOutput,omitempty"`
+}
+
 // PostToolUseOutput is the response for a PostToolUse hook.
 type PostToolUseOutput struct {
 	BaseOutput
-	Decision             *Decision       `json:"decision,omitempty"`
-	Reason               *string         `json:"reason,omitempty"`
-	AdditionalContext    *string         `json:"additionalContext,omitempty"`
-	UpdatedMCPToolOutput json.RawMessage `json:"updatedMCPToolOutput,omitempty"`
+	Decision             *Decision              `json:"decision,omitempty"`
+	Reason               *string                `json:"reason,omitempty"`
+	AdditionalContext    *string                `json:"additionalContext,omitempty"`
+	UpdatedMCPToolOutput json.RawMessage        `json:"updatedMCPToolOutput,omitempty"`
+	HookSpecificOutput   *PostToolUseHookOutput `json:"hookSpecificOutput,omitempty"`
 }
 
 // PostToolUseFailureOutput is the response for a PostToolUseFailure hook.

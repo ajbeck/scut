@@ -13,6 +13,7 @@ import (
 
 	cc "github.com/ajbeck/scut/hooks/claudecode"
 	"github.com/ajbeck/scut/internal/format"
+	"github.com/ajbeck/scut/internal/formatignore"
 )
 
 type postToolUseCmd struct{ trailingArgs }
@@ -21,6 +22,7 @@ func (c *postToolUseCmd) Help() string {
 	return `Formats files in place after successful Write or Edit tool calls.
 Dispatches by file extension: .go files are formatted with gofmt,
 .md and .mdx files are formatted with goldmark-prettier-markdown.
+Paths matched by root .prettierignore or .scutignore files are skipped.
 Files with other extensions or syntax errors are left unchanged.`
 }
 
@@ -43,6 +45,14 @@ func (c *postToolUseCmd) Run(stdin io.Reader, stdout io.Writer, fs afero.Fs, log
 	info, err := fs.Stat(fp)
 	if err != nil {
 		logger.Debug("skipped", "reason", "file not found", "file_path", fp, "duration_ms", ms(start))
+		return writeJSON(stdout, cc.PostToolUseOutput{})
+	}
+
+	ignored, err := formatignore.MatchPath(fs, fp, info.IsDir())
+	if err != nil {
+		logger.Warn("ignore check failed", "file_path", fp, "error", err, "duration_ms", ms(start))
+	} else if ignored {
+		logger.Debug("skipped", "reason", "ignored", "file_path", fp, "duration_ms", ms(start))
 		return writeJSON(stdout, cc.PostToolUseOutput{})
 	}
 
@@ -72,7 +82,15 @@ func (c *postToolUseCmd) Run(stdin io.Reader, stdout io.Writer, fs afero.Fs, log
 		return writeJSON(stdout, cc.PostToolUseOutput{})
 	}
 
-	_ = afero.WriteFile(fs, fp, formatted, info.Mode())
+	if err := afero.WriteFile(fs, fp, formatted, info.Mode()); err != nil {
+		logger.Warn("write failed", "file_path", fp, "formatter", formatterName, "error", err, "duration_ms", ms(start))
+		return writeJSON(stdout, cc.PostToolUseOutput{})
+	}
 	logger.Info("formatted", "file_path", fp, "formatter", formatterName, "duration_ms", ms(start))
-	return writeJSON(stdout, cc.PostToolUseOutput{})
+	return writeJSON(stdout, cc.PostToolUseOutput{
+		HookSpecificOutput: &cc.PostToolUseHookOutput{
+			HookEventName:     cc.EventPostToolUse,
+			AdditionalContext: new(fmt.Sprintf("scut formatted %s after the %s tool completed. The file on disk may differ from the original tool input.", fp, in.ToolName)),
+		},
+	})
 }

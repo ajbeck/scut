@@ -46,7 +46,9 @@ func TestPostToolUseCmd_Dispatch(t *testing.T) {
 		payload     string
 		filePath    string
 		fileContent string
+		extraFiles  map[string]string
 		wantContent string
+		wantContext bool
 	}{
 		{
 			name:        "go file gets formatted",
@@ -54,6 +56,7 @@ func TestPostToolUseCmd_Dispatch(t *testing.T) {
 			filePath:    "/src/main.go",
 			fileContent: unformattedGo,
 			wantContent: formattedGo,
+			wantContext: true,
 		},
 		{
 			name:        "md file gets formatted",
@@ -61,6 +64,7 @@ func TestPostToolUseCmd_Dispatch(t *testing.T) {
 			filePath:    "/docs/readme.md",
 			fileContent: unformattedMd,
 			wantContent: formattedMd,
+			wantContext: true,
 		},
 		{
 			name:        "mdx file gets formatted",
@@ -68,6 +72,17 @@ func TestPostToolUseCmd_Dispatch(t *testing.T) {
 			filePath:    "/docs/page.mdx",
 			fileContent: unformattedMd,
 			wantContent: formattedMd,
+			wantContext: true,
+		},
+		{
+			name:        "ignored md file unchanged",
+			payload:     hookPayload(toolInput("/docs/themes/shortcode.md")),
+			filePath:    "/docs/themes/shortcode.md",
+			fileContent: unformattedMd,
+			extraFiles: map[string]string{
+				"/docs/.prettierignore": "themes/\n",
+			},
+			wantContent: unformattedMd,
 		},
 		{
 			name:        "already formatted go file unchanged",
@@ -106,6 +121,11 @@ func TestPostToolUseCmd_Dispatch(t *testing.T) {
 					t.Fatalf("seeding file: %v", err)
 				}
 			}
+			for path, content := range tt.extraFiles {
+				if err := afero.WriteFile(fs, path, []byte(content), 0o644); err != nil {
+					t.Fatalf("seeding extra file: %v", err)
+				}
+			}
 
 			stdin := strings.NewReader(tt.payload)
 			var stdout bytes.Buffer
@@ -119,6 +139,10 @@ func TestPostToolUseCmd_Dispatch(t *testing.T) {
 			var out cc.PostToolUseOutput
 			if err := json.Unmarshal(stdout.Bytes(), &out); err != nil {
 				t.Fatalf("invalid output JSON: %v\nraw: %s", err, stdout.String())
+			}
+			hasContext := out.HookSpecificOutput != nil && out.HookSpecificOutput.AdditionalContext != nil
+			if hasContext != tt.wantContext {
+				t.Errorf("additional context present = %v, want %v", hasContext, tt.wantContext)
 			}
 
 			// Verify file contents when a file was seeded.

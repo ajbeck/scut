@@ -487,7 +487,7 @@
       <p>All 25 commands are wired up and deserialize their stdin payloads into the typed input structs. Implementation maturity varies by command:</p>
 
       <ul>
-        <li><strong><code>post-tool-use</code></strong> has a full implementation — formats <code>.go</code>, <code>.md</code>, and <code>.mdx</code> files via the shared <code>internal/format</code> package (see <a href="post-tool-use.html">post-tool-use</a>).</li>
+        <li><strong><code>post-tool-use</code></strong> has a full implementation — formats <code>.go</code>, <code>.md</code>, and <code>.mdx</code> files via the shared <code>internal/format</code> package, skips paths matched by root <code>.prettierignore</code> or <code>.scutignore</code>, and reports formatting changes back to Claude with <code>additionalContext</code> (see <a href="post-tool-use.html">post-tool-use</a>).</li>
         <li><strong><code>session-start</code>, <code>session-end</code>, <code>pre-tool-use</code>, <code>stop-failure</code>, <code>pre-compact</code>, <code>post-compact</code></strong> emit structured logs at Info/Warn level with hook-specific fields (<code>source</code>, <code>reason</code>, <code>tool_name</code>, <code>error</code>, <code>trigger</code>, etc.) on each invocation and return either a <code>BaseOutput{}</code> or a minimal allow/inject response.</li>
         <li>The remaining commands deserialize input and return mock output values that exercise their output type's shape (e.g., <code>permission-request</code> returns <code>BehaviorAllow</code>, <code>worktree-create</code> returns <code>/tmp/mock-worktree</code>). These are placeholders to be replaced with real hook logic.</li>
       </ul>

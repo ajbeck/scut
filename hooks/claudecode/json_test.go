@@ -24,6 +24,10 @@ func TestPostToolUseOutput_OmitEmpty(t *testing.T) {
 			Decision:          new(DecisionBlock),
 			Reason:            new("bad output"),
 			AdditionalContext: new("extra info"),
+			HookSpecificOutput: &PostToolUseHookOutput{
+				HookEventName:     EventPostToolUse,
+				AdditionalContext: new("nested info"),
+			},
 		}
 		data, err := json.Marshal(out)
 		if err != nil {
@@ -42,6 +46,16 @@ func TestPostToolUseOutput_OmitEmpty(t *testing.T) {
 		}
 		if m["additionalContext"] != "extra info" {
 			t.Errorf("additionalContext = %v, want %q", m["additionalContext"], "extra info")
+		}
+		hook, ok := m["hookSpecificOutput"].(map[string]any)
+		if !ok {
+			t.Fatalf("hookSpecificOutput missing or wrong type: %v", m["hookSpecificOutput"])
+		}
+		if hook["hookEventName"] != "PostToolUse" {
+			t.Errorf("hookEventName = %v, want %q", hook["hookEventName"], "PostToolUse")
+		}
+		if hook["additionalContext"] != "nested info" {
+			t.Errorf("hook additionalContext = %v, want %q", hook["additionalContext"], "nested info")
 		}
 	})
 }

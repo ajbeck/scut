@@ -460,7 +460,7 @@ scut gotools doc &lt;package&gt; &lt;symbol&gt;[.&lt;methodOrField&gt;]</pre>
     <section id="build">
       <h2><span class="section-anchor">// 07</span>Build</h2>
 
-      <p>See <code>magefiles/</code> for build targets. <code>mage build</code> compiles with ldflags that inject build metadata into <code>internal/version</code>. All mage targets set <code>GOEXPERIMENT=jsonv2</code> via <code>init()</code> in <code>magefiles/helpers.go</code>.</p>
+      <p>See <code>magefiles/</code> for build targets. <code>mage build</code> compiles with ldflags that inject <code>internal/version.Version</code> and <code>internal/version.BuildMetadata</code>. Local builds use the development version from code plus timestamp metadata; release builds set <code>RELEASE_VERSION=vM.m.p</code> and <code>BUILD_METADATA=gh:&lt;run&gt;:&lt;sha&gt;</code>. Source installs fall back to Go build information when linker flags are not set. <code>mage buildPlatform &lt;goos&gt; &lt;goarch&gt;</code> cross-compiles release artifacts, and <code>mage version</code> prints the base version that will be injected. All mage targets set <code>GOEXPERIMENT=jsonv2</code> via <code>init()</code> in <code>magefiles/helpers.go</code>.</p>
 
       <div class="callout note"><strong>note</strong>Do not run <code>go test</code>, <code>go build</code>, or <code>go vet</code> directly — always use the corresponding Mage target. Magefiles set <code>GOEXPERIMENT=jsonv2</code> and other required environment configuration automatically. Running Go toolchain commands directly will produce incorrect results or miss build tags.</div>
     </section>

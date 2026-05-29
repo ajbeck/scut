@@ -1,0 +1,160 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      releaseVersion:
+        description: Version to release, for example 0.2.0 or v0.2.0.
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  actions: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  tag-release:
+    name: Tag Release
+    runs-on: ubuntu-latest
+    outputs:
+      commit_sha: ${{ steps.tag.outputs.commit_sha }}
+      release_tag: ${{ steps.tag.outputs.release_tag }}
+      major_tag: ${{ steps.tag.outputs.major_tag }}
+      minor_tag: ${{ steps.tag.outputs.minor_tag }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Create release tags
+        id: tag
+        env:
+          INPUT_VERSION: ${{ inputs.releaseVersion }}
+        run: |
+          version="${INPUT_VERSION#v}"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "releaseVersion must be a stable semantic version like 0.2.0 or v0.2.0" >&2
+            exit 1
+          fi
+
+          IFS=. read -r major minor patch <<< "$version"
+          release_tag="v${major}.${minor}.${patch}"
+          minor_tag="v${major}.${minor}"
+          major_tag="v${major}"
+          commit_sha="$(git rev-parse HEAD)"
+
+          existing_sha="$(git rev-parse -q --verify "refs/tags/${release_tag}^{commit}" || true)"
+          if [ -n "$existing_sha" ] && [ "$existing_sha" != "$commit_sha" ]; then
+            echo "Tag ${release_tag} already exists at ${existing_sha}. Exact release tags are immutable." >&2
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if [ -z "$existing_sha" ]; then
+            git tag "${release_tag}" "${commit_sha}"
+          fi
+          git tag -f "${minor_tag}" "${commit_sha}"
+          git tag -f "${major_tag}" "${commit_sha}"
+
+          if [ -z "$existing_sha" ]; then
+            git push origin "refs/tags/${release_tag}"
+          fi
+          git push --force origin "refs/tags/${minor_tag}" "refs/tags/${major_tag}"
+
+          echo "commit_sha=${commit_sha}" >> "$GITHUB_OUTPUT"
+          echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"
+          echo "major_tag=${major_tag}" >> "$GITHUB_OUTPUT"
+          echo "minor_tag=${minor_tag}" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build
+    needs: tag-release
+    uses: ./.github/workflows/build.yaml
+    with:
+      mode: release
+      ref: ${{ needs.tag-release.outputs.release_tag }}
+      release_tag: ${{ needs.tag-release.outputs.release_tag }}
+
+  release:
+    name: Create GitHub Release
+    needs: [tag-release, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download release assets
+        uses: actions/download-artifact@v8
+        with:
+          name: release-assets
+          path: release-assets
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.tag-release.outputs.release_tag }}
+          COMMIT_SHA: ${{ needs.tag-release.outputs.commit_sha }}
+        run: |
+          gh release create "${RELEASE_TAG}" release-assets/* \
+            --repo "${GITHUB_REPOSITORY}" \
+            --target "${COMMIT_SHA}" \
+            --title "scut ${RELEASE_TAG}" \
+            --generate-notes
+
+      - name: Write release summary
+        env:
+          RELEASE_TAG: ${{ needs.tag-release.outputs.release_tag }}
+          COMMIT_SHA: ${{ needs.tag-release.outputs.commit_sha }}
+          MAJOR_TAG: ${{ needs.tag-release.outputs.major_tag }}
+          MINOR_TAG: ${{ needs.tag-release.outputs.minor_tag }}
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" << EOF
+          ## Release Summary
+
+          | Item | Value |
+          |------|-------|
+          | Release | \`${RELEASE_TAG}\` |
+          | Commit | [\`${COMMIT_SHA:0:7}\`](https://github.com/${{ github.repository }}/commit/${COMMIT_SHA}) |
+          | Movable tags | \`${MINOR_TAG}\`, \`${MAJOR_TAG}\` |
+
+          ### Assets
+
+          - \`scut-${RELEASE_TAG}-darwin-amd64.tar.gz\`
+          - \`scut-${RELEASE_TAG}-darwin-arm64.tar.gz\`
+          - \`scut-${RELEASE_TAG}-linux-amd64.tar.gz\`
+          - \`scut-${RELEASE_TAG}-linux-arm64.tar.gz\`
+          - \`checksums.txt\`
+          EOF
+
+  deploy-docs:
+    name: Deploy Docs
+    needs: [tag-release, release]
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout release commit
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.tag-release.outputs.commit_sha }}
+
+      - name: Upload docs artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ./docs
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

@@ -1,0 +1,179 @@
+name: Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to checkout.
+        required: false
+        type: string
+      mode:
+        description: Build mode.
+        required: false
+        default: pr
+        type: choice
+        options:
+          - pr
+          - release
+      release_tag:
+        description: Release tag to inject into the binary, for example v0.2.0.
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      ref:
+        description: Git ref to checkout.
+        required: false
+        type: string
+      mode:
+        description: Build mode.
+        required: false
+        default: pr
+        type: string
+      release_tag:
+        description: Release tag to inject into the binary, for example v0.2.0.
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Verify
+    if: inputs.mode != 'release'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Format
+        run: |
+          go run github.com/magefile/mage@v1.17.0 -d magefiles -w . fmt
+          git diff --exit-code
+
+      - name: Vet
+        run: go run github.com/magefile/mage@v1.17.0 -d magefiles -w . vet
+
+      - name: Test
+        run: go run github.com/magefile/mage@v1.17.0 -d magefiles -w . test
+
+  build:
+    name: Build (${{ matrix.goos }}/${{ matrix.goarch }})
+    needs: [verify]
+    if: ${{ always() && !failure() && !cancelled() }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: darwin
+            goarch: amd64
+            runner: macos-latest
+          - goos: darwin
+            goarch: arm64
+            runner: macos-latest
+          - goos: linux
+            goarch: amd64
+            runner: ubuntu-latest
+          - goos: linux
+            goarch: arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Set build variables
+        id: vars
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          sha_short="$(git rev-parse --short=7 HEAD)"
+          version="${RELEASE_TAG:-dev}"
+          echo "sha_short=${sha_short}" >> "$GITHUB_OUTPUT"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        env:
+          BUILD_METADATA: gh:${{ github.run_id }}:${{ steps.vars.outputs.sha_short }}
+          RELEASE: ${{ inputs.mode == 'release' }}
+          RELEASE_VERSION: ${{ inputs.release_tag }}
+        run: go run github.com/magefile/mage@v1.17.0 -d magefiles -w . buildPlatform ${{ matrix.goos }} ${{ matrix.goarch }}
+
+      - name: Package
+        env:
+          VERSION: ${{ steps.vars.outputs.version }}
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          asset="scut-${VERSION}-${GOOS}-${GOARCH}.tar.gz"
+          mkdir -p "dist/scut-${VERSION}-${GOOS}-${GOARCH}"
+          cp "bin/scut-${GOOS}-${GOARCH}" "dist/scut-${VERSION}-${GOOS}-${GOARCH}/scut"
+          tar -czf "dist/${asset}" -C "dist/scut-${VERSION}-${GOOS}-${GOARCH}" scut
+
+      - name: Upload platform artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: scut-${{ steps.vars.outputs.version }}-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/scut-${{ steps.vars.outputs.version }}-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz
+          retention-days: 7
+
+  assemble:
+    name: Assemble Artifacts
+    needs: [build]
+    if: ${{ !failure() && !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download platform artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: release-assets
+          pattern: scut-*
+          merge-multiple: true
+
+      - name: Create checksums
+        working-directory: release-assets
+        run: shasum -a 256 *.tar.gz > checksums.txt
+
+      - name: Upload release assets
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-assets
+          path: release-assets/*
+          retention-days: 30
+
+      - name: Write summary
+        env:
+          MODE: ${{ inputs.mode }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          version="${RELEASE_TAG:-dev}"
+          cat >> "$GITHUB_STEP_SUMMARY" << EOF
+          ## Build Summary
+
+          | Item | Value |
+          |------|-------|
+          | Version | \`${version}\` |
+          | Mode | \`${MODE}\` |
+          | Platforms | darwin/amd64, darwin/arm64, linux/amd64, linux/arm64 |
+          EOF

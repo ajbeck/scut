@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Release Workflows — scut</title>
+<link rel="stylesheet" href="scut-docs.css">
+<script src="scut-docs.js"></script>
+</head>
+<body>
+
+<div class="layout">
+
+  <aside class="rail">
+    <p class="rail-title">// scut · operations</p>
+    <p class="rail-product"><span class="live-dot" aria-hidden="true"></span>Release Workflows</p>
+
+    <nav class="toc">
+      <a class="toc-link" href="#overview"><span class="toc-num">01</span><span>Overview</span></a>
+      <a class="toc-link" href="#pull-request"><span class="toc-num">02</span><span>Pull Request</span></a>
+      <a class="toc-link" href="#build"><span class="toc-num">03</span><span>Build</span></a>
+      <a class="toc-link" href="#release"><span class="toc-num">04</span><span>Release</span></a>
+      <a class="toc-link" href="#versioning"><span class="toc-num">05</span><span>Versioning</span></a>
+      <a class="toc-link" href="#dependabot"><span class="toc-num">06</span><span>Dependabot</span></a>
+    </nav>
+
+    <div class="theme-switcher">
+      <span class="theme-switcher__label">Theme</span>
+      <button class="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle color theme"><span class="toggle-glyph toggle-glyph--sun" aria-hidden="true">☀︎</span><span class="toggle-glyph toggle-glyph--moon" aria-hidden="true">☾</span></button>
+    </div>
+  </aside>
+
+  <main>
+
+    <header class="hero">
+      <div class="hero-meta">
+        <span class="badge primary">github actions</span>
+        <span class="badge tests">mage</span>
+        <span class="badge swift">release tags</span>
+      </div>
+      <h1><span class="moniker-bracket">[</span><span class="moniker">release workflows</span><span class="moniker-bracket">]</span></h1>
+      <p class="lede">scut uses three GitHub Actions workflows: one pull request entry point, one reusable build workflow, and one release workflow that creates tags, publishes assets, and deploys the documentation site.</p>
+    </header>
+
+    <section id="overview">
+      <h2><span class="section-anchor">// 01</span>Overview</h2>
+
+      <p>The workflows are deliberately thin around Mage. GitHub Actions owns orchestration, permissions, artifacts, and release publishing. Mage owns every Go build, format, vet, and test command so the repository's <code>GOEXPERIMENT=jsonv2</code> setup stays consistent locally and in CI.</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Workflow</th><th>Responsibility</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field"><code>pull-request.yaml</code></td>
+            <td class="note">Runs on PRs to <code>main</code> and calls the reusable build workflow in PR mode.</td>
+          </tr>
+          <tr>
+            <td class="field"><code>build.yaml</code></td>
+            <td class="note">Reusable workflow for verification, platform builds, tarball assembly, and checksum generation.</td>
+          </tr>
+          <tr>
+            <td class="field"><code>release.yaml</code></td>
+            <td class="note">Manual release workflow. Tags <code>main</code>, builds from the exact tag, creates the GitHub Release, and deploys Pages.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="pull-request">
+      <h2><span class="section-anchor">// 02</span>Pull Request</h2>
+
+      <p>The pull request workflow triggers for PRs targeting <code>main</code>. It has read-only permissions and a concurrency group based on the workflow name and PR ref, with <code>cancel-in-progress</code> enabled. Pushing a new commit to a PR cancels the older PR workflow run and starts a fresh one.</p>
+
+      <div class="code-frame">
+        <div class="code-title">
+          <span class="filename">pull-request<span class="ext">.yaml</span></span>
+        </div>
+<pre>jobs:
+  build:
+    uses: ./.github/workflows/build.yaml
+    with:
+      mode: pr
+      ref: ${{ github.sha }}</pre>
+      </div>
+    </section>
+
+    <section id="build">
+      <h2><span class="section-anchor">// 03</span>Build</h2>
+
+      <p>The build workflow supports both <code>workflow_call</code> and manual dispatch. In PR mode it runs verification first, then builds the four release platforms. In release mode verification is skipped because the release commit has already passed PR checks on <code>main</code>.</p>
+
+      <ol class="steps">
+        <li><strong>verify</strong> checks formatting, vet, and tests through Mage. Every Go setup step enables the built-in Go cache and keys dependency invalidation from <code>go.sum</code>.</li>
+        <li><strong>build</strong> runs a matrix for <code>darwin/amd64</code>, <code>darwin/arm64</code>, <code>linux/amd64</code>, and <code>linux/arm64</code>. Each matrix job calls <code>mage buildPlatform &lt;goos&gt; &lt;goarch&gt;</code>.</li>
+        <li><strong>assemble</strong> downloads the platform artifacts, writes <code>checksums.txt</code>, and uploads a single <code>release-assets</code> artifact for release publishing.</li>
+      </ol>
+
+      <p>The platform artifacts are named <code>scut-&lt;version&gt;-&lt;goos&gt;-&lt;goarch&gt;.tar.gz</code>. Each tarball contains one executable named <code>scut</code>.</p>
+    </section>
+
+    <section id="release">
+      <h2><span class="section-anchor">// 04</span>Release</h2>
+
+      <p>The release workflow is manually dispatched with <code>releaseVersion</code>. It always checks out <code>main</code>; releases are not cut from feature branches.</p>
+
+      <ol class="steps">
+        <li><strong>tag-release</strong> validates a stable semantic version, creates immutable <code>vM.m.p</code> when it does not already exist, and force-updates movable <code>vM.m</code> and <code>vM</code> tags to the current <code>main</code> commit.</li>
+        <li><strong>build</strong> calls the reusable build workflow in release mode with <code>ref</code> set to the exact tag and <code>release_tag</code> set to <code>vM.m.p</code>.</li>
+        <li><strong>release</strong> downloads <code>release-assets</code>, creates the GitHub Release for the exact tag, and uploads tarballs plus <code>checksums.txt</code>.</li>
+        <li><strong>deploy-docs</strong> deploys <code>docs/</code> to GitHub Pages from the same release commit, keeping hosted documentation aligned with the release.</li>
+      </ol>
+
+      <div class="callout warn"><strong>guardrail</strong>If <code>vM.m.p</code> already exists at a different commit, the workflow fails. If it exists at the same commit, the workflow can continue, which allows rerunning a failed release after tagging succeeded.</div>
+    </section>
+
+    <section id="versioning">
+      <h2><span class="section-anchor">// 05</span>Versioning</h2>
+
+      <p>Release versions come from tags. <code>internal/version.Version</code> defaults to <code>v0.0.0-dev</code>, and release builds override it through linker flags by setting <code>RELEASE_VERSION=vM.m.p</code>. <code>BUILD_METADATA=gh:&lt;run&gt;:&lt;sha&gt;</code> is injected separately.</p>
+
+      <p>Source installs such as <code>go install github.com/ajbeck/scut@vM.m.p</code> use Go build information as a fallback when linker flags are not set. Local Mage builds report the development version plus local timestamp metadata.</p>
+    </section>
+
+    <section id="dependabot">
+      <h2><span class="section-anchor">// 06</span>Dependabot</h2>
+
+      <p><code>.github/dependabot.yml</code> checks Go modules and GitHub Actions weekly. Updates are grouped per ecosystem so routine dependency churn lands as focused PRs instead of one PR per dependency.</p>
+    </section>
+
+    <footer>
+      <span class="blink">scut</span>
+      <span>operations · release workflows</span>
+    </footer>
+
+  </main>
+</div>
+
+</body>
+</html>

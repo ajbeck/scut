@@ -1,5 +1,10 @@
 # scut
 
+[![Release](https://img.shields.io/github/v/release/ajbeck/scut?sort=semver)](https://github.com/ajbeck/scut/releases)
+[![Pull Request](https://github.com/ajbeck/scut/actions/workflows/pull-request.yaml/badge.svg)](https://github.com/ajbeck/scut/actions/workflows/pull-request.yaml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/ajbeck/scut)](go.mod)
+
 CLI tool for LLM agents. Provides a consistent interface for agent authors to interact with tools, the environment, and each other via hooks, rules, and instructions.
 
 ## Installation
@@ -14,7 +19,7 @@ verifies `checksums.txt`, and installs `scut` to `~/.local/bin`.
 Install a specific version or destination:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ajbeck/scut/main/install.sh | sh -s -- --version v0.2.0 --bin-dir /usr/local/bin
+curl -fsSL https://raw.githubusercontent.com/ajbeck/scut/main/install.sh | sh -s -- --version v0.1.0 --bin-dir /usr/local/bin
 ```
 
 Go users can also install from source:
@@ -195,3 +200,15 @@ scut logging clean              # remove files older than 7 days (default)
 scut logging clean --days 30    # remove files older than 30 days
 scut logging clean --all        # remove all log files
 ```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development commands and pull request expectations.
+
+## Security
+
+Report security issues privately. See [SECURITY.md](SECURITY.md).
+
+## License
+
+scut is released under the [MIT License](LICENSE).

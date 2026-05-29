@@ -13,7 +13,7 @@ Usage:
   install.sh [--version VERSION] [--bin-dir DIR]
 
 Options:
-  --version VERSION  Install a specific release, for example v0.2.0.
+  --version VERSION  Install a specific release, for example v0.1.0.
   --bin-dir DIR      Install directory. Defaults to $HOME/.local/bin.
   -h, --help         Show this help.
 EOF

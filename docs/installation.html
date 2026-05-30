@@ -133,8 +133,8 @@ checksums.txt</pre>
 
       <ol class="steps">
         <li>Code lands on <code>main</code>.</li>
-        <li>The <code>Release</code> workflow is manually dispatched with a stable semver version.</li>
-        <li>The workflow checks out <code>main</code>, creates immutable <code>vM.m.p</code>, and updates movable <code>vM.m</code> and <code>vM</code> tags.</li>
+        <li>The <code>Release</code> workflow is manually dispatched with a stable semver version and the full commit SHA to release.</li>
+        <li>The workflow checks out <code>main</code>, verifies the target SHA matches <code>origin/main</code>, creates immutable <code>vM.m.p</code>, and updates movable <code>vM.m</code> and <code>vM</code> tags.</li>
         <li>The reusable build workflow builds all platform artifacts with <code>RELEASE_VERSION=vM.m.p</code>.</li>
         <li>The release job creates the GitHub Release and uploads tarballs plus <code>checksums.txt</code>.</li>
         <li>The Homebrew tap job dispatches <code>update-formula</code> to <code>ajbeck/homebrew-tap</code> so the tap can open a formula update PR.</li>

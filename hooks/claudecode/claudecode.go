@@ -1,3 +1,5 @@
+//go:build goexperiment.jsonv2
+
 // Package claudecode provides types for Claude Code hook inputs and outputs.
 //
 // Claude Code invokes hooks as subprocesses, passing a JSON payload on stdin
@@ -17,31 +19,35 @@ import "encoding/json"
 type EventName string
 
 const (
-	EventSessionStart       EventName = "SessionStart"
-	EventSessionEnd         EventName = "SessionEnd"
-	EventInstructionsLoaded EventName = "InstructionsLoaded"
-	EventUserPromptSubmit   EventName = "UserPromptSubmit"
-	EventPreToolUse         EventName = "PreToolUse"
-	EventPostToolUse        EventName = "PostToolUse"
-	EventPostToolUseFailure EventName = "PostToolUseFailure"
-	EventPermissionRequest  EventName = "PermissionRequest"
-	EventNotification       EventName = "Notification"
-	EventSubagentStart      EventName = "SubagentStart"
-	EventSubagentStop       EventName = "SubagentStop"
-	EventStop               EventName = "Stop"
-	EventStopFailure        EventName = "StopFailure"
-	EventTaskCreated        EventName = "TaskCreated"
-	EventTaskCompleted      EventName = "TaskCompleted"
-	EventTeammateIdle       EventName = "TeammateIdle"
-	EventConfigChange       EventName = "ConfigChange"
-	EventCwdChanged         EventName = "CwdChanged"
-	EventFileChanged        EventName = "FileChanged"
-	EventWorktreeCreate     EventName = "WorktreeCreate"
-	EventWorktreeRemove     EventName = "WorktreeRemove"
-	EventPreCompact         EventName = "PreCompact"
-	EventPostCompact        EventName = "PostCompact"
-	EventElicitation        EventName = "Elicitation"
-	EventElicitationResult  EventName = "ElicitationResult"
+	EventSetup               EventName = "Setup"
+	EventSessionStart        EventName = "SessionStart"
+	EventSessionEnd          EventName = "SessionEnd"
+	EventInstructionsLoaded  EventName = "InstructionsLoaded"
+	EventUserPromptSubmit    EventName = "UserPromptSubmit"
+	EventUserPromptExpansion EventName = "UserPromptExpansion"
+	EventPreToolUse          EventName = "PreToolUse"
+	EventPostToolUse         EventName = "PostToolUse"
+	EventPostToolUseFailure  EventName = "PostToolUseFailure"
+	EventPostToolBatch       EventName = "PostToolBatch"
+	EventPermissionRequest   EventName = "PermissionRequest"
+	EventPermissionDenied    EventName = "PermissionDenied"
+	EventNotification        EventName = "Notification"
+	EventSubagentStart       EventName = "SubagentStart"
+	EventSubagentStop        EventName = "SubagentStop"
+	EventStop                EventName = "Stop"
+	EventStopFailure         EventName = "StopFailure"
+	EventTaskCreated         EventName = "TaskCreated"
+	EventTaskCompleted       EventName = "TaskCompleted"
+	EventTeammateIdle        EventName = "TeammateIdle"
+	EventConfigChange        EventName = "ConfigChange"
+	EventCwdChanged          EventName = "CwdChanged"
+	EventFileChanged         EventName = "FileChanged"
+	EventWorktreeCreate      EventName = "WorktreeCreate"
+	EventWorktreeRemove      EventName = "WorktreeRemove"
+	EventPreCompact          EventName = "PreCompact"
+	EventPostCompact         EventName = "PostCompact"
+	EventElicitation         EventName = "Elicitation"
+	EventElicitationResult   EventName = "ElicitationResult"
 )
 
 // PermissionMode describes the active permission mode for the session.
@@ -82,10 +88,12 @@ const (
 type NotificationType string
 
 const (
-	NotificationPermissionPrompt  NotificationType = "permission_prompt"
-	NotificationIdlePrompt        NotificationType = "idle_prompt"
-	NotificationAuthSuccess       NotificationType = "auth_success"
-	NotificationElicitationDialog NotificationType = "elicitation_dialog"
+	NotificationPermissionPrompt    NotificationType = "permission_prompt"
+	NotificationIdlePrompt          NotificationType = "idle_prompt"
+	NotificationAuthSuccess         NotificationType = "auth_success"
+	NotificationElicitationDialog   NotificationType = "elicitation_dialog"
+	NotificationElicitationComplete NotificationType = "elicitation_complete"
+	NotificationElicitationResponse NotificationType = "elicitation_response"
 )
 
 // MemoryType describes the origin of a loaded instructions file.
@@ -116,6 +124,15 @@ const (
 	PermissionAllow PermissionDecision = "allow"
 	PermissionDeny  PermissionDecision = "deny"
 	PermissionAsk   PermissionDecision = "ask"
+	PermissionDefer PermissionDecision = "defer"
+)
+
+// ExpansionType describes the source of a prompt expansion.
+type ExpansionType string
+
+const (
+	ExpansionSlashCommand ExpansionType = "slash_command"
+	ExpansionMCPPrompt    ExpansionType = "mcp_prompt"
 )
 
 // StopError categorizes the failure in a StopFailure event.
@@ -217,6 +234,7 @@ type Input struct {
 	CWD            string         `json:"cwd"`
 	HookEventName  EventName      `json:"hook_event_name"`
 	PermissionMode PermissionMode `json:"permission_mode"`
+	Effort         string         `json:"effort,omitempty"`
 	AgentID        string         `json:"agent_id,omitempty"`
 	AgentType      string         `json:"agent_type,omitempty"`
 }
@@ -230,6 +248,12 @@ type SessionStartInput struct {
 	Input
 	Source SessionSource `json:"source"`
 	Model  string        `json:"model"`
+}
+
+// SetupInput is sent by explicit setup and maintenance invocations.
+type SetupInput struct {
+	Input
+	Matcher string `json:"matcher,omitempty"`
 }
 
 // SessionEndInput is sent when a session terminates.
@@ -253,6 +277,16 @@ type InstructionsLoadedInput struct {
 type UserPromptSubmitInput struct {
 	Input
 	Prompt string `json:"prompt"`
+}
+
+// UserPromptExpansionInput is sent when a typed command expands into a prompt.
+type UserPromptExpansionInput struct {
+	Input
+	ExpansionType ExpansionType `json:"expansion_type"`
+	CommandName   string        `json:"command_name"`
+	CommandArgs   string        `json:"command_args"`
+	CommandSource string        `json:"command_source"`
+	Prompt        string        `json:"prompt"`
 }
 
 // PreToolUseInput is sent before a tool call executes.
@@ -297,6 +331,20 @@ type PostToolUseFailureInput struct {
 	IsInterrupt *bool           `json:"is_interrupt,omitempty"`
 }
 
+// ToolCall describes one tool result in a PostToolBatch event.
+type ToolCall struct {
+	ToolName     string          `json:"tool_name"`
+	ToolUseID    string          `json:"tool_use_id"`
+	ToolInput    json.RawMessage `json:"tool_input"`
+	ToolResponse json.RawMessage `json:"tool_response"`
+}
+
+// PostToolBatchInput is sent after a batch of parallel tool calls resolves.
+type PostToolBatchInput struct {
+	Input
+	ToolCalls []ToolCall `json:"tool_calls"`
+}
+
 // PermissionRule describes a single permission rule in a suggestion.
 type PermissionRule struct {
 	ToolName    string `json:"toolName"`
@@ -317,6 +365,15 @@ type PermissionRequestInput struct {
 	ToolName              string                 `json:"tool_name"`
 	ToolInput             json.RawMessage        `json:"tool_input"`
 	PermissionSuggestions []PermissionSuggestion `json:"permission_suggestions"`
+}
+
+// PermissionDeniedInput is sent when auto mode denies a tool call.
+type PermissionDeniedInput struct {
+	Input
+	ToolName  string          `json:"tool_name"`
+	ToolUseID string          `json:"tool_use_id"`
+	ToolInput json.RawMessage `json:"tool_input"`
+	Reason    string          `json:"reason"`
 }
 
 // NotificationInput is sent when Claude Code emits a notification.
@@ -447,10 +504,11 @@ type ElicitationResultInput struct {
 
 // BaseOutput contains fields that any hook response may include.
 type BaseOutput struct {
-	Continue       *bool   `json:"continue,omitempty"`
-	StopReason     *string `json:"stopReason,omitempty"`
-	SuppressOutput *bool   `json:"suppressOutput,omitempty"`
-	SystemMessage  *string `json:"systemMessage,omitempty"`
+	Continue         *bool   `json:"continue,omitempty"`
+	StopReason       *string `json:"stopReason,omitempty"`
+	SuppressOutput   *bool   `json:"suppressOutput,omitempty"`
+	SystemMessage    *string `json:"systemMessage,omitempty"`
+	TerminalSequence *string `json:"terminalSequence,omitempty"`
 }
 
 // SessionStartOutput is the response for a SessionStart hook.
@@ -462,9 +520,27 @@ type SessionStartOutput struct {
 // UserPromptSubmitOutput is the response for a UserPromptSubmit hook.
 type UserPromptSubmitOutput struct {
 	BaseOutput
-	Decision          *Decision `json:"decision,omitempty"`
-	Reason            *string   `json:"reason,omitempty"`
+	Decision           *Decision             `json:"decision,omitempty"`
+	Reason             *string               `json:"reason,omitempty"`
+	AdditionalContext  *string               `json:"additionalContext,omitempty"`
+	SessionTitle       *string               `json:"sessionTitle,omitempty"`
+	HookSpecificOutput *UserPromptHookOutput `json:"hookSpecificOutput,omitempty"`
+}
+
+// UserPromptHookOutput contains context fields for prompt events.
+type UserPromptHookOutput struct {
+	HookEventName     EventName `json:"hookEventName"`
 	AdditionalContext *string   `json:"additionalContext,omitempty"`
+	SessionTitle      *string   `json:"sessionTitle,omitempty"`
+}
+
+// UserPromptExpansionOutput is the response for a UserPromptExpansion hook.
+type UserPromptExpansionOutput struct {
+	BaseOutput
+	Decision           *Decision             `json:"decision,omitempty"`
+	Reason             *string               `json:"reason,omitempty"`
+	AdditionalContext  *string               `json:"additionalContext,omitempty"`
+	HookSpecificOutput *UserPromptHookOutput `json:"hookSpecificOutput,omitempty"`
 }
 
 // PreToolUseHookOutput contains PreToolUse-specific output fields.
@@ -505,6 +581,20 @@ type PostToolUseFailureOutput struct {
 	AdditionalContext *string `json:"additionalContext,omitempty"`
 }
 
+// PostToolBatchHookOutput contains PostToolBatch-specific output fields.
+type PostToolBatchHookOutput struct {
+	HookEventName     EventName `json:"hookEventName"`
+	AdditionalContext *string   `json:"additionalContext,omitempty"`
+}
+
+// PostToolBatchOutput is the response for a PostToolBatch hook.
+type PostToolBatchOutput struct {
+	BaseOutput
+	Decision           *Decision                `json:"decision,omitempty"`
+	Reason             *string                  `json:"reason,omitempty"`
+	HookSpecificOutput *PostToolBatchHookOutput `json:"hookSpecificOutput,omitempty"`
+}
+
 // PermissionUpdate describes a permission change to apply.
 type PermissionUpdate struct {
 	Type        PermissionSuggestionType `json:"type"`
@@ -532,6 +622,18 @@ type PermissionRequestHookOutput struct {
 type PermissionRequestOutput struct {
 	BaseOutput
 	HookSpecificOutput PermissionRequestHookOutput `json:"hookSpecificOutput"`
+}
+
+// PermissionDeniedHookOutput contains PermissionDenied-specific output fields.
+type PermissionDeniedHookOutput struct {
+	HookEventName EventName `json:"hookEventName"`
+	Retry         *bool     `json:"retry,omitempty"`
+}
+
+// PermissionDeniedOutput is the response for a PermissionDenied hook.
+type PermissionDeniedOutput struct {
+	BaseOutput
+	HookSpecificOutput *PermissionDeniedHookOutput `json:"hookSpecificOutput,omitempty"`
 }
 
 // NotificationOutput is the response for a Notification hook.

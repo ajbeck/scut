@@ -20,14 +20,18 @@ type hookSpec struct {
 //
 // Slugs must exactly match the cmd:"" tag values on fields of hook.Cmd.
 var hookSpecs = []hookSpec{
+	{Slug: "setup", Event: "Setup", Matcher: "init|maintenance"},
 	{Slug: "session-start", Event: "SessionStart", Matcher: "*"},
 	{Slug: "session-end", Event: "SessionEnd", Matcher: "*"},
 	{Slug: "instructions-loaded", Event: "InstructionsLoaded", Matcher: "*"},
 	{Slug: "user-prompt-submit", Event: "UserPromptSubmit", Matcher: "*"},
+	{Slug: "user-prompt-expansion", Event: "UserPromptExpansion", Matcher: "*"},
 	{Slug: "pre-tool-use", Event: "PreToolUse", Matcher: "*"},
 	{Slug: "post-tool-use", Event: "PostToolUse", Matcher: "Write|Edit", StatusMessage: "Formatting..."},
 	{Slug: "post-tool-use-failure", Event: "PostToolUseFailure", Matcher: "*"},
+	{Slug: "post-tool-batch", Event: "PostToolBatch", Matcher: "*"},
 	{Slug: "permission-request", Event: "PermissionRequest", Matcher: "*"},
+	{Slug: "permission-denied", Event: "PermissionDenied", Matcher: "*"},
 	{Slug: "notification", Event: "Notification", Matcher: "*"},
 	{Slug: "subagent-start", Event: "SubagentStart", Matcher: "*"},
 	{Slug: "subagent-stop", Event: "SubagentStop", Matcher: "*"},

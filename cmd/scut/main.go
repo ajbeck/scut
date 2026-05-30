@@ -4,12 +4,15 @@ package main
 import (
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
+	"strings"
 
 	"github.com/alecthomas/kong"
 	"github.com/spf13/afero"
 
 	"github.com/ajbeck/scut/internal/cmd/claude"
+	"github.com/ajbeck/scut/internal/cmd/codex"
 	formatcmd "github.com/ajbeck/scut/internal/cmd/format"
 	gotoolscmd "github.com/ajbeck/scut/internal/cmd/gotools"
 	loggingcmd "github.com/ajbeck/scut/internal/cmd/logging"
@@ -22,6 +25,7 @@ type cli struct {
 	VersionFlag versionFlag    `name:"version" help:"Print version and exit." short:"v"`
 	Version     versioncmd.Cmd `cmd:"version" help:"Print version and exit."`
 	Claude      claude.Cmd     `cmd:"claude" help:"Claude Code agent commands — hooks, status line, and configuration."`
+	Codex       codex.Cmd      `cmd:"codex" help:"Codex agent commands — hooks and lifecycle integrations."`
 	Format      formatcmd.Cmd  `cmd:"format" help:"Format source code files."`
 	Gotools     gotoolscmd.Cmd `cmd:"gotools" help:"Go tool-inspired commands for agents."`
 	Logging     loggingcmd.Cmd `cmd:"logging" help:"Manage scut log files."`
@@ -58,7 +62,7 @@ func main() {
 		parser.FatalIfErrorf(err)
 	}
 
-	logger, logCloser := c.Claude.OpenLogger(ctx.Command())
+	logger, logCloser := c.openLogger(ctx.Command())
 	if logCloser != nil {
 		defer logCloser.Close()
 	}
@@ -66,4 +70,11 @@ func main() {
 	logger.Debug("invoked", "args", os.Args, "command", ctx.Command())
 
 	ctx.FatalIfErrorf(ctx.Run(logger))
+}
+
+func (c *cli) openLogger(command string) (*slog.Logger, io.Closer) {
+	if command == "codex" || strings.HasPrefix(command, "codex ") {
+		return c.Codex.OpenLogger(command)
+	}
+	return c.Claude.OpenLogger(command)
 }

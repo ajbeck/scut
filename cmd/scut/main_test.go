@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"io"
+	"strings"
 	"testing"
 
 	"github.com/alecthomas/kong"
@@ -58,6 +59,26 @@ func TestGotoolsDocCommandParses(t *testing.T) {
 		t.Fatalf("Parse() error = %v", err)
 	}
 	if got, want := ctx.Command(), "gotools doc <lookup>"; got != want {
+		t.Errorf("Command() = %q, want %q", got, want)
+	}
+}
+
+func TestCodexHookCommandParses(t *testing.T) {
+	var c cli
+	var stdout bytes.Buffer
+	parser := kong.Must(&c,
+		kong.Name("scut"),
+		kong.Vars{"version": versionmeta.String()},
+		kong.BindTo(strings.NewReader(`{"session_id":"test","hook_event_name":"Stop","turn_id":"turn-1"}`), (*io.Reader)(nil)),
+		kong.BindTo(&stdout, (*io.Writer)(nil)),
+		kong.BindTo(afero.NewMemMapFs(), (*afero.Fs)(nil)),
+	)
+
+	ctx, err := parser.Parse([]string{"codex", "hook", "stop"})
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+	if got, want := ctx.Command(), "codex hook stop"; got != want {
 		t.Errorf("Command() = %q, want %q", got, want)
 	}
 }

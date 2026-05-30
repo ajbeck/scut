@@ -66,7 +66,7 @@
 
       <p>When enabled, log lines are appended to date-partitioned files at <code>~/.scut/logging/</code>. Logging is off by default — hooks run silently unless a flag is set.</p>
 
-      <p>The command surface is <code>scut claude --log</code> and <code>scut claude --log-level=LEVEL</code>. Both flags live on <code>claude.Cmd</code> so they propagate uniformly to all <code>hook</code> subcommands and to <code>status-line</code>.</p>
+      <p>The command surfaces are <code>scut claude --log</code>, <code>scut claude --log-level=LEVEL</code>, <code>scut codex --log</code>, and <code>scut codex --log-level=LEVEL</code>. The flags live on each agent command group so they propagate uniformly to that group's hook subcommands. Claude's flags also propagate to <code>status-line</code>.</p>
 
       <p>When neither flag is set, all <code>Run()</code> methods receive <code>logging.Discard</code> — a no-op logger backed by <code>io.Discard</code>. No file is opened, no disk I/O occurs.</p>
     </section>
@@ -74,7 +74,7 @@
     <section id="flags">
       <h2><span class="section-anchor">// 02</span>Flags</h2>
 
-      <p>Flags live on <code>claude.Cmd</code> so they propagate to both <code>hook</code> subcommands and <code>status-line</code>.</p>
+      <p>Flags live on the agent command group (<code>claude.Cmd</code> or <code>codex.Cmd</code>) so they propagate to that agent's hook subcommands. Claude's group also covers <code>status-line</code>.</p>
 
       <table class="fields">
         <thead>
@@ -175,11 +175,11 @@ ctx.FatalIfErrorf(ctx.Run(logger))</pre>
         <li>Returns a <code>*slog.Logger</code> backed by <code>slog.NewJSONHandler</code></li>
       </ol>
 
-      <p>The command name is extracted from the Kong command path: <code>"claude hook post-tool-use"</code> → <code>"post-tool-use"</code>, <code>"claude status-line"</code> → <code>"status-line"</code>.</p>
+      <p>The command name is extracted from the Kong command path: <code>"claude hook post-tool-use"</code> → <code>"post-tool-use"</code>, <code>"codex hook stop"</code> → <code>"stop"</code>, <code>"claude status-line"</code> → <code>"status-line"</code>.</p>
 
       <h3>Run method signatures</h3>
 
-      <p>All hook commands and the status line accept <code>*slog.Logger</code> as a <code>Run()</code> parameter:</p>
+      <p>All Claude and Codex hook commands, plus the Claude status line, accept <code>*slog.Logger</code> as a <code>Run()</code> parameter:</p>
 
       <div class="code-frame">
         <div class="code-titlebar">

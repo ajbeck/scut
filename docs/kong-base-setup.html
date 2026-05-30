@@ -110,7 +110,7 @@
         parser.FatalIfErrorf(err)
     }
 
-    logger, logCloser := c.Claude.OpenLogger(ctx.Command())
+    logger, logCloser := c.openLogger(ctx.Command())
     <span class="tok-keyword">if</span> logCloser != <span class="tok-number">nil</span> {
         <span class="tok-keyword">defer</span> logCloser.Close()
     }
@@ -169,7 +169,7 @@
           <span class="filename">cmd/scut/main<span class="ext">.go</span></span>
           <span class="langtag">GO</span>
         </div>
-<pre>logger, logCloser := c.Claude.OpenLogger(ctx.Command())
+<pre>logger, logCloser := c.openLogger(ctx.Command())
 <span class="tok-keyword">if</span> logCloser != <span class="tok-number">nil</span> {
     <span class="tok-keyword">defer</span> logCloser.Close()
 }

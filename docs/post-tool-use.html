@@ -54,12 +54,12 @@
         <span class="badge swift">go 1.26</span>
       </div>
       <h1><span class="moniker-bracket">[</span><span class="moniker">Post Tool Use</span><span class="moniker-bracket">]</span></h1>
-      <p class="lede"><code>scut claude hook post-tool-use</code> — fires after a Claude Code tool call succeeds. Formats files written by Claude, applying <code>gofmt</code> for Go source and goldmark-prettier-markdown for Markdown. Formatting is in-place, respects root <code>.prettierignore</code> and <code>.scutignore</code> files, and reports formatted files back to Claude via <code>additionalContext</code>.</p>
+      <p class="lede"><code>scut claude hook post-tool-use</code> and <code>scut codex hook post-tool-use</code> format files after successful edit tool calls. Both paths apply <code>gofmt</code> for Go source and goldmark-prettier-markdown for Markdown, respect root <code>.prettierignore</code> and <code>.scutignore</code> files, and report changed files back to the agent via <code>additionalContext</code>.</p>
 
       <div class="hero-stats">
         <div class="stat"><span class="num">2</span><span class="label">formatters</span></div>
-        <div class="stat"><span class="num">9</span><span class="label">dispatch steps</span></div>
-        <div class="stat"><span class="num">4</span><span class="label">testing layers</span></div>
+        <div class="stat"><span class="num">2</span><span class="label">agent integrations</span></div>
+        <div class="stat"><span class="num">5</span><span class="label">testing layers</span></div>
         <div class="stat"><span class="num">3</span><span class="label">extensions handled</span></div>
       </div>
     </header>
@@ -67,13 +67,13 @@
     <section id="overview">
       <h2><span class="section-anchor">// 01</span>Overview</h2>
 
-      <p>Fires after a Claude Code tool call succeeds. The hook formats files written by Claude — applying <code>gofmt</code> for Go source and goldmark-prettier-markdown for Markdown. Formatting happens in-place, skips ignored paths, and injects a short <code>additionalContext</code> message when it changes a file so Claude knows the file on disk may differ from the original tool input.</p>
+      <p>Fires after an agent edit tool succeeds. The Claude command handles <code>Write</code>/<code>Edit</code> style inputs with a single <code>file_path</code>. The Codex command handles direct <code>file_path</code> inputs and <code>apply_patch</code> payloads that may touch multiple files. Formatting happens in-place, skips ignored paths, and injects a short <code>additionalContext</code> message when it changes files so the agent knows disk contents may differ from the original tool input.</p>
     </section>
 
     <section id="input">
       <h2><span class="section-anchor">// 02</span>Input</h2>
 
-      <p>Deserialized from stdin as <code>claudecode.PostToolUseInput</code>.</p>
+      <p>The Claude command deserializes stdin as <code>claudecode.PostToolUseInput</code>. The Codex command deserializes stdin as <code>codex.PostToolUseInput</code>. The core tool fields are intentionally parallel:</p>
 
       <table class="fields">
         <thead>
@@ -82,8 +82,8 @@
         <tbody>
           <tr>
             <td class="field"><em>(base fields)</em></td>
-            <td class="type">claudecode.Input</td>
-            <td class="note"><code>session_id</code>, <code>transcript_path</code>, <code>cwd</code>, <code>hook_event_name</code>, <code>permission_mode</code>, <code>agent_id</code>, <code>agent_type</code></td>
+            <td class="type">claudecode.Input / codex.TurnInput</td>
+            <td class="note">Common session fields. Codex also carries <code>turn_id</code>; Claude carries <code>permission_mode</code>, <code>agent_id</code>, and <code>agent_type</code>.</td>
           </tr>
           <tr>
             <td class="field">tool_name</td>
@@ -108,15 +108,15 @@
         </tbody>
       </table>
 
-      <h3>FilePath extraction</h3>
+      <h3>Path extraction</h3>
 
-      <p><code>PostToolUseInput.FilePath()</code> extracts <code>tool_input.file_path</code> from the raw JSON. Returns <code>""</code> if the field is absent, empty, or not a string. This method lives in the shared <code>hooks/claudecode</code> package.</p>
+      <p><code>claudecode.PostToolUseInput.FilePath()</code> extracts <code>tool_input.file_path</code> from the raw JSON and returns <code>""</code> when absent, empty, or non-string. <code>codex.PostToolUseInput.FilePaths()</code> extracts a direct <code>file_path</code> and also parses <code>apply_patch</code> text from <code>command</code>, <code>patch</code>, or <code>input</code>. For patches, added, updated, and moved files are returned; deleted files are skipped. Relative Codex patch paths are resolved against <code>cwd</code>.</p>
     </section>
 
     <section id="output">
       <h2><span class="section-anchor">// 03</span>Output</h2>
 
-      <p>Written to stdout as <code>claudecode.PostToolUseOutput</code>.</p>
+      <p>Written to stdout as <code>claudecode.PostToolUseOutput</code> or <code>codex.PostToolUseOutput</code>.</p>
 
       <table class="fields">
         <thead>
@@ -125,7 +125,7 @@
         <tbody>
           <tr>
             <td class="field"><em>(base fields)</em></td>
-            <td class="type">claudecode.BaseOutput</td>
+            <td class="type">BaseOutput</td>
             <td class="note"><code>continue</code>, <code>stopReason</code>, <code>suppressOutput</code>, <code>systemMessage</code></td>
           </tr>
           <tr>
@@ -150,28 +150,28 @@
           </tr>
           <tr>
             <td class="field">hookSpecificOutput</td>
-            <td class="type">*PostToolUseHookOutput</td>
-            <td class="note">Nested event-specific output with <code>hookEventName</code>, <code>additionalContext</code>, and optional <code>updatedToolOutput</code></td>
+            <td class="type">event-specific hook output</td>
+            <td class="note">Nested event-specific output with <code>hookEventName</code> and <code>additionalContext</code>. Claude also supports optional <code>updatedToolOutput</code>.</td>
           </tr>
         </tbody>
       </table>
 
-      <p>When formatting changes a file, the implementation returns <code>hookSpecificOutput.additionalContext</code> with <code>hookEventName</code> set to <code>PostToolUse</code>. Skips and unchanged files still return an empty <code>PostToolUseOutput{}</code>.</p>
+      <p>When formatting changes one or more files, the implementation returns <code>hookSpecificOutput.additionalContext</code> with <code>hookEventName</code> set to <code>PostToolUse</code>. Skips and unchanged files still return an empty <code>PostToolUseOutput{}</code>.</p>
     </section>
 
     <section id="dispatch-flow">
       <h2><span class="section-anchor">// 04</span>Dispatch Flow</h2>
 
       <ol class="steps">
-        <li>Decode <code>PostToolUseInput</code> from stdin</li>
-        <li>Extract <code>file_path</code> via <code>in.FilePath()</code> — bail if empty</li>
-        <li><code>fs.Stat(fp)</code> — bail if file doesn't exist</li>
-        <li>Check root <code>.prettierignore</code> and <code>.scutignore</code> files — bail if the path is ignored</li>
-        <li>Switch on <code>filepath.Ext(fp)</code> to select a formatter — bail if no match</li>
-        <li><code>afero.ReadFile(fs, fp)</code> — bail on error</li>
-        <li>Call formatter — bail if result is <code>nil</code> (declined) or unchanged</li>
+        <li>Decode the agent-specific <code>PostToolUseInput</code> from stdin</li>
+        <li>Extract candidate paths: Claude uses <code>in.FilePath()</code>; Codex uses <code>in.FilePaths()</code></li>
+        <li>For each path, <code>fs.Stat(fp)</code> — skip if the file does not exist</li>
+        <li>Check root <code>.prettierignore</code> and <code>.scutignore</code> files — skip if the path is ignored</li>
+        <li>Switch on <code>filepath.Ext(fp)</code> to select a formatter — skip if no formatter matches</li>
+        <li><code>afero.ReadFile(fs, fp)</code> — skip on read error</li>
+        <li>Call formatter — skip if result is <code>nil</code> (declined) or unchanged</li>
         <li><code>afero.WriteFile(fs, fp, formatted, info.Mode())</code> — preserves original file permissions</li>
-        <li>Write <code>PostToolUseOutput{}</code> to stdout, including nested <code>additionalContext</code> only when the hook changed the file</li>
+        <li>Write <code>PostToolUseOutput{}</code> to stdout, including nested <code>additionalContext</code> only when the hook changed at least one file</li>
       </ol>
 
       <div class="callout note"><strong>note</strong>Every bail path writes an empty output and returns nil. The hook never errors on formatting failures — it silently skips.</div>
@@ -225,15 +225,15 @@
       <ol class="steps">
         <li>Add a <code>func Format&lt;Name&gt;(src []byte) ([]byte, error)</code> function to <code>internal/format/format.go</code> (or a sibling file in the same package)</li>
         <li>Add test cases under <code>internal/format/</code> — pure bytes in, bytes out</li>
-        <li>Add a <code>case</code> to the extension switch in <code>internal/cmd/claude/hook/posttooluse.go</code> that selects <code>format.Format&lt;Name&gt;</code></li>
-        <li>Add a dispatch test case in <code>internal/cmd/claude/hook/posttooluse_test.go</code></li>
+        <li>Add a <code>case</code> to the extension switch in both <code>internal/cmd/claude/hook/posttooluse.go</code> and <code>internal/cmd/codex/hook/posttooluse.go</code> that selects <code>format.Format&lt;Name&gt;</code></li>
+        <li>Add dispatch test cases in <code>internal/cmd/claude/hook/posttooluse_test.go</code> and <code>internal/cmd/codex/hook/hook_test.go</code></li>
       </ol>
     </section>
 
     <section id="testing">
       <h2><span class="section-anchor">// 09</span>Testing</h2>
 
-      <p>Four layers, each independently testable:</p>
+      <p>Five layers, each independently testable:</p>
 
       <table class="fields">
         <thead>
@@ -244,6 +244,12 @@
             <td class="field">FilePath extraction</td>
             <td class="type">hooks/claudecode/claudecode_test.go</td>
             <td class="note">JSON parsing of <code>tool_input.file_path</code></td>
+            <td class="note">None — pure JSON</td>
+          </tr>
+          <tr>
+            <td class="field">FilePaths extraction</td>
+            <td class="type">hooks/codex/codex_test.go</td>
+            <td class="note">JSON parsing of direct <code>file_path</code> inputs and <code>apply_patch</code> file headers</td>
             <td class="note">None — pure JSON</td>
           </tr>
           <tr>
@@ -260,8 +266,8 @@
           </tr>
           <tr>
             <td class="field">Command dispatch</td>
-            <td class="type">internal/cmd/claude/hook/posttooluse_test.go</td>
-            <td class="note">Extension routing, ignore skips, file I/O, end-to-end</td>
+            <td class="type">internal/cmd/claude/hook/posttooluse_test.go, internal/cmd/codex/hook/hook_test.go</td>
+            <td class="note">Extension routing, ignore skips, file I/O, single-file and multi-file payloads, end-to-end</td>
             <td class="note"><code>afero.MemMapFs</code></td>
           </tr>
         </tbody>
@@ -278,7 +284,7 @@
         <tbody>
           <tr>
             <td class="note">Command</td>
-            <td class="field">internal/cmd/claude/hook/posttooluse.go</td>
+            <td class="field">internal/cmd/claude/hook/posttooluse.go, internal/cmd/codex/hook/posttooluse.go</td>
           </tr>
           <tr>
             <td class="note">Formatters (<code>FormatGo</code>, <code>FormatMarkdown</code>)</td>
@@ -289,13 +295,13 @@
             <td class="field">internal/formatignore/formatignore.go</td>
           </tr>
           <tr>
-            <td class="note">Types (<code>PostToolUseInput</code>, <code>PostToolUseOutput</code>, <code>FilePath()</code>)</td>
-            <td class="field">hooks/claudecode/claudecode.go</td>
+            <td class="note">Types (<code>PostToolUseInput</code>, <code>PostToolUseOutput</code>, <code>FilePath()</code>, <code>FilePaths()</code>)</td>
+            <td class="field">hooks/claudecode/claudecode.go, hooks/codex/codex.go</td>
           </tr>
         </tbody>
       </table>
 
-      <p>See also: <a href="kong-base-setup.html">kong-base-setup</a> for how <code>afero.Fs</code> is wired via <code>BindTo</code>, and <a href="claude-hook-commands.html">claude-hook-commands</a> for the full hook command inventory.</p>
+      <p>See also: <a href="kong-base-setup.html">kong-base-setup</a> for how <code>afero.Fs</code> is wired via <code>BindTo</code>, <a href="claude-hook-commands.html">claude-hook-commands</a> for the Claude inventory, and <a href="codex-hook-commands.html">codex-hook-commands</a> for Codex hook wiring.</p>
     </section>
 
     <footer>

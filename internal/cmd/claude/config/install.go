@@ -120,7 +120,7 @@ func resolveScope(scope string) (string, error) {
 }
 
 // resolveInstallSet converts a list of --only tokens to a set of slugs to install.
-// An empty list installs all 25 hook slugs plus "status-line".
+// An empty list installs all hook slugs plus "status-line".
 func resolveInstallSet(only []string) (map[string]bool, error) {
 	if len(only) == 0 {
 		// Install everything.

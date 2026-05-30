@@ -24,31 +24,35 @@ type trailingArgs struct {
 
 // Cmd is the Kong command group for "scut claude hook".
 type Cmd struct {
-	SessionStart       sessionStartCmd       `cmd:"session-start" help:"Inject context when a session begins or resumes."`
-	SessionEnd         sessionEndCmd         `cmd:"session-end" help:"Record session termination."`
-	InstructionsLoaded instructionsLoadedCmd `cmd:"instructions-loaded" help:"Record when a CLAUDE.md or rules file is loaded."`
-	UserPromptSubmit   userPromptSubmitCmd   `cmd:"user-prompt-submit" help:"Validate or annotate user prompts before processing."`
-	PreToolUse         preToolUseCmd         `cmd:"pre-tool-use" help:"Allow, deny, or modify tool calls before execution."`
-	PostToolUse        postToolUseCmd        `cmd:"post-tool-use" help:"Format files after successful write or edit tool calls."`
-	PostToolUseFailure postToolUseFailureCmd `cmd:"post-tool-use-failure" help:"Record context after a tool call fails."`
-	PermissionRequest  permissionRequestCmd  `cmd:"permission-request" help:"Auto-approve or deny permission prompts."`
-	Notification       notificationCmd       `cmd:"notification" help:"Record agent notifications."`
-	SubagentStart      subagentStartCmd      `cmd:"subagent-start" help:"Inject context when a subagent is spawned."`
-	SubagentStop       subagentStopCmd       `cmd:"subagent-stop" help:"Allow or block subagent termination."`
-	Stop               stopCmd               `cmd:"stop" help:"Allow or block agent turn completion."`
-	StopFailure        stopFailureCmd        `cmd:"stop-failure" help:"Record API errors that ended a turn."`
-	TaskCreated        taskCreatedCmd        `cmd:"task-created" help:"Validate or block task creation."`
-	TaskCompleted      taskCompletedCmd      `cmd:"task-completed" help:"Validate or block task completion."`
-	TeammateIdle       teammateIdleCmd       `cmd:"teammate-idle" help:"Decide whether an idle teammate should continue."`
-	ConfigChange       configChangeCmd       `cmd:"config-change" help:"Allow or block configuration changes."`
-	CwdChanged         cwdChangedCmd         `cmd:"cwd-changed" help:"React to working directory changes."`
-	FileChanged        fileChangedCmd        `cmd:"file-changed" help:"React to watched file changes on disk."`
-	WorktreeCreate     worktreeCreateCmd     `cmd:"worktree-create" help:"Provide a custom worktree path."`
-	WorktreeRemove     worktreeRemoveCmd     `cmd:"worktree-remove" help:"Record worktree removal."`
-	PreCompact         preCompactCmd         `cmd:"pre-compact" help:"Record before context compaction begins."`
-	PostCompact        postCompactCmd        `cmd:"post-compact" help:"Record after context compaction completes."`
-	Elicitation        elicitationCmd        `cmd:"elicitation" help:"Accept, decline, or cancel MCP user input requests."`
-	ElicitationResult  elicitationResultCmd  `cmd:"elicitation-result" help:"Validate or modify MCP elicitation responses."`
+	Setup               setupCmd               `cmd:"setup" help:"Run explicit Claude Code setup or maintenance work."`
+	SessionStart        sessionStartCmd        `cmd:"session-start" help:"Inject context when a session begins or resumes."`
+	SessionEnd          sessionEndCmd          `cmd:"session-end" help:"Record session termination."`
+	InstructionsLoaded  instructionsLoadedCmd  `cmd:"instructions-loaded" help:"Record when a CLAUDE.md or rules file is loaded."`
+	UserPromptSubmit    userPromptSubmitCmd    `cmd:"user-prompt-submit" help:"Validate or annotate user prompts before processing."`
+	UserPromptExpansion userPromptExpansionCmd `cmd:"user-prompt-expansion" help:"Validate or annotate slash-command prompt expansions."`
+	PreToolUse          preToolUseCmd          `cmd:"pre-tool-use" help:"Allow, deny, or modify tool calls before execution."`
+	PostToolUse         postToolUseCmd         `cmd:"post-tool-use" help:"Format files after successful write or edit tool calls."`
+	PostToolUseFailure  postToolUseFailureCmd  `cmd:"post-tool-use-failure" help:"Record context after a tool call fails."`
+	PostToolBatch       postToolBatchCmd       `cmd:"post-tool-batch" help:"Inject context after a batch of parallel tool calls resolves."`
+	PermissionRequest   permissionRequestCmd   `cmd:"permission-request" help:"Auto-approve or deny permission prompts."`
+	PermissionDenied    permissionDeniedCmd    `cmd:"permission-denied" help:"Record or retry auto-mode permission denials."`
+	Notification        notificationCmd        `cmd:"notification" help:"Record agent notifications."`
+	SubagentStart       subagentStartCmd       `cmd:"subagent-start" help:"Inject context when a subagent is spawned."`
+	SubagentStop        subagentStopCmd        `cmd:"subagent-stop" help:"Allow or block subagent termination."`
+	Stop                stopCmd                `cmd:"stop" help:"Allow or block agent turn completion."`
+	StopFailure         stopFailureCmd         `cmd:"stop-failure" help:"Record API errors that ended a turn."`
+	TaskCreated         taskCreatedCmd         `cmd:"task-created" help:"Validate or block task creation."`
+	TaskCompleted       taskCompletedCmd       `cmd:"task-completed" help:"Validate or block task completion."`
+	TeammateIdle        teammateIdleCmd        `cmd:"teammate-idle" help:"Decide whether an idle teammate should continue."`
+	ConfigChange        configChangeCmd        `cmd:"config-change" help:"Allow or block configuration changes."`
+	CwdChanged          cwdChangedCmd          `cmd:"cwd-changed" help:"React to working directory changes."`
+	FileChanged         fileChangedCmd         `cmd:"file-changed" help:"React to watched file changes on disk."`
+	WorktreeCreate      worktreeCreateCmd      `cmd:"worktree-create" help:"Provide a custom worktree path."`
+	WorktreeRemove      worktreeRemoveCmd      `cmd:"worktree-remove" help:"Record worktree removal."`
+	PreCompact          preCompactCmd          `cmd:"pre-compact" help:"Record before context compaction begins."`
+	PostCompact         postCompactCmd         `cmd:"post-compact" help:"Record after context compaction completes."`
+	Elicitation         elicitationCmd         `cmd:"elicitation" help:"Accept, decline, or cancel MCP user input requests."`
+	ElicitationResult   elicitationResultCmd   `cmd:"elicitation-result" help:"Validate or modify MCP elicitation responses."`
 }
 
 // writeJSON encodes v as JSON to w.
@@ -56,6 +60,22 @@ func writeJSON(w io.Writer, v any) error {
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
 	return enc.Encode(v)
+}
+
+// ---------------------------------------------------------------------------
+// Setup
+// ---------------------------------------------------------------------------
+
+type setupCmd struct{ trailingArgs }
+
+func (c *setupCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
+	start := time.Now()
+	var in cc.SetupInput
+	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
+		return fmt.Errorf("decoding Setup input: %w", err)
+	}
+	logger.Info("handled", "hook", "setup", "session_id", in.SessionID, "matcher", in.Matcher, "duration_ms", ms(start))
+	return writeJSON(stdout, cc.BaseOutput{})
 }
 
 // ---------------------------------------------------------------------------
@@ -123,6 +143,25 @@ func (c *userPromptSubmitCmd) Run(stdin io.Reader, stdout io.Writer, logger *slo
 }
 
 // ---------------------------------------------------------------------------
+// UserPromptExpansion
+// ---------------------------------------------------------------------------
+
+type userPromptExpansionCmd struct{ trailingArgs }
+
+func (c *userPromptExpansionCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
+	var in cc.UserPromptExpansionInput
+	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
+		return fmt.Errorf("decoding UserPromptExpansion input: %w", err)
+	}
+	return writeJSON(stdout, cc.UserPromptExpansionOutput{
+		HookSpecificOutput: &cc.UserPromptHookOutput{
+			HookEventName:     cc.EventUserPromptExpansion,
+			AdditionalContext: new("hello from scut user-prompt-expansion"),
+		},
+	})
+}
+
+// ---------------------------------------------------------------------------
 // PreToolUse
 // ---------------------------------------------------------------------------
 
@@ -161,6 +200,21 @@ func (c *postToolUseFailureCmd) Run(stdin io.Reader, stdout io.Writer, logger *s
 }
 
 // ---------------------------------------------------------------------------
+// PostToolBatch
+// ---------------------------------------------------------------------------
+
+type postToolBatchCmd struct{ trailingArgs }
+
+func (c *postToolBatchCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
+	var in cc.PostToolBatchInput
+	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
+		return fmt.Errorf("decoding PostToolBatch input: %w", err)
+	}
+	logger.Info("handled", "hook", "post-tool-batch", "session_id", in.SessionID, "tool_calls", len(in.ToolCalls))
+	return writeJSON(stdout, cc.PostToolBatchOutput{})
+}
+
+// ---------------------------------------------------------------------------
 // PermissionRequest
 // ---------------------------------------------------------------------------
 
@@ -180,6 +234,21 @@ func (c *permissionRequestCmd) Run(stdin io.Reader, stdout io.Writer, logger *sl
 			},
 		},
 	})
+}
+
+// ---------------------------------------------------------------------------
+// PermissionDenied
+// ---------------------------------------------------------------------------
+
+type permissionDeniedCmd struct{ trailingArgs }
+
+func (c *permissionDeniedCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
+	var in cc.PermissionDeniedInput
+	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
+		return fmt.Errorf("decoding PermissionDenied input: %w", err)
+	}
+	logger.Info("handled", "hook", "permission-denied", "session_id", in.SessionID, "tool_name", in.ToolName, "reason", in.Reason)
+	return writeJSON(stdout, cc.PermissionDeniedOutput{})
 }
 
 // ---------------------------------------------------------------------------

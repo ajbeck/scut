@@ -64,7 +64,7 @@
 
       <div class="hero-stats">
         <div class="stat"><span class="num">3</span><span class="label">subcommands</span></div>
-        <div class="stat"><span class="num">25</span><span class="label">hook events wired</span></div>
+        <div class="stat"><span class="num">29</span><span class="label">hook events wired</span></div>
         <div class="stat"><span class="num">2</span><span class="label">scopes (project, user)</span></div>
         <div class="stat"><span class="num">1</span><span class="label">file touched per run</span></div>
       </div>
@@ -173,7 +173,7 @@
         <li>Resolve the path for <code>--scope</code> (see <a href="#scope-resolution">§09</a>).</li>
         <li>Read the existing file. If it does not exist, start from an empty <code>Settings</code>.</li>
         <li>Unmarshal into <code>Settings</code> using <code>encoding/json/v2</code>. Foreign top-level keys land in the inlined <code>Foreign</code> field as <code>jsontext.Value</code>.</li>
-        <li>Compute the install set: <code>--only</code> if specified, otherwise <code>{all 25 hook events, status-line}</code>. Validate every token; unknown tokens return <code>ErrUnknownOnlyToken</code> wrapped with the valid set.</li>
+        <li>Compute the install set: <code>--only</code> if specified, otherwise <code>{all hook events, status-line}</code>. Validate every token; unknown tokens return <code>ErrUnknownOnlyToken</code> wrapped with the valid set.</li>
         <li>For each token in the install set, build the entry and merge it (see <a href="#merge-semantics">§07</a>).</li>
         <li>Marshal the resulting <code>Settings</code> with <code>json.Deterministic(true)</code> and <code>jsontext.WithIndent("&nbsp;&nbsp;")</code>, then append a trailing <code>\n</code>.</li>
         <li>If <code>--dry-run</code>, write to <code>stdout</code> and return. Otherwise create the parent directory at <code>0755</code> if needed and write the file at <code>0644</code>.</li>

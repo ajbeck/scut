@@ -62,6 +62,7 @@ Implementation docs live in `docs/` as standalone HTML files styled by the share
 | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | [kong-base-setup.html](docs/kong-base-setup.html)             | Kong CLI framework setup, BindTo dependency injection, command tree structure, how to add commands and groups          |
 | [claude-hook-commands.html](docs/claude-hook-commands.html)   | Claude Code hook subcommands, event types, input/output types, decision control per event, shared types package design |
+| [codex-hook-commands.html](docs/codex-hook-commands.html)     | Codex hook subcommands, event types, input/output types, command-hook config shape, Claude parity boundaries           |
 | [post-tool-use.html](docs/post-tool-use.html)                 | PostToolUse hook deep-dive — input/output fields, decision control, MCP output replacement, code locations             |
 | [status-line.html](docs/status-line.html)                     | Status line command — colour palette, formatting, go-git integration, available input fields                           |
 | [logging.html](docs/logging.html)                             | Structured JSONL logging — flags, file layout, rotation, standardized fields, clean command                            |
@@ -77,6 +78,7 @@ Implementation docs live in `docs/` as standalone HTML files styled by the share
 
 - `cmd/scut/main.go` or `internal/cmd/**` changes → review `kong-base-setup.html`
 - `hooks/claudecode/**` or `internal/cmd/claude/hook/**` changes → review `claude-hook-commands.html`
+- `hooks/codex/**` or `internal/cmd/codex/hook/**` changes → review `codex-hook-commands.html`
 - `internal/cmd/claude/hook/posttooluse.go` or `PostToolUseInput`/`PostToolUseOutput` changes → review `post-tool-use.html`
 - `internal/cmd/claude/statusline.go` or `hooks/claudecode/statusline.go` changes → review `status-line.html`
 - `internal/logging/**` or `internal/cmd/logging/**` or `--log`/`--log-level` flag changes → review `logging.html`

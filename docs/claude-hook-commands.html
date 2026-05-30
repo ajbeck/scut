@@ -65,7 +65,7 @@
       <p class="lede"><code>scut claude hook &lt;event&gt;</code> handles Claude Code hook events. Each event type is a separate subcommand that reads a JSON payload from stdin and writes a JSON response to stdout.</p>
 
       <div class="hero-stats">
-        <div class="stat"><span class="num">25</span><span class="label">hook commands</span></div>
+        <div class="stat"><span class="num">29</span><span class="label">hook commands</span></div>
         <div class="stat"><span class="num">14</span><span class="label">event categories</span></div>
         <div class="stat"><span class="num">2</span><span class="label">exported packages</span></div>
         <div class="stat"><span class="num">4</span><span class="label">exit-code paths</span></div>
@@ -127,6 +127,13 @@
         </thead>
         <tbody>
           <tr>
+            <td class="field">setup</td>
+            <td class="note">Setup</td>
+            <td class="type">SetupInput</td>
+            <td class="type">BaseOutput</td>
+            <td class="note">Explicit setup/maintenance only</td>
+          </tr>
+          <tr>
             <td class="field">session-start</td>
             <td class="note">SessionStart</td>
             <td class="type">SessionStartInput</td>
@@ -142,6 +149,8 @@
           </tr>
         </tbody>
       </table>
+
+      <p><strong>setup</strong> fires only for explicit setup or maintenance invocations such as <code>--init-only</code>, not on normal startup. Use it for one-time preparation that should not run every session.</p>
 
       <p><strong>session-start</strong> fires when a session begins or resumes. The <code>source</code> field indicates the trigger (<code>startup</code>, <code>resume</code>, <code>clear</code>, <code>compact</code>). The response can inject text into Claude's context via <code>additionalContext</code>.</p>
 
@@ -180,10 +189,19 @@
             <td class="type">UserPromptSubmitOutput</td>
             <td class="note">Can block prompt or inject context</td>
           </tr>
+          <tr>
+            <td class="field">user-prompt-expansion</td>
+            <td class="note">UserPromptExpansion</td>
+            <td class="type">UserPromptExpansionInput</td>
+            <td class="type">UserPromptExpansionOutput</td>
+            <td class="note">Can block slash-command expansion or inject context</td>
+          </tr>
         </tbody>
       </table>
 
       <p><strong>user-prompt-submit</strong> fires when the user submits a prompt, before Claude processes it. The response can set <code>decision</code> to <code>"block"</code> with a <code>reason</code> to reject the prompt, or inject <code>additionalContext</code>.</p>
+
+      <p><strong>user-prompt-expansion</strong> fires when a user-typed slash command or MCP prompt expands before reaching Claude. It matches on <code>command_name</code> and includes <code>expansion_type</code>, <code>command_args</code>, <code>command_source</code>, and the original <code>prompt</code>.</p>
 
       <h3 id="tool-use">Tool Use</h3>
 
@@ -213,6 +231,13 @@
             <td class="type">PostToolUseFailureOutput</td>
             <td class="note">Can inject context</td>
           </tr>
+          <tr>
+            <td class="field">post-tool-batch</td>
+            <td class="note">PostToolBatch</td>
+            <td class="type">PostToolBatchInput</td>
+            <td class="type">PostToolBatchOutput</td>
+            <td class="note">Can inject context before next model call</td>
+          </tr>
         </tbody>
       </table>
 
@@ -221,6 +246,8 @@
       <p><strong>post-tool-use</strong> fires after a tool call succeeds. Can set <code>decision</code> to <code>"block"</code> to reject the result, inject <code>additionalContext</code>, or provide <code>updatedMCPToolOutput</code> for MCP tools.</p>
 
       <p><strong>post-tool-use-failure</strong> fires after a tool call fails. Provides <code>error</code> and <code>is_interrupt</code>. Can inject <code>additionalContext</code>.</p>
+
+      <p><strong>post-tool-batch</strong> fires once after every tool call in a parallel batch resolves, before Claude sends the next model request. It receives a <code>tool_calls</code> array whose <code>tool_response</code> values are the serialized content that the model sees.</p>
 
       <h3 id="permissions">Permissions</h3>
 
@@ -236,10 +263,19 @@
             <td class="type">PermissionRequestOutput</td>
             <td class="note">Can auto-approve/deny, modify input, update permissions</td>
           </tr>
+          <tr>
+            <td class="field">permission-denied</td>
+            <td class="note">PermissionDenied</td>
+            <td class="type">PermissionDeniedInput</td>
+            <td class="type">PermissionDeniedOutput</td>
+            <td class="note">Can mark an auto-mode denial retryable</td>
+          </tr>
         </tbody>
       </table>
 
       <p><strong>permission-request</strong> fires when a permission dialog is about to appear. Input includes <code>permission_suggestions</code> — proposed rule changes. The response wraps decisions in <code>hookSpecificOutput</code> with a <code>decision</code> containing <code>behavior</code> (<code>allow</code>/<code>deny</code>), optional <code>updatedInput</code>, <code>updatedPermissions</code>, <code>message</code>, and <code>interrupt</code> flag.</p>
+
+      <p><strong>permission-denied</strong> fires when the auto mode classifier denies a tool call. It includes <code>tool_name</code>, <code>tool_input</code>, <code>tool_use_id</code>, and <code>reason</code>. Returning <code>hookSpecificOutput.retry: true</code> tells Claude the denied call may be retried, but does not reverse the original denial.</p>
 
       <h3 id="notifications">Notifications</h3>
 
@@ -484,11 +520,11 @@
     <section id="current-status">
       <h2><span class="section-anchor">// 05</span>Current Status</h2>
 
-      <p>All 25 commands are wired up and deserialize their stdin payloads into the typed input structs. Implementation maturity varies by command:</p>
+      <p>All 29 currently documented command-hook events are wired up and deserialize their stdin payloads into the typed input structs. This page was reviewed against the current <a href="https://code.claude.com/docs/en/hooks">Claude Code hooks reference</a> and includes newer events such as <code>Setup</code>, <code>UserPromptExpansion</code>, <code>PermissionDenied</code>, and <code>PostToolBatch</code>. Implementation maturity varies by command:</p>
 
       <ul>
         <li><strong><code>post-tool-use</code></strong> has a full implementation — formats <code>.go</code>, <code>.md</code>, and <code>.mdx</code> files via the shared <code>internal/format</code> package, skips paths matched by root <code>.prettierignore</code> or <code>.scutignore</code>, and reports formatting changes back to Claude with <code>additionalContext</code> (see <a href="post-tool-use.html">post-tool-use</a>).</li>
-        <li><strong><code>session-start</code>, <code>session-end</code>, <code>pre-tool-use</code>, <code>stop-failure</code>, <code>pre-compact</code>, <code>post-compact</code></strong> emit structured logs at Info/Warn level with hook-specific fields (<code>source</code>, <code>reason</code>, <code>tool_name</code>, <code>error</code>, <code>trigger</code>, etc.) on each invocation and return either a <code>BaseOutput{}</code> or a minimal allow/inject response.</li>
+        <li><strong><code>setup</code>, <code>session-start</code>, <code>session-end</code>, <code>pre-tool-use</code>, <code>post-tool-batch</code>, <code>permission-denied</code>, <code>stop-failure</code>, <code>pre-compact</code>, <code>post-compact</code></strong> emit structured logs at Info/Warn level with hook-specific fields (<code>source</code>, <code>matcher</code>, <code>reason</code>, <code>tool_name</code>, <code>tool_calls</code>, <code>error</code>, <code>trigger</code>, etc.) on each invocation and return either a <code>BaseOutput{}</code> or a minimal allow/inject response.</li>
         <li>The remaining commands deserialize input and return mock output values that exercise their output type's shape (e.g., <code>permission-request</code> returns <code>BehaviorAllow</code>, <code>worktree-create</code> returns <code>/tmp/mock-worktree</code>). These are placeholders to be replaced with real hook logic.</li>
       </ul>
 

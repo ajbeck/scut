@@ -62,10 +62,10 @@ func TestInstall(t *testing.T) {
 		if m["hooks"] == nil {
 			t.Errorf("expected hooks in output, got none\n%s", data)
 		}
-		// All 25 hook events should be present.
+		// All hook events should be present.
 		hooks, _ := m["hooks"].(map[string]interface{})
-		if len(hooks) != 25 {
-			t.Errorf("expected 25 hook events, got %d\n%s", len(hooks), data)
+		if len(hooks) != len(hookSpecs) {
+			t.Errorf("expected %d hook events, got %d\n%s", len(hookSpecs), len(hooks), data)
 		}
 	})
 

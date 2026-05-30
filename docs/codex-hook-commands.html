@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codex Hook Commands - scut</title>
+<link rel="stylesheet" href="scut-docs.css">
+<script src="scut-docs.js"></script>
+</head>
+<body>
+
+<div class="layout">
+
+  <aside class="rail">
+    <p class="rail-title">// scut · hooks</p>
+    <p class="rail-product"><span class="live-dot" aria-hidden="true"></span>Codex Hooks</p>
+
+    <nav class="toc">
+      <div class="toc-section">
+        <p class="toc-section-label">Start</p>
+        <a class="toc-link" href="#how-it-works"><span class="toc-num">01</span><span>How It Works</span></a>
+        <a class="toc-link" href="#shared-types"><span class="toc-num">02</span><span>Shared Types</span></a>
+        <a class="toc-link" href="#command-structure"><span class="toc-num">03</span><span>Command Structure</span></a>
+      </div>
+      <div class="toc-section">
+        <p class="toc-section-label">Events</p>
+        <a class="toc-link" href="#event-reference"><span class="toc-num">04</span><span>Event Reference</span></a>
+        <a class="toc-link" href="#parity"><span class="toc-num">05</span><span>Claude Parity</span></a>
+        <a class="toc-link" href="#current-status"><span class="toc-num">06</span><span>Current Status</span></a>
+      </div>
+    </nav>
+
+    <div class="theme-switcher">
+      <span class="theme-switcher__label">Theme</span>
+      <button class="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle color theme"><span class="toggle-glyph toggle-glyph--sun" aria-hidden="true">☀︎</span><span class="toggle-glyph toggle-glyph--moon" aria-hidden="true">☾</span></button>
+    </div>
+  </aside>
+
+  <main>
+
+    <header class="hero">
+      <div class="hero-meta">
+        <span class="badge primary">v1 docs</span>
+        <span class="badge tests">codex hooks</span>
+        <span class="badge swift">go 1.26</span>
+      </div>
+      <h1><span class="moniker-bracket">[</span><span class="moniker">Codex Hook Commands</span><span class="moniker-bracket">]</span></h1>
+      <p class="lede"><code>scut codex hook &lt;event&gt;</code> handles the command-hook lifecycle documented by Codex. The surface mirrors the Claude hook command pattern where Codex has a published equivalent, while keeping Codex-native event fields such as <code>turn_id</code>, <code>model</code>, and <code>apply_patch</code> tool names.</p>
+
+      <div class="hero-stats">
+        <div class="stat"><span class="num">10</span><span class="label">hook commands</span></div>
+        <div class="stat"><span class="num">1</span><span class="label">shared package</span></div>
+        <div class="stat"><span class="num">2</span><span class="label">config forms</span></div>
+        <div class="stat"><span class="num">0</span><span class="label">new deps</span></div>
+      </div>
+    </header>
+
+    <section id="how-it-works">
+      <h2><span class="section-anchor">// 01</span>How It Works</h2>
+
+      <p>Codex command hooks run as subprocesses. Codex sends one JSON object on stdin, then reads optional JSON from stdout. Hooks can be stored in <code>hooks.json</code> next to an active Codex config layer, or inline under <code>[hooks]</code> in <code>config.toml</code>. Project-local hooks only load once the project <code>.codex/</code> layer is trusted.</p>
+
+      <ol class="steps">
+        <li>Codex fires an event such as <code>PreToolUse</code>, <code>PostToolUse</code>, or <code>Stop</code>.</li>
+        <li>The matcher group selects handlers. Tool events match <code>tool_name</code> and aliases such as <code>Edit</code>/<code>Write</code> for <code>apply_patch</code>.</li>
+        <li><code>scut codex hook &lt;event&gt;</code> decodes stdin into the event-specific input type.</li>
+        <li>The handler writes a valid JSON response, usually an empty output object unless the event injects context or blocks/continues.</li>
+      </ol>
+
+      <div class="callout note"><strong>note</strong>Codex command hooks are trust-gated. Non-managed hooks must be reviewed through Codex's <code>/hooks</code> UI before they run, unless Codex is launched with <code>--dangerously-bypass-hook-trust</code>.</div>
+    </section>
+
+    <section id="shared-types">
+      <h2><span class="section-anchor">// 02</span>Shared Types</h2>
+
+      <p>All Codex hook wire types live in the exported <code>hooks/codex</code> package. It is intentionally public for the same reason as <code>hooks/claudecode</code>: other local tools can import the canonical structs instead of rebuilding the JSON shapes.</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Type</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">Input</td>
+            <td class="note">Common fields: <code>session_id</code>, <code>transcript_path</code>, <code>cwd</code>, <code>hook_event_name</code>, <code>model</code>, and optional <code>permission_mode</code>.</td>
+          </tr>
+          <tr>
+            <td class="field">TurnInput</td>
+            <td class="note">Embeds <code>Input</code> and adds Codex's <code>turn_id</code> for turn-scoped events.</td>
+          </tr>
+          <tr>
+            <td class="field">BaseOutput</td>
+            <td class="note">Common JSON fields: <code>continue</code>, <code>stopReason</code>, <code>systemMessage</code>, and <code>suppressOutput</code>.</td>
+          </tr>
+          <tr>
+            <td class="field">ContextHookOutput</td>
+            <td class="note">Nested <code>hookSpecificOutput</code> shape for event-specific <code>additionalContext</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>Polymorphic fields such as <code>tool_input</code> and <code>tool_response</code> use <code>json.RawMessage</code>. The Codex docs describe these as JSON values because Bash, <code>apply_patch</code>, and MCP tools all use different payload shapes.</p>
+    </section>
+
+    <section id="command-structure">
+      <h2><span class="section-anchor">// 03</span>Command Structure</h2>
+
+      <p>Commands live in <code>internal/cmd/codex/hook/</code>. Each leaf command has a <code>Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error</code> method and embeds <code>trailingArgs</code> so unexpected future positional arguments do not break hook invocation.</p>
+
+      <p>The top-level group is <code>scut codex</code>. It has the same <code>--log</code> and <code>--log-level</code> flags as <code>scut claude</code>, and the root command chooses the logger based on the parsed Kong command path.</p>
+    </section>
+
+    <section id="event-reference">
+      <h2><span class="section-anchor">// 04</span>Event Reference</h2>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Command</th><th>Event</th><th>Matcher</th><th>Input Type</th><th>Decision Control</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="field">session-start</td><td class="note">SessionStart</td><td class="note"><code>source</code></td><td class="type">SessionStartInput</td><td class="note">Can inject context</td></tr>
+          <tr><td class="field">subagent-start</td><td class="note">SubagentStart</td><td class="note"><code>agent_type</code></td><td class="type">SubagentStartInput</td><td class="note">Can inject subagent context</td></tr>
+          <tr><td class="field">pre-tool-use</td><td class="note">PreToolUse</td><td class="note"><code>tool_name</code> and aliases</td><td class="type">PreToolUseInput</td><td class="note">Can deny or rewrite supported tool calls</td></tr>
+          <tr><td class="field">permission-request</td><td class="note">PermissionRequest</td><td class="note"><code>tool_name</code> and aliases</td><td class="type">PermissionRequestInput</td><td class="note">Can allow or deny approval requests</td></tr>
+          <tr><td class="field">post-tool-use</td><td class="note">PostToolUse</td><td class="note"><code>tool_name</code> and aliases</td><td class="type">PostToolUseInput</td><td class="note">Can add context or replace feedback after the tool ran</td></tr>
+          <tr><td class="field">pre-compact</td><td class="note">PreCompact</td><td class="note"><code>trigger</code></td><td class="type">PreCompactInput</td><td class="note"><code>continue: false</code> stops before compacting</td></tr>
+          <tr><td class="field">post-compact</td><td class="note">PostCompact</td><td class="note"><code>trigger</code></td><td class="type">PostCompactInput</td><td class="note"><code>continue: false</code> stops after compacting</td></tr>
+          <tr><td class="field">user-prompt-submit</td><td class="note">UserPromptSubmit</td><td class="note">unused</td><td class="type">UserPromptSubmitInput</td><td class="note">Can block prompt or inject context</td></tr>
+          <tr><td class="field">subagent-stop</td><td class="note">SubagentStop</td><td class="note"><code>agent_type</code></td><td class="type">SubagentStopInput</td><td class="note">Can continue the subagent</td></tr>
+          <tr><td class="field">stop</td><td class="note">Stop</td><td class="note">unused</td><td class="type">StopInput</td><td class="note">Can continue the turn</td></tr>
+        </tbody>
+      </table>
+
+      <p>Codex's current tool hooks intercept Bash, file edits performed through <code>apply_patch</code>, and MCP tool calls. They do not yet intercept every shell or web operation path. The docs call this a guardrail rather than a complete enforcement boundary.</p>
+    </section>
+
+    <section id="parity">
+      <h2><span class="section-anchor">// 05</span>Claude Parity</h2>
+
+      <p>The Codex implementation follows the Claude hook architecture where the official Codex surface overlaps: public wire types, a Kong subcommand per event, JSON stdin/stdout, structured logging, and forward-compatible trailing args.</p>
+
+      <table class="fields">
+        <thead>
+          <tr><th>Area</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">Implemented</td>
+            <td class="note">The ten documented Codex command-hook events have typed inputs, typed outputs, subcommands, and round-trip tests.</td>
+          </tr>
+          <tr>
+            <td class="field">Not implemented</td>
+            <td class="note">Codex config install/uninstall/status commands. Codex uses <code>hooks.json</code> and inline <code>[hooks]</code>, which should be modelled separately from Claude's <code>settings.json</code>.</td>
+          </tr>
+          <tr>
+            <td class="field">Not a Codex feature today</td>
+            <td class="note">Claude-only events such as <code>Notification</code>, <code>SessionEnd</code>, <code>PostToolUseFailure</code>, worktree hooks, MCP elicitation hooks, and team/task events are not added to <code>scut codex</code> until Codex documents them.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="current-status">
+      <h2><span class="section-anchor">// 06</span>Current Status</h2>
+
+      <p>All ten Codex hook commands currently deserialize their stdin payloads and emit valid JSON. <code>session-start</code>, <code>subagent-start</code>, and <code>user-prompt-submit</code> return placeholder <code>additionalContext</code> so their nested output shape is exercised. Tool and stop hooks return empty outputs until repository-specific policy is added.</p>
+
+      <div class="callout warn"><strong>warn</strong>The official Codex docs say generated schemas in the Codex GitHub repository may include fields not in the current release; this page follows the release-behavior docs, not unreleased schema fields.</div>
+    </section>
+
+    <footer>
+      <span class="blink">scut</span>
+      <span>codex-hook-commands · hooks</span>
+    </footer>
+
+  </main>
+</div>
+
+</body>
+</html>

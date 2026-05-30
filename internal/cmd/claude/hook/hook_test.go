@@ -39,14 +39,18 @@ func TestHandlers_RoundTrip(t *testing.T) {
 		name string
 		run  runHandler
 	}{
+		{"setup", stubHandler(new(setupCmd).Run)},
 		{"session-start", stubHandler(new(sessionStartCmd).Run)},
 		{"session-end", stubHandler(new(sessionEndCmd).Run)},
 		{"instructions-loaded", stubHandler(new(instructionsLoadedCmd).Run)},
 		{"user-prompt-submit", stubHandler(new(userPromptSubmitCmd).Run)},
+		{"user-prompt-expansion", stubHandler(new(userPromptExpansionCmd).Run)},
 		{"pre-tool-use", stubHandler(new(preToolUseCmd).Run)},
 		{"post-tool-use", fsHandler(new(postToolUseCmd).Run)},
 		{"post-tool-use-failure", stubHandler(new(postToolUseFailureCmd).Run)},
+		{"post-tool-batch", stubHandler(new(postToolBatchCmd).Run)},
 		{"permission-request", stubHandler(new(permissionRequestCmd).Run)},
+		{"permission-denied", stubHandler(new(permissionDeniedCmd).Run)},
 		{"notification", stubHandler(new(notificationCmd).Run)},
 		{"subagent-start", stubHandler(new(subagentStartCmd).Run)},
 		{"subagent-stop", stubHandler(new(subagentStopCmd).Run)},
@@ -89,6 +93,7 @@ func TestHandlers_InvalidJSON(t *testing.T) {
 		name string
 		run  runHandler
 	}{
+		{"setup", stubHandler(new(setupCmd).Run)},
 		{"session-start", stubHandler(new(sessionStartCmd).Run)},
 		{"post-tool-use", fsHandler(new(postToolUseCmd).Run)},
 		{"pre-tool-use", stubHandler(new(preToolUseCmd).Run)},

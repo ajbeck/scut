@@ -9,7 +9,11 @@
 // See https://developers.openai.com/codex/hooks for the full specification.
 package codex
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"path/filepath"
+	"strings"
+)
 
 // EventName identifies which Codex hook event fired.
 type EventName string
@@ -131,6 +135,87 @@ type PostToolUseInput struct {
 	ToolUseID    string          `json:"tool_use_id"`
 	ToolInput    json.RawMessage `json:"tool_input"`
 	ToolResponse json.RawMessage `json:"tool_response"`
+}
+
+// FilePaths extracts target file paths from a PostToolUse tool input.
+//
+// Direct file tools may provide file_path. Codex edit flows generally use
+// apply_patch, whose input carries patch text in a string field such as
+// command or patch.
+func (in *PostToolUseInput) FilePaths() []string {
+	if len(in.ToolInput) == 0 {
+		return nil
+	}
+	var ti struct {
+		FilePath string `json:"file_path"`
+		Command  string `json:"command"`
+		Patch    string `json:"patch"`
+		Input    string `json:"input"`
+	}
+	if err := json.Unmarshal(in.ToolInput, &ti); err != nil {
+		return nil
+	}
+	seen := make(map[string]bool)
+	var paths []string
+	add := func(path string) {
+		path = strings.TrimSpace(path)
+		if path == "" {
+			return
+		}
+		if !filepath.IsAbs(path) && in.CWD != "" {
+			path = filepath.Join(in.CWD, path)
+		}
+		path = filepath.Clean(path)
+		if !seen[path] {
+			seen[path] = true
+			paths = append(paths, path)
+		}
+	}
+	add(ti.FilePath)
+	for _, patch := range []string{ti.Command, ti.Patch, ti.Input} {
+		for _, path := range patchFilePaths(patch) {
+			add(path)
+		}
+	}
+	return paths
+}
+
+func patchFilePaths(patch string) []string {
+	if patch == "" {
+		return nil
+	}
+	var paths []string
+	var current string
+	var deleted bool
+	flush := func() {
+		if current != "" && !deleted {
+			paths = append(paths, current)
+		}
+		current = ""
+		deleted = false
+	}
+	for line := range strings.Lines(patch) {
+		line = strings.TrimRight(line, "\r\n")
+		switch {
+		case strings.HasPrefix(line, "*** Add File: "):
+			flush()
+			current = strings.TrimSpace(strings.TrimPrefix(line, "*** Add File: "))
+		case strings.HasPrefix(line, "*** Update File: "):
+			flush()
+			current = strings.TrimSpace(strings.TrimPrefix(line, "*** Update File: "))
+		case strings.HasPrefix(line, "*** Delete File: "):
+			flush()
+			current = strings.TrimSpace(strings.TrimPrefix(line, "*** Delete File: "))
+			deleted = true
+		case strings.HasPrefix(line, "*** Move to: ") && current != "":
+			current = strings.TrimSpace(strings.TrimPrefix(line, "*** Move to: "))
+			deleted = false
+		case line == "*** End Patch":
+			flush()
+		}
+	}
+	flush()
+	return paths
 }
 
 // PreCompactInput is sent before Codex compacts the conversation.

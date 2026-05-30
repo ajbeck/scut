@@ -51,7 +51,7 @@
         <div class="stat"><span class="num">10</span><span class="label">hook commands</span></div>
         <div class="stat"><span class="num">1</span><span class="label">shared package</span></div>
         <div class="stat"><span class="num">2</span><span class="label">config forms</span></div>
-        <div class="stat"><span class="num">0</span><span class="label">new deps</span></div>
+        <div class="stat"><span class="num">1</span><span class="label">implemented formatter hook</span></div>
       </div>
     </header>
 
@@ -122,7 +122,7 @@
           <tr><td class="field">subagent-start</td><td class="note">SubagentStart</td><td class="note"><code>agent_type</code></td><td class="type">SubagentStartInput</td><td class="note">Can inject subagent context</td></tr>
           <tr><td class="field">pre-tool-use</td><td class="note">PreToolUse</td><td class="note"><code>tool_name</code> and aliases</td><td class="type">PreToolUseInput</td><td class="note">Can deny or rewrite supported tool calls</td></tr>
           <tr><td class="field">permission-request</td><td class="note">PermissionRequest</td><td class="note"><code>tool_name</code> and aliases</td><td class="type">PermissionRequestInput</td><td class="note">Can allow or deny approval requests</td></tr>
-          <tr><td class="field">post-tool-use</td><td class="note">PostToolUse</td><td class="note"><code>tool_name</code> and aliases</td><td class="type">PostToolUseInput</td><td class="note">Can add context or replace feedback after the tool ran</td></tr>
+          <tr><td class="field">post-tool-use</td><td class="note">PostToolUse</td><td class="note"><code>tool_name</code> and aliases</td><td class="type">PostToolUseInput</td><td class="note">Formats changed Go/Markdown files after <code>apply_patch</code> or direct file inputs</td></tr>
           <tr><td class="field">pre-compact</td><td class="note">PreCompact</td><td class="note"><code>trigger</code></td><td class="type">PreCompactInput</td><td class="note"><code>continue: false</code> stops before compacting</td></tr>
           <tr><td class="field">post-compact</td><td class="note">PostCompact</td><td class="note"><code>trigger</code></td><td class="type">PostCompactInput</td><td class="note"><code>continue: false</code> stops after compacting</td></tr>
           <tr><td class="field">user-prompt-submit</td><td class="note">UserPromptSubmit</td><td class="note">unused</td><td class="type">UserPromptSubmitInput</td><td class="note">Can block prompt or inject context</td></tr>
@@ -132,6 +132,8 @@
       </table>
 
       <p>Codex's current tool hooks intercept Bash, file edits performed through <code>apply_patch</code>, and MCP tool calls. They do not yet intercept every shell or web operation path. The docs call this a guardrail rather than a complete enforcement boundary.</p>
+
+      <p><strong>post-tool-use</strong> reuses the Claude formatter policy for Codex edit flows. It extracts <code>file_path</code> when a tool supplies one directly, or parses <code>apply_patch</code> text from fields such as <code>command</code>, <code>patch</code>, or <code>input</code>. Relative patch paths are resolved against <code>cwd</code>. Added, updated, and moved files are candidates for formatting; deleted files are skipped.</p>
     </section>
 
     <section id="parity">
@@ -163,7 +165,7 @@
     <section id="current-status">
       <h2><span class="section-anchor">// 06</span>Current Status</h2>
 
-      <p>All ten Codex hook commands currently deserialize their stdin payloads and emit valid JSON. <code>session-start</code>, <code>subagent-start</code>, and <code>user-prompt-submit</code> return placeholder <code>additionalContext</code> so their nested output shape is exercised. Tool and stop hooks return empty outputs until repository-specific policy is added.</p>
+      <p>All ten Codex hook commands currently deserialize their stdin payloads and emit valid JSON. <code>post-tool-use</code> has a real formatter implementation: it formats <code>.go</code>, <code>.md</code>, and <code>.mdx</code> files, respects root <code>.prettierignore</code> and <code>.scutignore</code>, and returns nested <code>additionalContext</code> only when it changes files. <code>session-start</code>, <code>subagent-start</code>, and <code>user-prompt-submit</code> return placeholder <code>additionalContext</code> so their nested output shape is exercised. Remaining tool and stop hooks return empty outputs until repository-specific policy is added.</p>
 
       <div class="callout warn"><strong>warn</strong>The official Codex docs say generated schemas in the Codex GitHub repository may include fields not in the current release; this page follows the release-behavior docs, not unreleased schema fields.</div>
     </section>

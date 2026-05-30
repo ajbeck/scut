@@ -151,8 +151,8 @@
             <td class="note">The ten documented Codex command-hook events have typed inputs, typed outputs, subcommands, and round-trip tests.</td>
           </tr>
           <tr>
-            <td class="field">Not implemented</td>
-            <td class="note">Codex config install/uninstall/status commands. Codex uses <code>hooks.json</code> and inline <code>[hooks]</code>, which should be modelled separately from Claude's <code>settings.json</code>.</td>
+            <td class="field">Config support</td>
+            <td class="note"><code>scut codex config install</code>/<code>uninstall</code>/<code>status</code> manage <code>hooks.json</code> files. scut intentionally writes <code>hooks.json</code> rather than inline <code>[hooks]</code> TOML so a single representation is used per config layer.</td>
           </tr>
           <tr>
             <td class="field">Not a Codex feature today</td>

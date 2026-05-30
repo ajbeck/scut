@@ -15,6 +15,7 @@ import (
 	"github.com/ajbeck/scut/internal/cmd/codex"
 	formatcmd "github.com/ajbeck/scut/internal/cmd/format"
 	gotoolscmd "github.com/ajbeck/scut/internal/cmd/gotools"
+	initcmd "github.com/ajbeck/scut/internal/cmd/initcmd"
 	loggingcmd "github.com/ajbeck/scut/internal/cmd/logging"
 	versioncmd "github.com/ajbeck/scut/internal/cmd/version"
 	"github.com/ajbeck/scut/internal/logging"
@@ -26,6 +27,7 @@ type cli struct {
 	Version     versioncmd.Cmd `cmd:"version" help:"Print version and exit."`
 	Claude      claude.Cmd     `cmd:"claude" help:"Claude Code agent commands — hooks, status line, and configuration."`
 	Codex       codex.Cmd      `cmd:"codex" help:"Codex agent commands — hooks and lifecycle integrations."`
+	Init        initcmd.Cmd    `cmd:"init" help:"Set up scut hooks for detected or selected coding agents."`
 	Format      formatcmd.Cmd  `cmd:"format" help:"Format source code files."`
 	Gotools     gotoolscmd.Cmd `cmd:"gotools" help:"Go tool-inspired commands for agents."`
 	Logging     loggingcmd.Cmd `cmd:"logging" help:"Manage scut log files."`

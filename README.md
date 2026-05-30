@@ -56,15 +56,24 @@ Files with other extensions are passed through unchanged.
 
 ### Configuration
 
-Wire everything up with a single command:
+Wire supported agents with the unified setup command:
+
+```bash
+scut init                         # detected agents, project scope
+scut init --all --dry-run          # preview Claude Code + Codex setup
+scut init --codex --scope=user     # explicitly set up Codex user hooks
+```
+
+Agent-specific commands remain available when you need lower-level control:
 
 ```bash
 scut claude config install              # project scope: .claude/settings.json
 scut claude config install --scope=user # user scope: ~/.claude/settings.json
 scut claude config install --dry-run    # preview without writing
+scut codex config install               # project scope: .codex/hooks.json
 ```
 
-This installs entries for all 25 hook events plus the status line, merging non-destructively with any existing `settings.json`. See [docs/config-command.html](docs/config-command.html) for flags, merge semantics, and the `uninstall` / `status` subcommands.
+Claude setup installs entries for all 29 hook events plus the status line, merging non-destructively with any existing `settings.json`. Codex setup defaults to the `post-tool-use` formatter hook in `hooks.json`; use `--only` on `scut codex config install` to opt into additional Codex hook events. See [docs/init-command.html](docs/init-command.html), [docs/config-command.html](docs/config-command.html), and [docs/codex-config-command.html](docs/codex-config-command.html) for flags, merge semantics, and the `uninstall` / `status` subcommands.
 
 For reference, this is the PostToolUse entry the command writes:
 
@@ -111,10 +120,11 @@ For reference, this is the PostToolUse entry the command writes:
 
 ### Other hook events
 
-scut has subcommands wired for all 25 Claude Code hook events (e.g. `session-start`, `pre-tool-use`, `user-prompt-submit`, `stop`, etc.). These are currently stub implementations that deserialize input and return empty responses. See the [Claude Code hooks documentation](https://docs.anthropic.com/en/docs/claude-code/hooks) for the full event reference.
+scut has subcommands wired for all 29 Claude Code hook events and all 10 documented Codex command-hook events (e.g. `session-start`, `pre-tool-use`, `user-prompt-submit`, `stop`, etc.). Most non-formatting hooks currently deserialize input and return empty or placeholder responses. See the [Claude Code hooks documentation](https://docs.anthropic.com/en/docs/claude-code/hooks) and [Codex hooks documentation](https://developers.openai.com/codex/hooks) for the full event references.
 
 ```
 scut claude hook --help
+scut codex hook --help
 ```
 
 ## Status Line

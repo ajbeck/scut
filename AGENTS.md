@@ -69,6 +69,7 @@ Implementation docs live in `docs/` as standalone HTML files styled by the share
 | [config-command.html](docs/config-command.html)               | `claude config install`/`uninstall`/`status` — settings.json model, merge semantics, ownership rules, registry, scope resolution, error sentinels |
 | [codex-config-command.html](docs/codex-config-command.html)   | `codex config install`/`uninstall`/`status` — hooks.json model, default formatter install, ownership rules, scope resolution |
 | [init-command.html](docs/init-command.html)                   | `scut init` — unified agent setup, detection rules, explicit agent selection, dry-run output                           |
+| [doctor-command.html](docs/doctor-command.html)               | `scut doctor` — read-only setup diagnostics, severity model, human and JSON output                                    |
 | [installation.html](docs/installation.html)                   | Install script, release assets, checksum verification, source installs, and release workflow                                                      |
 | [release-workflows.html](docs/release-workflows.html)         | Pull request, reusable build, release tagging, GitHub Release publishing, Pages deployment, and Dependabot automation                              |
 | [design-system.html](docs/design-system.html)                 | The docs design system itself — page anatomy, primitives (rail, hero, code frames, callouts, steps), colour tokens, theming, voice, and how other projects can adopt the pattern |
@@ -87,6 +88,7 @@ Implementation docs live in `docs/` as standalone HTML files styled by the share
 - `internal/cmd/claude/config/**` changes → review `config-command.html`
 - `internal/cmd/codex/config/**` changes → review `codex-config-command.html`
 - `internal/cmd/initcmd/**` changes → review `init-command.html`
+- `internal/cmd/doctor/**` changes → review `doctor-command.html`
 - `docs/scut-docs.css` or `docs/scut-docs.js` changes → review `design-system.html` (class names and conventions documented there), then run `mage docsStandalone` to refresh `design-system-standalone.html`
 - `docs/design-system.html` changes → run `mage docsStandalone` in the same commit to refresh the standalone edition
 - Any new `docs/*.html` documentation file → add it to the index table above

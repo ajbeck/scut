@@ -76,6 +76,15 @@ scut codex config install               # project scope: .codex/hooks.json
 
 Claude setup installs entries for all 29 hook events plus the status line, merging non-destructively with any existing `settings.json`. Codex setup defaults to the `post-tool-use` formatter hook in `hooks.json`; use `--only` on `scut codex config install` to opt into additional Codex hook events. In project scope, `scut init` auto-detects agents only when `.claude/` or `.codex/` exists; pass `--all`, `--claude`, or `--codex` to force setup. See [docs/init-command.html](docs/init-command.html), [docs/config-command.html](docs/config-command.html), and [docs/codex-config-command.html](docs/codex-config-command.html) for flags, merge semantics, and the `uninstall` / `status` subcommands.
 
+Check an installation without changing files:
+
+```bash
+scut doctor                  # check Claude Code + Codex across project/user scopes
+scut doctor --codex --json    # machine-readable Codex diagnostics
+```
+
+`scut doctor` reports `ok`, `info`, `warn`, and `error` findings for PATH setup, parse errors, missing scut hook entries, Codex inline hook conflicts, disabled Codex hooks, and project trust reminders. See [docs/doctor-command.html](docs/doctor-command.html) for the diagnostics model.
+
 For reference, this is the PostToolUse entry the command writes:
 
 ```json

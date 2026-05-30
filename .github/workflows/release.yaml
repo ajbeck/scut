@@ -134,6 +134,42 @@ jobs:
           - \`checksums.txt\`
           EOF
 
+  update-homebrew-tap:
+    name: Update Homebrew Tap
+    needs: [tag-release, release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create release publisher token
+        id: release-publisher-token
+        uses: actions/create-github-app-token@v3.2.0
+        with:
+          client-id: ${{ secrets.AJBECK_RELEASE_PUBLISHER_CLIENT_ID }}
+          private-key: ${{ secrets.AJBECK_RELEASE_PUBLISHER_KEY }}
+          owner: ajbeck
+          repositories: homebrew-tap
+          permission-contents: write
+
+      - name: Trigger Homebrew tap update
+        env:
+          GH_TOKEN: ${{ steps.release-publisher-token.outputs.token }}
+          RELEASE_TAG: ${{ needs.tag-release.outputs.release_tag }}
+        run: |
+          gh api repos/ajbeck/homebrew-tap/dispatches \
+            --method POST \
+            -f event_type=update-formula \
+            -f client_payload[formula]=scut \
+            -f client_payload[version]="${RELEASE_TAG}"
+
+      - name: Write Homebrew tap summary
+        env:
+          RELEASE_TAG: ${{ needs.tag-release.outputs.release_tag }}
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" << EOF
+          ## Homebrew Tap
+
+          Triggered \`ajbeck/homebrew-tap\` formula update for \`scut\` ${RELEASE_TAG}.
+          EOF
+
   deploy-docs:
     name: Deploy Docs
     needs: [tag-release, release]

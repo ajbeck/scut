@@ -39,7 +39,7 @@
         <span class="badge swift">release tags</span>
       </div>
       <h1><span class="moniker-bracket">[</span><span class="moniker">release workflows</span><span class="moniker-bracket">]</span></h1>
-      <p class="lede">scut uses three GitHub Actions workflows: one pull request entry point, one reusable build workflow, and one release workflow that creates tags, publishes assets, and deploys the documentation site.</p>
+      <p class="lede">scut uses three GitHub Actions workflows: one pull request entry point, one reusable build workflow, and one release workflow that creates tags, publishes assets, updates the Homebrew tap, and deploys the documentation site.</p>
     </header>
 
     <section id="overview">
@@ -62,7 +62,7 @@
           </tr>
           <tr>
             <td class="field"><code>release.yaml</code></td>
-            <td class="note">Manual release workflow. Tags <code>main</code>, builds from the exact tag, creates the GitHub Release, and deploys Pages.</td>
+            <td class="note">Manual release workflow. Tags <code>main</code>, builds from the exact tag, creates the GitHub Release, dispatches the Homebrew tap update, and deploys Pages.</td>
           </tr>
         </tbody>
       </table>
@@ -109,10 +109,13 @@
         <li><strong>tag-release</strong> validates a stable semantic version, creates immutable <code>vM.m.p</code> when it does not already exist, and force-updates movable <code>vM.m</code> and <code>vM</code> tags to the current <code>main</code> commit.</li>
         <li><strong>build</strong> calls the reusable build workflow in release mode with <code>ref</code> set to the exact tag and <code>release_tag</code> set to <code>vM.m.p</code>.</li>
         <li><strong>release</strong> downloads <code>release-assets</code>, creates the GitHub Release for the exact tag, and uploads tarballs plus <code>checksums.txt</code>.</li>
+        <li><strong>update-homebrew-tap</strong> mints an installation token for the release publisher GitHub App and sends an <code>update-formula</code> repository dispatch event to <code>ajbeck/homebrew-tap</code> with <code>formula=scut</code> and <code>version=vM.m.p</code>.</li>
         <li><strong>deploy-docs</strong> deploys <code>docs/</code> to GitHub Pages from the same release commit, keeping hosted documentation aligned with the release.</li>
       </ol>
 
       <div class="callout warn"><strong>guardrail</strong>If <code>vM.m.p</code> already exists at a different commit, the workflow fails. If it exists at the same commit, the workflow can continue, which allows rerunning a failed release after tagging succeeded.</div>
+
+      <div class="callout note"><strong>secrets</strong>The tap dispatch uses <code>AJBECK_RELEASE_PUBLISHER_CLIENT_ID</code> and <code>AJBECK_RELEASE_PUBLISHER_KEY</code>. The GitHub App client secret is not needed for installation-token auth. The GitHub App installation must have <code>Contents: write</code> permission on <code>ajbeck/homebrew-tap</code> so it can call the repository dispatch endpoint.</div>
     </section>
 
     <section id="versioning">

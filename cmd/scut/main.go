@@ -13,6 +13,7 @@ import (
 
 	"github.com/ajbeck/scut/internal/cmd/claude"
 	"github.com/ajbeck/scut/internal/cmd/codex"
+	doctorcmd "github.com/ajbeck/scut/internal/cmd/doctor"
 	formatcmd "github.com/ajbeck/scut/internal/cmd/format"
 	gotoolscmd "github.com/ajbeck/scut/internal/cmd/gotools"
 	initcmd "github.com/ajbeck/scut/internal/cmd/initcmd"
@@ -28,6 +29,7 @@ type cli struct {
 	Claude      claude.Cmd     `cmd:"claude" help:"Claude Code agent commands — hooks, status line, and configuration."`
 	Codex       codex.Cmd      `cmd:"codex" help:"Codex agent commands — hooks and lifecycle integrations."`
 	Init        initcmd.Cmd    `cmd:"init" help:"Set up scut hooks for detected or selected coding agents."`
+	Doctor      doctorcmd.Cmd  `cmd:"doctor" help:"Diagnose scut hook setup for supported coding agents."`
 	Format      formatcmd.Cmd  `cmd:"format" help:"Format source code files."`
 	Gotools     gotoolscmd.Cmd `cmd:"gotools" help:"Go tool-inspired commands for agents."`
 	Logging     loggingcmd.Cmd `cmd:"logging" help:"Manage scut log files."`

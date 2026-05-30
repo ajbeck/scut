@@ -60,7 +60,8 @@ Wire supported agents with the unified setup command:
 
 ```bash
 scut init                         # detected agents, project scope
-scut init --all --dry-run          # preview Claude Code + Codex setup
+scut init --all --dry-run          # preview setup targets
+scut init --all --dry-run --verbose # preview rendered config
 scut init --codex --scope=user     # explicitly set up Codex user hooks
 scut init --all --bake-log-level=debug
 ```

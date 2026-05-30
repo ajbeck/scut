@@ -168,7 +168,8 @@ func inspectClaude(fs afero.Fs, scope string) []finding {
 		Message:  "Claude settings file parsed",
 	}}
 
-	entries := claudeScutEntries(settings)
+	hooks, statusLines := claudeScutEntries(settings)
+	entries := append(slices.Clone(hooks), statusLines...)
 	if len(entries) == 0 {
 		findings = append(findings, finding{
 			Severity: severityWarn,
@@ -185,7 +186,7 @@ func inspectClaude(fs afero.Fs, scope string) []finding {
 			Scope:    scope,
 			Check:    "scut-hooks",
 			Path:     path,
-			Message:  fmt.Sprintf("%d scut Claude entries found", len(entries)),
+			Message:  fmt.Sprintf("%d scut Claude hooks and %d status line found", len(hooks), len(statusLines)),
 		})
 	}
 	return append(findings, inspectCommands(fs, "claude", scope, path, entries)...)
@@ -212,7 +213,7 @@ func inspectCodex(fs afero.Fs, scope string) []finding {
 			Scope:    scope,
 			Check:    "project-trust",
 			Path:     filepath.Dir(hooksPath),
-			Message:  "Codex project hooks require the project .codex layer to be trusted",
+			Message:  "Codex project hooks require this .codex layer to be trusted; if hooks do not run, approve/trust this project in Codex",
 		})
 	}
 
@@ -502,21 +503,22 @@ type claudeSettings struct {
 	} `json:"hooks"`
 }
 
-func claudeScutEntries(s claudeSettings) []string {
-	var commands []string
+func claudeScutEntries(s claudeSettings) ([]string, []string) {
+	var hooks []string
+	var statusLines []string
 	if s.StatusLine != nil && ownsClaudeCommand(s.StatusLine.Command) {
-		commands = append(commands, s.StatusLine.Command)
+		statusLines = append(statusLines, s.StatusLine.Command)
 	}
 	for _, groups := range s.Hooks {
 		for _, group := range groups {
 			for _, hook := range group.Hooks {
 				if hook.Type == "command" && ownsClaudeCommand(hook.Command) {
-					commands = append(commands, hook.Command)
+					hooks = append(hooks, hook.Command)
 				}
 			}
 		}
 	}
-	return commands
+	return hooks, statusLines
 }
 
 func ownsClaudeCommand(command string) bool {

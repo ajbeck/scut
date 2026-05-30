@@ -22,10 +22,33 @@ type installCmd struct {
 	DryRun       bool     `help:"Print resulting JSON to stdout instead of writing." name:"dry-run"`
 }
 
+// InstallOptions configures Claude Code settings installation.
+type InstallOptions struct {
+	Scope        string
+	Only         []string
+	BakeLog      bool
+	BakeLogLevel string
+	DryRun       bool
+}
+
 // Run executes the install command: reads settings.json, merges scut entries, and writes back.
 func (c *installCmd) Run(stdout io.Writer, fs afero.Fs, logger *slog.Logger) error {
+	return Install(stdout, fs, logger, InstallOptions{
+		Scope:        c.Scope,
+		Only:         c.Only,
+		BakeLog:      c.BakeLog,
+		BakeLogLevel: c.BakeLogLevel,
+		DryRun:       c.DryRun,
+	})
+}
+
+// Install reads settings.json, merges scut entries, and writes the result.
+func Install(stdout io.Writer, fs afero.Fs, logger *slog.Logger, opts InstallOptions) error {
+	if opts.Scope == "" {
+		opts.Scope = "project"
+	}
 	// Resolve the settings file path.
-	path, err := resolveScope(c.Scope)
+	path, err := resolveScope(opts.Scope)
 	if err != nil {
 		return err
 	}
@@ -37,7 +60,7 @@ func (c *installCmd) Run(stdout io.Writer, fs afero.Fs, logger *slog.Logger) err
 	}
 
 	// Compute the install set.
-	installSet, err := resolveInstallSet(c.Only)
+	installSet, err := resolveInstallSet(opts.Only)
 	if err != nil {
 		return err
 	}
@@ -49,7 +72,7 @@ func (c *installCmd) Run(stdout io.Writer, fs afero.Fs, logger *slog.Logger) err
 	}
 
 	// Build the command string prefix based on bake-log flags.
-	logPrefix := buildLogPrefix(c.BakeLog, c.BakeLogLevel)
+	logPrefix := buildLogPrefix(opts.BakeLog, opts.BakeLogLevel)
 
 	// Apply each item in the install set.
 	if installSet["status-line"] {
@@ -80,7 +103,7 @@ func (c *installCmd) Run(stdout io.Writer, fs afero.Fs, logger *slog.Logger) err
 	}
 
 	// Dry-run: write JSON to stdout and return.
-	if c.DryRun {
+	if opts.DryRun {
 		data, err := marshalSettings(s)
 		if err != nil {
 			return err
@@ -95,10 +118,10 @@ func (c *installCmd) Run(stdout io.Writer, fs afero.Fs, logger *slog.Logger) err
 	}
 
 	logger.Info("installed",
-		"scope", c.Scope,
+		"scope", opts.Scope,
 		"path", path,
 		"entries", len(installSet),
-		"bake_log", c.BakeLog || c.BakeLogLevel != "",
+		"bake_log", opts.BakeLog || opts.BakeLogLevel != "",
 	)
 	return nil
 }
@@ -117,6 +140,15 @@ func resolveScope(scope string) (string, error) {
 	default:
 		return "", fmt.Errorf("unknown scope %q", scope)
 	}
+}
+
+// PathForScope returns the settings.json path for a project or user scope.
+func PathForScope(scope string) (string, error) {
+	path, err := resolveScope(scope)
+	if err != nil {
+		return "", fmt.Errorf("resolving Claude settings path: %w", err)
+	}
+	return path, nil
 }
 
 // resolveInstallSet converts a list of --only tokens to a set of slugs to install.

@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/ajbeck/scut/internal/cmd/codex/config"
 	"github.com/ajbeck/scut/internal/cmd/codex/hook"
 	"github.com/ajbeck/scut/internal/logging"
 )
@@ -17,7 +18,8 @@ type Cmd struct {
 	Log      bool   `help:"Enable logging to ~/.scut/logging/ at info level."`
 	LogLevel string `help:"Set log level: debug, info, warn, error (implies --log)." placeholder:"LEVEL"`
 
-	Hook hook.Cmd `cmd:"hook" help:"Hook event handlers. Called by Codex as subprocesses during lifecycle events."`
+	Hook   hook.Cmd   `cmd:"hook" help:"Hook event handlers. Called by Codex as subprocesses during lifecycle events."`
+	Config config.Cmd `cmd:"config" help:"Configure Codex hooks.json — install or remove scut hooks."`
 }
 
 // OpenLogger returns a logger configured from the --log and --log-level flags.

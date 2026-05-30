@@ -65,6 +65,9 @@ scut init --codex
 <span class="tok-comment"># Preview generated config files</span>
 scut init --all --dry-run
 
+<span class="tok-comment"># Print the full rendered config during dry-run</span>
+scut init --all --dry-run --verbose
+
 <span class="tok-comment"># Bake hook logging into generated commands</span>
 scut init --all --bake-log-level=debug</pre>
       </div>
@@ -98,6 +101,10 @@ scut init --all --bake-log-level=debug</pre>
             <td class="field">--bake-log / --bake-log-level</td>
             <td class="note">Bakes scut logging flags into every generated hook command. <code>--bake-log-level</code> implies logging and omits the redundant bare <code>--log</code> flag.</td>
           </tr>
+          <tr>
+            <td class="field">--verbose</td>
+            <td class="note">With <code>--dry-run</code>, prints the full rendered config for each selected agent. Without it, dry-run prints a compact target summary.</td>
+          </tr>
         </tbody>
       </table>
     </section>
@@ -105,7 +112,7 @@ scut init --all --bake-log-level=debug</pre>
     <section id="output">
       <h2><span class="section-anchor">// 03</span>Output</h2>
 
-      <p>Normal runs print one result line per installed agent. Dry runs print a header for each selected agent followed by the generated JSON that would be written by that agent's config installer. If no supported agents are detected in default mode, the command reports each skipped agent and exits successfully without writing files.</p>
+      <p>Normal runs preflight every selected target before writing any file, then print one result line per installed agent plus a suggested <code>scut doctor --scope=&lt;scope&gt;</code> follow-up. Dry runs print a compact target summary by default; add <code>--verbose</code> to print the generated JSON that would be written by each agent's config installer. If no supported agents are detected in default mode, the command reports each skipped agent and exits successfully without writing files.</p>
     </section>
 
     <footer>

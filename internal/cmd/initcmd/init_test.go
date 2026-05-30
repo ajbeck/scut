@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-func TestRunDryRunAllPrintsGroupedAgentOutput(t *testing.T) {
+func TestRunDryRunAllPrintsCompactPlan(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	t.Chdir(t.TempDir())
 
@@ -26,9 +26,28 @@ func TestRunDryRunAllPrintsGroupedAgentOutput(t *testing.T) {
 	if !bytes.Contains(stdout.Bytes(), []byte("CLAUDE project")) {
 		t.Errorf("Claude dry-run header missing\n%s", out)
 	}
-	if !bytes.Contains(stdout.Bytes(), []byte("CODEX project")) {
+	if !bytes.Contains(stdout.Bytes(), []byte("CODEX")) || !bytes.Contains(stdout.Bytes(), []byte("project")) {
 		t.Errorf("Codex dry-run header missing\n%s", out)
 	}
+	if !bytes.Contains(stdout.Bytes(), []byte("would update")) {
+		t.Errorf("dry-run summary missing\n%s", out)
+	}
+	if bytes.Contains(stdout.Bytes(), []byte("scut claude hook post-tool-use")) {
+		t.Errorf("compact dry-run should not print full Claude JSON\n%s", out)
+	}
+}
+
+func TestRunDryRunVerbosePrintsRenderedConfig(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	t.Chdir(t.TempDir())
+
+	var stdout bytes.Buffer
+	cmd := &Cmd{All: true, Scope: "project", DryRun: true, Verbose: true}
+	if err := cmd.Run(&stdout, fs, slog.Default()); err != nil {
+		t.Fatalf("Run() error: %v", err)
+	}
+
+	out := stdout.String()
 	if !bytes.Contains(stdout.Bytes(), []byte("scut claude hook post-tool-use")) {
 		t.Errorf("Claude config output missing\n%s", out)
 	}
@@ -42,7 +61,7 @@ func TestRunDryRunAllPassesLoggingFlags(t *testing.T) {
 	t.Chdir(t.TempDir())
 
 	var stdout bytes.Buffer
-	cmd := &Cmd{All: true, Scope: "project", BakeLogLevel: "debug", DryRun: true}
+	cmd := &Cmd{All: true, Scope: "project", BakeLogLevel: "debug", DryRun: true, Verbose: true}
 	if err := cmd.Run(&stdout, fs, slog.Default()); err != nil {
 		t.Fatalf("Run() error: %v", err)
 	}
@@ -75,8 +94,34 @@ func TestRunExplicitCodexWritesOnlyCodexConfig(t *testing.T) {
 	if _, err := fs.Stat(filepath.Join(cwd, ".claude", "settings.json")); err == nil {
 		t.Fatal("did not expect .claude/settings.json to be written")
 	}
-	if !bytes.Contains(stdout.Bytes(), []byte("CODEX project")) {
+	if !bytes.Contains(stdout.Bytes(), []byte("CODEX")) || !bytes.Contains(stdout.Bytes(), []byte("project")) {
 		t.Errorf("Codex install output missing\n%s", stdout.String())
+	}
+	if !bytes.Contains(stdout.Bytes(), []byte("scut doctor --scope=project")) {
+		t.Errorf("post-install doctor guidance missing\n%s", stdout.String())
+	}
+}
+
+func TestRunPreflightsAllTargetsBeforeWriting(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	t.Chdir(t.TempDir())
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("os.Getwd: %v", err)
+	}
+	blockedPath := filepath.Join(cwd, ".codex", "hooks.json")
+	if err := fs.MkdirAll(blockedPath, 0755); err != nil {
+		t.Fatalf("mkdir blocked target: %v", err)
+	}
+
+	var stdout bytes.Buffer
+	cmd := &Cmd{All: true, Scope: "project"}
+	err = cmd.Run(&stdout, fs, slog.Default())
+	if err == nil {
+		t.Fatal("Run() expected preflight error")
+	}
+	if _, statErr := fs.Stat(filepath.Join(cwd, ".claude", "settings.json")); statErr == nil {
+		t.Fatal("Claude settings were written despite Codex preflight failure")
 	}
 }
 
@@ -118,7 +163,7 @@ func TestRunUserScopeUsesPathDetection(t *testing.T) {
 	if bytes.Contains(stdout.Bytes(), []byte("CLAUDE user")) {
 		t.Errorf("did not expect Claude user config output\n%s", stdout.String())
 	}
-	if !bytes.Contains(stdout.Bytes(), []byte("CODEX user")) {
+	if !bytes.Contains(stdout.Bytes(), []byte("CODEX")) || !bytes.Contains(stdout.Bytes(), []byte("user")) {
 		t.Errorf("expected Codex user config output\n%s", stdout.String())
 	}
 }
@@ -128,7 +173,7 @@ func TestKongWiring(t *testing.T) {
 		Init Cmd `cmd:""`
 	}
 	parser := kong.Must(&cli, kong.Name("scut"))
-	if _, err := parser.Parse([]string{"init", "--all", "--scope=project", "--dry-run"}); err != nil {
+	if _, err := parser.Parse([]string{"init", "--all", "--scope=project", "--dry-run", "--verbose"}); err != nil {
 		t.Fatalf("Parse() error: %v", err)
 	}
 }

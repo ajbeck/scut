@@ -90,7 +90,7 @@ scut doctor --json</pre>
           </tr>
           <tr>
             <td class="field">project-trust</td>
-            <td class="note">When project <code>.codex/</code> exists, emits an informational reminder that Codex project hooks require the project layer to be trusted.</td>
+            <td class="note">When project <code>.codex/</code> exists, emits an informational reminder that Codex project hooks require the project layer to be trusted and tells users to approve or trust the project if hooks do not run.</td>
           </tr>
         </tbody>
       </table>
@@ -99,7 +99,7 @@ scut doctor --json</pre>
     <section id="output">
       <h2><span class="section-anchor">// 03</span>Output</h2>
 
-      <p>Human output uses four severities: <code>OK</code>, <code>INFO</code>, <code>WARN</code>, and <code>ERROR</code>. JSON output returns the same findings as an array of objects with <code>severity</code>, <code>agent</code>, <code>scope</code>, <code>check</code>, <code>path</code>, and <code>message</code>. The command exits non-zero when any finding has <code>error</code> severity.</p>
+      <p>Human output uses four severities: <code>OK</code>, <code>INFO</code>, <code>WARN</code>, and <code>ERROR</code>. Claude hook diagnostics report hook and status-line counts separately. JSON output returns the same findings as an array of objects with <code>severity</code>, <code>agent</code>, <code>scope</code>, <code>check</code>, <code>path</code>, and <code>message</code>. The command exits non-zero when any finding has <code>error</code> severity.</p>
     </section>
 
     <footer>

@@ -53,13 +53,13 @@ func TestRunHumanReportsInstalledHooks(t *testing.T) {
 	if !bytes.Contains(stdout.Bytes(), []byte("scut is discoverable on PATH")) {
 		t.Errorf("missing PATH check\n%s", out)
 	}
-	if !bytes.Contains(stdout.Bytes(), []byte("scut Claude entries found")) {
+	if !bytes.Contains(stdout.Bytes(), []byte("1 scut Claude hooks and 1 status line found")) {
 		t.Errorf("missing Claude entries check\n%s", out)
 	}
 	if !bytes.Contains(stdout.Bytes(), []byte("scut Codex hook entries found")) {
 		t.Errorf("missing Codex entries check\n%s", out)
 	}
-	if !bytes.Contains(stdout.Bytes(), []byte("project hooks require")) {
+	if !bytes.Contains(stdout.Bytes(), []byte("approve/trust this project")) {
 		t.Errorf("missing Codex project trust note\n%s", out)
 	}
 }

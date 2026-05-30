@@ -103,10 +103,10 @@
     <section id="release">
       <h2><span class="section-anchor">// 04</span>Release</h2>
 
-      <p>The release workflow is manually dispatched with <code>releaseVersion</code>. It always checks out <code>main</code>; releases are not cut from feature branches.</p>
+      <p>The release workflow is manually dispatched with <code>releaseVersion</code> and <code>targetSha</code>. It always checks out <code>main</code>, and <code>targetSha</code> must be the current <code>origin/main</code> commit; releases are not cut from feature branches or an implicit moving HEAD.</p>
 
       <ol class="steps">
-        <li><strong>tag-release</strong> validates a stable semantic version, creates immutable <code>vM.m.p</code> when it does not already exist, and force-updates movable <code>vM.m</code> and <code>vM</code> tags to the current <code>main</code> commit.</li>
+        <li><strong>tag-release</strong> validates <code>releaseVersion</code> with the SemVer.org suggested regular expression, rejects prerelease/build metadata for stable releases, validates full 40-character <code>targetSha</code>, verifies that the target commit matches <code>origin/main</code>, creates immutable <code>vM.m.p</code> when it does not already exist, and force-updates movable <code>vM.m</code> and <code>vM</code> tags to that explicit commit.</li>
         <li><strong>build</strong> calls the reusable build workflow in release mode with <code>ref</code> set to the exact tag and <code>release_tag</code> set to <code>vM.m.p</code>.</li>
         <li><strong>release</strong> downloads <code>release-assets</code>, creates the GitHub Release for the exact tag, and uploads tarballs plus <code>checksums.txt</code>.</li>
         <li><strong>update-homebrew-tap</strong> mints an installation token for the release publisher GitHub App and sends an <code>update-formula</code> repository dispatch event to <code>ajbeck/homebrew-tap</code> with <code>formula=scut</code> and <code>version=vM.m.p</code>.</li>

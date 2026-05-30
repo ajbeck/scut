@@ -7,6 +7,10 @@ on:
         description: Version to release, for example 0.2.0 or v0.2.0.
         required: true
         type: string
+      targetSha:
+        description: Full commit SHA to release. Must match the current HEAD of main.
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -39,10 +43,24 @@ jobs:
         id: tag
         env:
           INPUT_VERSION: ${{ inputs.releaseVersion }}
+          TARGET_SHA: ${{ inputs.targetSha }}
         run: |
           version="${INPUT_VERSION#v}"
-          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "releaseVersion must be a stable semantic version like 0.2.0 or v0.2.0" >&2
+          VERSION="${version}" node <<'NODE'
+          const version = process.env.VERSION
+          const semverPattern = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/
+          const match = semverPattern.exec(version)
+          if (!match) {
+            console.error("releaseVersion must be a semantic version like 0.2.0 or v0.2.0")
+            process.exit(1)
+          }
+          if (match[4] || match[5]) {
+            console.error("releaseVersion must be stable; prerelease and build metadata are not accepted")
+            process.exit(1)
+          }
+          NODE
+          if [[ ! "$TARGET_SHA" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo "targetSha must be a full 40-character commit SHA" >&2
             exit 1
           fi
 
@@ -50,7 +68,12 @@ jobs:
           release_tag="v${major}.${minor}.${patch}"
           minor_tag="v${major}.${minor}"
           major_tag="v${major}"
-          commit_sha="$(git rev-parse HEAD)"
+          commit_sha="$(git rev-parse "${TARGET_SHA}^{commit}")"
+          main_sha="$(git rev-parse origin/main)"
+          if [ "$commit_sha" != "$main_sha" ]; then
+            echo "targetSha must match the current HEAD of main (${main_sha})" >&2
+            exit 1
+          fi
 
           existing_sha="$(git rev-parse -q --verify "refs/tags/${release_tag}^{commit}" || true)"
           if [ -n "$existing_sha" ] && [ "$existing_sha" != "$commit_sha" ]; then

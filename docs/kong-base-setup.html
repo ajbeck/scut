@@ -82,6 +82,7 @@
     VersionFlag versionFlag    `name:<span class="tok-string">"version"</span> help:<span class="tok-string">"Print version and exit."</span> short:<span class="tok-string">"v"</span>`
     Version     versioncmd.Cmd `cmd:<span class="tok-string">"version"</span> help:<span class="tok-string">"Print version and exit."</span>`
     Claude      claude.Cmd     `cmd:<span class="tok-string">"claude"</span> help:<span class="tok-string">"Claude Code agent commands — hooks, status line, and configuration."</span>`
+    Codex       codex.Cmd      `cmd:<span class="tok-string">"codex"</span> help:<span class="tok-string">"Codex agent commands — hooks and lifecycle integrations."</span>`
     Format      formatcmd.Cmd  `cmd:<span class="tok-string">"format"</span> help:<span class="tok-string">"Format source code files."</span>`
     Gotools     gotoolscmd.Cmd `cmd:<span class="tok-string">"gotools"</span> help:<span class="tok-string">"Go tool-inspired commands for agents."</span>`
     Logging     loggingcmd.Cmd `cmd:<span class="tok-string">"logging"</span> help:<span class="tok-string">"Manage scut log files."</span>`
@@ -252,6 +253,8 @@ ctx.FatalIfErrorf(ctx.Run(logger))
 internal/cmd/claude/claude.go          <span class="tok-comment"># "scut claude" agent group (--log, --log-level flags)</span>
 internal/cmd/claude/hook/hook.go       <span class="tok-comment"># "scut claude hook" subcommands</span>
 internal/cmd/claude/config/config.go   <span class="tok-comment"># "scut claude config" subcommands (install, uninstall, status)</span>
+internal/cmd/codex/codex.go            <span class="tok-comment"># "scut codex" agent group (--log, --log-level flags)</span>
+internal/cmd/codex/hook/hook.go        <span class="tok-comment"># "scut codex hook" subcommands</span>
 internal/cmd/format/format.go          <span class="tok-comment"># "scut format" group (formatter commands)</span>
 internal/cmd/gotools/gotools.go        <span class="tok-comment"># "scut gotools" group (Go tool-inspired commands)</span>
 internal/cmd/logging/logging.go        <span class="tok-comment"># "scut logging" group (clean command)</span>
@@ -289,7 +292,7 @@ scut gotools doc encoding/json Marshal
       </div>
 
       <ul>
-        <li><strong>Group nodes</strong> (claude, hook) are exported <code>Cmd</code> structs with <code>cmd:""</code> tagged fields for their children. They have no <code>Run()</code> method.</li>
+        <li><strong>Group nodes</strong> (claude, codex, hook) are exported <code>Cmd</code> structs with <code>cmd:""</code> tagged fields for their children. They have no <code>Run()</code> method.</li>
         <li><strong>Leaf commands</strong> (pre-tool-use, session-start, etc.) are unexported structs with a <code>Run(...) error</code> method. They are the actual execution targets.</li>
       </ul>
 

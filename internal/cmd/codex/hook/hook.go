@@ -97,18 +97,6 @@ func (c *permissionRequestCmd) Run(stdin io.Reader, stdout io.Writer, logger *sl
 	return writeJSON(stdout, cx.PermissionRequestOutput{})
 }
 
-type postToolUseCmd struct{ trailingArgs }
-
-func (c *postToolUseCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
-	start := time.Now()
-	var in cx.PostToolUseInput
-	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
-		return fmt.Errorf("decoding PostToolUse input: %w", err)
-	}
-	logger.Info("handled", "hook", "post-tool-use", "session_id", in.SessionID, "turn_id", in.TurnID, "tool_name", in.ToolName, "duration_ms", ms(start))
-	return writeJSON(stdout, cx.PostToolUseOutput{})
-}
-
 type preCompactCmd struct{ trailingArgs }
 
 func (c *preCompactCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {

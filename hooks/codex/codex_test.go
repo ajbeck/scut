@@ -4,6 +4,7 @@ package codex
 
 import (
 	"encoding/json"
+	"slices"
 	"testing"
 )
 
@@ -63,5 +64,58 @@ func TestPreToolUseOutput_NestedHookOutput(t *testing.T) {
 	}
 	if hook["permissionDecision"] != "deny" {
 		t.Errorf("permissionDecision = %v, want deny", hook["permissionDecision"])
+	}
+}
+
+func TestPostToolUseInput_FilePaths(t *testing.T) {
+	tests := []struct {
+		name      string
+		cwd       string
+		toolInput json.RawMessage
+		want      []string
+	}{
+		{
+			name:      "direct file_path",
+			toolInput: json.RawMessage(`{"file_path":"/src/main.go"}`),
+			want:      []string{"/src/main.go"},
+		},
+		{
+			name:      "apply_patch add update delete",
+			cwd:       "/repo",
+			toolInput: json.RawMessage(`{"command":"*** Begin Patch\n*** Add File: docs/new.md\n+#  Hi\n*** Update File: src/main.go\n@@\n-old\n+new\n*** Delete File: old.txt\n*** End Patch\n"}`),
+			want:      []string{"/repo/docs/new.md", "/repo/src/main.go"},
+		},
+		{
+			name:      "apply_patch move uses destination",
+			cwd:       "/repo",
+			toolInput: json.RawMessage(`{"patch":"*** Begin Patch\n*** Update File: docs/old.md\n*** Move to: docs/new.md\n@@\n-old\n+new\n*** End Patch\n"}`),
+			want:      []string{"/repo/docs/new.md"},
+		},
+		{
+			name:      "duplicates removed",
+			cwd:       "/repo",
+			toolInput: json.RawMessage(`{"file_path":"src/main.go","command":"*** Begin Patch\n*** Update File: src/main.go\n@@\n-old\n+new\n*** End Patch\n"}`),
+			want:      []string{"/repo/src/main.go"},
+		},
+		{
+			name:      "missing path",
+			toolInput: json.RawMessage(`{"command":"ls"}`),
+		},
+		{
+			name:      "invalid json",
+			toolInput: json.RawMessage(`{`),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			in := &PostToolUseInput{
+				TurnInput: TurnInput{Input: Input{CWD: tt.cwd}},
+				ToolInput: tt.toolInput,
+			}
+			if got := in.FilePaths(); !slices.Equal(got, tt.want) {
+				t.Errorf("FilePaths() = %#v, want %#v", got, tt.want)
+			}
+		})
 	}
 }

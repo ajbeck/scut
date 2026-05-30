@@ -17,11 +17,13 @@ import (
 
 // Cmd is the Kong command for "scut init".
 type Cmd struct {
-	Claude bool   `help:"Set up Claude Code hooks."`
-	Codex  bool   `help:"Set up Codex hooks."`
-	All    bool   `help:"Set up all supported agents, even if not detected."`
-	Scope  string `help:"Configuration scope: project or user." default:"project" enum:"project,user"`
-	DryRun bool   `help:"Print the planned config output without writing files." name:"dry-run"`
+	Claude       bool   `help:"Set up Claude Code hooks."`
+	Codex        bool   `help:"Set up Codex hooks."`
+	All          bool   `help:"Set up all supported agents, even if not detected."`
+	Scope        string `help:"Configuration scope: project or user." default:"project" enum:"project,user"`
+	BakeLog      bool   `help:"Bake --log into generated command strings." name:"bake-log"`
+	BakeLogLevel string `help:"Bake --log-level=LEVEL into generated command strings (implies --bake-log). One of: debug, info, warn, error." placeholder:"LEVEL" name:"bake-log-level" enum:",debug,info,warn,error" default:""`
+	DryRun       bool   `help:"Print the planned config output without writing files." name:"dry-run"`
 }
 
 type agent string
@@ -91,9 +93,7 @@ func (c *Cmd) resolveAgents(fs afero.Fs) ([]agent, []string, error) {
 func detectedAgent(fs afero.Fs, scope, configDir, binary string) bool {
 	switch scope {
 	case "project":
-		if exists(fs, configDir) {
-			return true
-		}
+		return exists(fs, configDir)
 	case "user":
 		path, err := homeConfigDir(configDir)
 		if err == nil && exists(fs, path) {
@@ -126,8 +126,10 @@ func (c *Cmd) installAgent(stdout io.Writer, fs afero.Fs, logger *slog.Logger, a
 		}
 		return c.writeAgent(stdout, "CLAUDE", c.Scope, path, func(w io.Writer) error {
 			return claudeconfig.Install(w, fs, logger, claudeconfig.InstallOptions{
-				Scope:  c.Scope,
-				DryRun: c.DryRun,
+				Scope:        c.Scope,
+				BakeLog:      c.BakeLog,
+				BakeLogLevel: c.BakeLogLevel,
+				DryRun:       c.DryRun,
 			})
 		})
 	case agentCodex:
@@ -137,8 +139,10 @@ func (c *Cmd) installAgent(stdout io.Writer, fs afero.Fs, logger *slog.Logger, a
 		}
 		return c.writeAgent(stdout, "CODEX", c.Scope, path, func(w io.Writer) error {
 			return codexconfig.Install(w, fs, logger, codexconfig.InstallOptions{
-				Scope:  c.Scope,
-				DryRun: c.DryRun,
+				Scope:        c.Scope,
+				BakeLog:      c.BakeLog,
+				BakeLogLevel: c.BakeLogLevel,
+				DryRun:       c.DryRun,
 			})
 		})
 	default:

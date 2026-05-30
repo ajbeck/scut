@@ -63,7 +63,10 @@ scut init --all
 scut init --codex
 
 <span class="tok-comment"># Preview generated config files</span>
-scut init --all --dry-run</pre>
+scut init --all --dry-run
+
+<span class="tok-comment"># Bake hook logging into generated commands</span>
+scut init --all --bake-log-level=debug</pre>
       </div>
     </section>
 
@@ -77,7 +80,7 @@ scut init --all --dry-run</pre>
         <tbody>
           <tr>
             <td class="field">default</td>
-            <td class="note">Installs for detected agents only. Detection checks the relevant config directory for the selected scope and then falls back to <code>PATH</code> lookup for the agent binary.</td>
+            <td class="note">Installs for detected agents only. Project scope detection requires a local <code>.claude/</code> or <code>.codex/</code> directory. User scope detection checks the user config directory and then falls back to <code>PATH</code> lookup for the agent binary.</td>
           </tr>
           <tr>
             <td class="field">--claude / --codex</td>
@@ -90,6 +93,10 @@ scut init --all --dry-run</pre>
           <tr>
             <td class="field">--scope</td>
             <td class="note">Selects project or user scope and is passed through to each agent-specific installer.</td>
+          </tr>
+          <tr>
+            <td class="field">--bake-log / --bake-log-level</td>
+            <td class="note">Bakes scut logging flags into every generated hook command. <code>--bake-log-level</code> implies logging and omits the redundant bare <code>--log</code> flag.</td>
           </tr>
         </tbody>
       </table>

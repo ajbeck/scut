@@ -37,6 +37,24 @@ func TestRunDryRunAllPrintsGroupedAgentOutput(t *testing.T) {
 	}
 }
 
+func TestRunDryRunAllPassesLoggingFlags(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	t.Chdir(t.TempDir())
+
+	var stdout bytes.Buffer
+	cmd := &Cmd{All: true, Scope: "project", BakeLogLevel: "debug", DryRun: true}
+	if err := cmd.Run(&stdout, fs, slog.Default()); err != nil {
+		t.Fatalf("Run() error: %v", err)
+	}
+
+	if !bytes.Contains(stdout.Bytes(), []byte("scut claude --log-level=debug hook post-tool-use")) {
+		t.Errorf("Claude baked log level missing\n%s", stdout.String())
+	}
+	if !bytes.Contains(stdout.Bytes(), []byte("scut codex --log-level=debug hook post-tool-use")) {
+		t.Errorf("Codex baked log level missing\n%s", stdout.String())
+	}
+}
+
 func TestRunExplicitCodexWritesOnlyCodexConfig(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	t.Chdir(t.TempDir())
@@ -65,13 +83,6 @@ func TestRunExplicitCodexWritesOnlyCodexConfig(t *testing.T) {
 func TestRunNoDetectedAgentsReportsSkipped(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	t.Chdir(t.TempDir())
-	oldLookPath := lookPath
-	lookPath = func(string) (string, error) {
-		return "", errors.New("not found")
-	}
-	t.Cleanup(func() {
-		lookPath = oldLookPath
-	})
 
 	var stdout bytes.Buffer
 	cmd := &Cmd{Scope: "project"}
@@ -81,6 +92,34 @@ func TestRunNoDetectedAgentsReportsSkipped(t *testing.T) {
 
 	if !bytes.Contains(stdout.Bytes(), []byte("no supported agents detected")) {
 		t.Errorf("expected no-detected message\n%s", stdout.String())
+	}
+}
+
+func TestRunUserScopeUsesPathDetection(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	t.Chdir(t.TempDir())
+	oldLookPath := lookPath
+	lookPath = func(binary string) (string, error) {
+		if binary == "codex" {
+			return "/usr/local/bin/codex", nil
+		}
+		return "", errors.New("not found")
+	}
+	t.Cleanup(func() {
+		lookPath = oldLookPath
+	})
+
+	var stdout bytes.Buffer
+	cmd := &Cmd{Scope: "user", DryRun: true}
+	if err := cmd.Run(&stdout, fs, slog.Default()); err != nil {
+		t.Fatalf("Run() error: %v", err)
+	}
+
+	if bytes.Contains(stdout.Bytes(), []byte("CLAUDE user")) {
+		t.Errorf("did not expect Claude user config output\n%s", stdout.String())
+	}
+	if !bytes.Contains(stdout.Bytes(), []byte("CODEX user")) {
+		t.Errorf("expected Codex user config output\n%s", stdout.String())
 	}
 }
 

@@ -20,17 +20,19 @@ type HooksFile struct {
 
 // HookGroup is one matcher group for a Codex hook event.
 type HookGroup struct {
-	Matcher string      `json:"matcher,omitzero"`
-	Hooks   []HookEntry `json:"hooks"`
+	Matcher string                    `json:"matcher,omitzero"`
+	Hooks   []HookEntry               `json:"hooks"`
+	Foreign map[string]jsontext.Value `json:",inline"`
 }
 
 // HookEntry is one command hook handler.
 type HookEntry struct {
-	Type           string `json:"type"`
-	Command        string `json:"command"`
-	CommandWindows string `json:"commandWindows,omitzero"`
-	Timeout        int    `json:"timeout,omitzero"`
-	StatusMessage  string `json:"statusMessage,omitzero"`
+	Type           string                    `json:"type"`
+	Command        string                    `json:"command"`
+	CommandWindows string                    `json:"commandWindows,omitzero"`
+	Timeout        int                       `json:"timeout,omitzero"`
+	StatusMessage  string                    `json:"statusMessage,omitzero"`
+	Foreign        map[string]jsontext.Value `json:",inline"`
 }
 
 func marshalHooksFile(h HooksFile) ([]byte, error) {

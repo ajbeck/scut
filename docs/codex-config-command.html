@@ -141,7 +141,7 @@ scut codex config status --scope=both --json</pre>
     <section id="ownership">
       <h2><span class="section-anchor">// 04</span>Ownership</h2>
 
-      <p>scut owns only command hooks whose command starts with <code>scut codex hook </code>, <code>scut codex --log hook </code>, or <code>scut codex --log-level=...</code>. Uninstall and status ignore foreign hook groups, including other commands inside the same event.</p>
+      <p>scut owns only command hooks whose command starts with <code>scut codex hook </code>, <code>scut codex --log hook </code>, or a <code>scut codex --log-level=... hook ...</code> invocation. Uninstall and status ignore foreign hook groups, including other commands inside the same event. Unknown fields on existing hook groups and hook entries are round-tripped through inline fallback maps.</p>
     </section>
 
     <section id="scope">

@@ -151,7 +151,7 @@
     parser.FatalIfErrorf(err)
 }
 
-logger, logCloser := c.Claude.OpenLogger(ctx.Command())
+logger, logCloser := c.openLogger(ctx.Command())
 <span class="tok-keyword">if</span> logCloser != <span class="tok-number">nil</span> {
     <span class="tok-keyword">defer</span> logCloser.Close()
 }
@@ -165,7 +165,7 @@ ctx.FatalIfErrorf(ctx.Run(logger))</pre>
 
       <h3>OpenLogger</h3>
 
-      <p><code>claude.Cmd.OpenLogger(command string)</code> checks the <code>--log</code> and <code>--log-level</code> flags. If logging is disabled, it returns <code>logging.Discard</code> and a nil closer. If enabled, it calls <code>logging.Open(name, level)</code> which:</p>
+      <p><code>claude.Cmd.OpenLogger(command string)</code> and <code>codex.Cmd.OpenLogger(command string)</code> check the relevant agent group's <code>--log</code> and <code>--log-level</code> flags. If logging is disabled, they return <code>logging.Discard</code> and a nil closer. If enabled, they call <code>logging.Open(name, level)</code> which:</p>
 
       <ol class="steps">
         <li>Resolves <code>~/.scut/logging/</code> (creating it if needed)</li>
@@ -274,7 +274,7 @@ err := cmd.Run(stdin, &amp;stdout, fs, logging.Discard)</pre>
           </tr>
           <tr>
             <td class="field">post-tool-use</td>
-            <td class="note"><code>tool_name</code>, <code>file_path</code>, <code>formatter</code>, <code>reason</code> (when skipped)</td>
+            <td class="note"><code>tool_name</code>, <code>turn_id</code> (Codex), <code>file_path</code>, <code>formatter</code>, <code>file_count</code>, <code>reason</code> (when skipped)</td>
           </tr>
           <tr>
             <td class="field">stop-failure</td>

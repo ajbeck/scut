@@ -71,7 +71,7 @@ Implementation docs live in `docs/` as standalone HTML files styled by the share
 | [init-command.html](docs/init-command.html)                   | `scut init` — unified agent setup, detection rules, explicit agent selection, dry-run output                           |
 | [doctor-command.html](docs/doctor-command.html)               | `scut doctor` — read-only setup diagnostics, severity model, human and JSON output                                    |
 | [installation.html](docs/installation.html)                   | Install script, release assets, checksum verification, source installs, and release workflow                                                      |
-| [release-workflows.html](docs/release-workflows.html)         | Pull request, reusable build, release tagging, GitHub Release publishing, Pages deployment, and Dependabot automation                              |
+| [release-workflows.html](docs/release-workflows.html)         | Pull request, reusable build, release tagging, GitHub Release publishing, Homebrew tap dispatch, Pages deployment, and Dependabot automation                              |
 | [design-system.html](docs/design-system.html)                 | The docs design system itself — page anatomy, primitives (rail, hero, code frames, callouts, steps), colour tokens, theming, voice, and how other projects can adopt the pattern |
 | [design-system-standalone.html](docs/design-system-standalone.html) | Single-file shareable edition of `design-system.html` with CSS and JS inlined. Generated — do not hand-edit; run `mage docsStandalone` after changing the source HTML, CSS, or JS |
 

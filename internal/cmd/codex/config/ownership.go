@@ -8,7 +8,7 @@ func owns(command string) bool {
 	c := strings.TrimLeft(command, " \t")
 	return strings.HasPrefix(c, "scut codex hook ") ||
 		strings.HasPrefix(c, "scut codex --log hook ") ||
-		strings.HasPrefix(c, "scut codex --log-level=")
+		(strings.HasPrefix(c, "scut codex --log-level=") && strings.Contains(c, " hook "))
 }
 
 func isScutGroup(g HookGroup) bool {

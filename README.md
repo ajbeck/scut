@@ -62,6 +62,7 @@ Wire supported agents with the unified setup command:
 scut init                         # detected agents, project scope
 scut init --all --dry-run          # preview Claude Code + Codex setup
 scut init --codex --scope=user     # explicitly set up Codex user hooks
+scut init --all --bake-log-level=debug
 ```
 
 Agent-specific commands remain available when you need lower-level control:
@@ -73,7 +74,7 @@ scut claude config install --dry-run    # preview without writing
 scut codex config install               # project scope: .codex/hooks.json
 ```
 
-Claude setup installs entries for all 29 hook events plus the status line, merging non-destructively with any existing `settings.json`. Codex setup defaults to the `post-tool-use` formatter hook in `hooks.json`; use `--only` on `scut codex config install` to opt into additional Codex hook events. See [docs/init-command.html](docs/init-command.html), [docs/config-command.html](docs/config-command.html), and [docs/codex-config-command.html](docs/codex-config-command.html) for flags, merge semantics, and the `uninstall` / `status` subcommands.
+Claude setup installs entries for all 29 hook events plus the status line, merging non-destructively with any existing `settings.json`. Codex setup defaults to the `post-tool-use` formatter hook in `hooks.json`; use `--only` on `scut codex config install` to opt into additional Codex hook events. In project scope, `scut init` auto-detects agents only when `.claude/` or `.codex/` exists; pass `--all`, `--claude`, or `--codex` to force setup. See [docs/init-command.html](docs/init-command.html), [docs/config-command.html](docs/config-command.html), and [docs/codex-config-command.html](docs/codex-config-command.html) for flags, merge semantics, and the `uninstall` / `status` subcommands.
 
 For reference, this is the PostToolUse entry the command writes:
 

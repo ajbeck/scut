@@ -69,7 +69,7 @@ func TestInstall(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		t.Chdir(t.TempDir())
 		path := projectPathFor(t)
-		seedJSON(t, fs, path, `{"metadata":{"owner":"user"},"hooks":{"Stop":[{"matcher":"*","hooks":[{"type":"command","command":"other stop"}]}]}}`)
+		seedJSON(t, fs, path, `{"metadata":{"owner":"user"},"hooks":{"Stop":[{"matcher":"*","note":"keep group","hooks":[{"type":"command","command":"other stop","timeout":5000,"extra":"keep hook"}]}]}}`)
 
 		cmd := &installCmd{Scope: "project"}
 		if err := cmd.Run(io.Discard, fs, slog.Default()); err != nil {
@@ -85,6 +85,12 @@ func TestInstall(t *testing.T) {
 		}
 		if !bytes.Contains(data, []byte(`other stop`)) {
 			t.Errorf("foreign hook missing after install\n%s", data)
+		}
+		if !bytes.Contains(data, []byte(`"note"`)) {
+			t.Errorf("foreign hook group key missing after install\n%s", data)
+		}
+		if !bytes.Contains(data, []byte(`"extra"`)) {
+			t.Errorf("foreign hook entry key missing after install\n%s", data)
 		}
 		if !bytes.Contains(data, []byte(`scut codex hook post-tool-use`)) {
 			t.Errorf("scut hook missing after install\n%s", data)

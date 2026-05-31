@@ -170,18 +170,18 @@ jobs:
           private-key: ${{ secrets.AJBECK_RELEASE_PUBLISHER_KEY }}
           owner: ajbeck
           repositories: homebrew-tap
-          permission-contents: write
+          permission-actions: write
 
       - name: Trigger Homebrew tap update
         env:
           GH_TOKEN: ${{ steps.release-publisher-token.outputs.token }}
           RELEASE_TAG: ${{ needs.tag-release.outputs.release_tag }}
         run: |
-          gh api repos/ajbeck/homebrew-tap/dispatches \
+          gh api repos/ajbeck/homebrew-tap/actions/workflows/update-formula.yml/dispatches \
             --method POST \
-            -f event_type=update-formula \
-            -f client_payload[formula]=scut \
-            -f client_payload[version]="${RELEASE_TAG}"
+            -f ref=main \
+            -f inputs[formula]=scut \
+            -f inputs[version]="${RELEASE_TAG}"
 
       - name: Write Homebrew tap summary
         env:

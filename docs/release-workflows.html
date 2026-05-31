@@ -109,13 +109,13 @@
         <li><strong>tag-release</strong> validates <code>releaseVersion</code> with the SemVer.org suggested regular expression, rejects prerelease/build metadata for stable releases, validates full 40-character <code>targetSha</code>, verifies that the target commit matches <code>origin/main</code>, creates immutable <code>vM.m.p</code> when it does not already exist, and force-updates movable <code>vM.m</code> and <code>vM</code> tags to that explicit commit.</li>
         <li><strong>build</strong> calls the reusable build workflow in release mode with <code>ref</code> set to the exact tag and <code>release_tag</code> set to <code>vM.m.p</code>.</li>
         <li><strong>release</strong> downloads <code>release-assets</code>, creates the GitHub Release for the exact tag, and uploads tarballs plus <code>checksums.txt</code>.</li>
-        <li><strong>update-homebrew-tap</strong> mints an installation token for the release publisher GitHub App and sends an <code>update-formula</code> repository dispatch event to <code>ajbeck/homebrew-tap</code> with <code>formula=scut</code> and <code>version=vM.m.p</code>.</li>
+        <li><strong>update-homebrew-tap</strong> mints an installation token for the release publisher GitHub App and invokes <code>ajbeck/homebrew-tap</code>'s <code>update-formula.yml</code> workflow through <code>workflow_dispatch</code> with <code>formula=scut</code> and <code>version=vM.m.p</code>.</li>
         <li><strong>deploy-docs</strong> deploys <code>docs/</code> to GitHub Pages from the same release commit, keeping hosted documentation aligned with the release.</li>
       </ol>
 
       <div class="callout warn"><strong>guardrail</strong>If <code>vM.m.p</code> already exists at a different commit, the workflow fails. If it exists at the same commit, the workflow can continue, which allows rerunning a failed release after tagging succeeded.</div>
 
-      <div class="callout note"><strong>secrets</strong>The tap dispatch uses <code>AJBECK_RELEASE_PUBLISHER_CLIENT_ID</code> and <code>AJBECK_RELEASE_PUBLISHER_KEY</code>. The GitHub App client secret is not needed for installation-token auth. The GitHub App installation must have <code>Contents: write</code> permission on <code>ajbeck/homebrew-tap</code> so it can call the repository dispatch endpoint.</div>
+      <div class="callout note"><strong>secrets</strong>The tap dispatch uses <code>AJBECK_RELEASE_PUBLISHER_CLIENT_ID</code> and <code>AJBECK_RELEASE_PUBLISHER_KEY</code>. The GitHub App client secret is not needed for installation-token auth. The GitHub App installation must have <code>Actions: write</code> permission on <code>ajbeck/homebrew-tap</code> so it can call the workflow dispatch endpoint.</div>
     </section>
 
     <section id="versioning">

@@ -128,6 +128,7 @@ func TestPostToolUseInput_RoundTrip(t *testing.T) {
 	raw := `{
 		"session_id": "abc",
 		"hook_event_name": "PostToolUse",
+		"effort": {"level": "high"},
 		"tool_name": "Write",
 		"tool_use_id": "tu_123",
 		"tool_input": {"file_path": "/x.go", "content": "package main"},
@@ -144,6 +145,9 @@ func TestPostToolUseInput_RoundTrip(t *testing.T) {
 	if in.ToolName != "Write" {
 		t.Errorf("ToolName = %q, want %q", in.ToolName, "Write")
 	}
+	if in.Effort == nil || in.Effort.Level != EffortHigh {
+		t.Errorf("Effort = %#v, want level %q", in.Effort, EffortHigh)
+	}
 	if in.FilePath() != "/x.go" {
 		t.Errorf("FilePath() = %q, want %q", in.FilePath(), "/x.go")
 	}
@@ -153,5 +157,38 @@ func TestPostToolUseInput_RoundTrip(t *testing.T) {
 	}
 	if len(in.ToolResponse) == 0 {
 		t.Error("ToolResponse is empty after unmarshal")
+	}
+}
+
+func TestPostToolBatchInput_EffortObject(t *testing.T) {
+	raw := `{
+		"session_id": "abc",
+		"hook_event_name": "PostToolBatch",
+		"effort": {"level": "medium"},
+		"tool_calls": [
+			{
+				"tool_name": "Read",
+				"tool_use_id": "tu_123",
+				"tool_input": {"file_path": "/x.go"},
+				"tool_response": "     1\tpackage main"
+			}
+		]
+	}`
+
+	var in PostToolBatchInput
+	if err := json.Unmarshal([]byte(raw), &in); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	if in.Effort == nil || in.Effort.Level != EffortMedium {
+		t.Errorf("Effort = %#v, want level %q", in.Effort, EffortMedium)
+	}
+	if len(in.ToolCalls) != 1 {
+		t.Fatalf("ToolCalls length = %d, want 1", len(in.ToolCalls))
+	}
+	if in.ToolCalls[0].ToolName != "Read" {
+		t.Errorf("ToolCalls[0].ToolName = %q, want %q", in.ToolCalls[0].ToolName, "Read")
+	}
+	if !json.Valid(in.ToolCalls[0].ToolResponse) {
+		t.Errorf("ToolCalls[0].ToolResponse is invalid JSON: %s", in.ToolCalls[0].ToolResponse)
 	}
 }

@@ -101,7 +101,7 @@
       <h3>Type Design</h3>
 
       <ul>
-        <li>Every input type embeds <code>claudecode.Input</code> which carries the common fields (<code>session_id</code>, <code>transcript_path</code>, <code>cwd</code>, <code>hook_event_name</code>, <code>permission_mode</code>, <code>agent_id</code>, <code>agent_type</code>).</li>
+        <li>Every input type embeds <code>claudecode.Input</code> which carries the common fields (<code>session_id</code>, <code>transcript_path</code>, <code>cwd</code>, <code>hook_event_name</code>, <code>permission_mode</code>, <code>effort</code>, <code>agent_id</code>, <code>agent_type</code>). <code>effort</code> is optional and uses Claude Code's object shape, e.g. <code>{"level":"high"}</code>.</li>
         <li>Every output type embeds <code>claudecode.BaseOutput</code> which carries universal response fields (<code>continue</code>, <code>stopReason</code>, <code>suppressOutput</code>, <code>systemMessage</code>).</li>
         <li>Enum-like values use typed string types with constants (e.g., <code>EventName</code>, <code>PermissionDecision</code>, <code>StopError</code>). This gives compile-time discoverability without sacrificing JSON compatibility.</li>
         <li>Output fields use pointer types for base types (<code>*string</code>, <code>*bool</code>, <code>*Decision</code>) so unset fields are omitted from JSON via <code>omitempty</code>. Use <code>new(expr)</code> to set them inline.</li>

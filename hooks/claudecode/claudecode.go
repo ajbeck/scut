@@ -62,6 +62,23 @@ const (
 	PermissionBypassPermissions PermissionMode = "bypassPermissions"
 )
 
+// EffortLevel describes the active model effort level for a turn.
+type EffortLevel string
+
+const (
+	EffortLow    EffortLevel = "low"
+	EffortMedium EffortLevel = "medium"
+	EffortHigh   EffortLevel = "high"
+	EffortXHigh  EffortLevel = "xhigh"
+	EffortMax    EffortLevel = "max"
+)
+
+// Effort describes the active model effort for hook events that run in a
+// tool-use context.
+type Effort struct {
+	Level EffortLevel `json:"level"`
+}
+
 // SessionSource describes what triggered a SessionStart event.
 type SessionSource string
 
@@ -234,7 +251,7 @@ type Input struct {
 	CWD            string         `json:"cwd"`
 	HookEventName  EventName      `json:"hook_event_name"`
 	PermissionMode PermissionMode `json:"permission_mode"`
-	Effort         string         `json:"effort,omitempty"`
+	Effort         *Effort        `json:"effort,omitempty"`
 	AgentID        string         `json:"agent_id,omitempty"`
 	AgentType      string         `json:"agent_type,omitempty"`
 }

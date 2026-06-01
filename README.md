@@ -10,7 +10,7 @@ CLI tool for LLM agents. Provides a consistent interface for agent authors to in
 ## Installation
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ajbeck/scut/main/install.sh | sh
+curl -fsSL https://install-scut.ajbeck.dev | sh
 ```
 
 By default, the installer downloads the latest GitHub Release for your platform,
@@ -19,7 +19,7 @@ verifies `checksums.txt`, and installs `scut` to `~/.local/bin`.
 Install a specific version or destination:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ajbeck/scut/main/install.sh | sh -s -- --version v0.1.0 --bin-dir /usr/local/bin
+curl -fsSL https://install-scut.ajbeck.dev | sh -s -- --version v0.1.0 --bin-dir /usr/local/bin
 ```
 
 Go users can also install from source:
@@ -36,7 +36,7 @@ mage build
 
 The binary is written to `bin/scut`.
 
-See [docs/installation.html](docs/installation.html) for release assets,
+See [Installation](https://scut.ajbeck.dev/usage/installation/) for release assets,
 supported platforms, and install-script behavior.
 
 ## Hooks
@@ -47,10 +47,10 @@ scut implements [Claude Code hooks](https://docs.anthropic.com/en/docs/claude-co
 
 The `post-tool-use` hook automatically formats files after Claude's **Write** or **Edit** tool calls. It dispatches by file extension:
 
-| Extension | Formatter | Notes |
-|-----------|-----------|-------|
-| `.go` | `gofmt` (via `go/format`) | Files with syntax errors are left unchanged |
-| `.md`, `.mdx` | goldmark-prettier-markdown | Preserves prose wrapping style |
+| Extension     | Formatter                  | Notes                                       |
+| ------------- | -------------------------- | ------------------------------------------- |
+| `.go`         | `gofmt` (via `go/format`)  | Files with syntax errors are left unchanged |
+| `.md`, `.mdx` | goldmark-prettier-markdown | Preserves prose wrapping style              |
 
 Files with other extensions are passed through unchanged.
 
@@ -75,7 +75,7 @@ scut claude config install --dry-run    # preview without writing
 scut codex config install               # project scope: .codex/hooks.json
 ```
 
-Claude setup installs entries for all 29 hook events plus the status line, merging non-destructively with any existing `settings.json`. Codex setup defaults to the `post-tool-use` formatter hook in `hooks.json`; use `--only` on `scut codex config install` to opt into additional Codex hook events. In project scope, `scut init` auto-detects agents only when `.claude/` or `.codex/` exists; pass `--all`, `--claude`, or `--codex` to force setup. See [docs/init-command.html](docs/init-command.html), [docs/config-command.html](docs/config-command.html), and [docs/codex-config-command.html](docs/codex-config-command.html) for flags, merge semantics, and the `uninstall` / `status` subcommands.
+Claude setup installs entries for all 29 hook events plus the status line, merging non-destructively with any existing `settings.json`. Codex setup defaults to the `post-tool-use` formatter hook in `hooks.json`; use `--only` on `scut codex config install` to opt into additional Codex hook events. In project scope, `scut init` auto-detects agents only when `.claude/` or `.codex/` exists; pass `--all`, `--claude`, or `--codex` to force setup. See the [Usage docs](https://scut.ajbeck.dev/usage/) and [CLI reference](https://scut.ajbeck.dev/cli/) for flags, merge semantics, and the `uninstall` / `status` subcommands.
 
 Check an installation without changing files:
 
@@ -84,7 +84,7 @@ scut doctor                  # check Claude Code + Codex across project/user sco
 scut doctor --codex --json    # machine-readable Codex diagnostics
 ```
 
-`scut doctor` reports `ok`, `info`, `warn`, and `error` findings for PATH setup, parse errors, missing scut hook entries, Codex inline hook conflicts, disabled Codex hooks, and project trust reminders. See [docs/doctor-command.html](docs/doctor-command.html) for the diagnostics model.
+`scut doctor` reports `ok`, `info`, `warn`, and `error` findings for PATH setup, parse errors, missing scut hook entries, Codex inline hook conflicts, disabled Codex hooks, and project trust reminders. See [Doctor](https://scut.ajbeck.dev/usage/doctor/) for the diagnostics model.
 
 For reference, this is the PostToolUse entry the command writes:
 
@@ -123,11 +123,11 @@ For reference, this is the PostToolUse entry the command writes:
 
 ### Exit codes
 
-| Code | Meaning |
-|------|---------|
-| `0` | Success. stdout is parsed as the hook's JSON response. |
-| `2` | Blocking error. stderr is surfaced as an error message to the agent. |
-| Other | Non-blocking error. Logged but execution continues. |
+| Code  | Meaning                                                              |
+| ----- | -------------------------------------------------------------------- |
+| `0`   | Success. stdout is parsed as the hook's JSON response.               |
+| `2`   | Blocking error. stderr is surfaced as an error message to the agent. |
+| Other | Non-blocking error. Logged but execution continues.                  |
 
 ### Other hook events
 
@@ -146,13 +146,13 @@ scut codex hook --help
 ████████████████│███ 50% | O4.6 | scut/internal/cmd | getting-started ✓ ↑1
 ```
 
-| Segment | Description |
-|---------|-------------|
-| Context bar | 20-character progress bar with half-block resolution (38 levels). A red `│` marker sits at 83% — the auto-compaction threshold. Mint <70%, amber 70–82%, red 83%+. |
-| Model | Abbreviated model label (e.g., `S4.5`, `O4.6-1M`) |
-| Path | Current directory relative to the git repo root (or `~/relative` outside a repo). Long paths are compacted by collapsing intermediate segments. |
-| Branch | Current git branch from HEAD, truncated to 20 characters |
-| Git indicators | `✓` when clean, `+N` staged (mint), `~N` unstaged/untracked (amber), `↑N` ahead (mint), `↓N` behind (amber) |
+| Segment        | Description                                                                                                                                                              |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Context bar    | 20-character progress bar with half-block resolution (38 levels). A red `│` marker sits at 83% — the auto-compaction threshold. Mint <70%, amber 70–82%, red 83%+. |
+| Model          | Abbreviated model label (e.g., `S4.5`, `O4.6-1M`)                                                                                                                        |
+| Path           | Current directory relative to the git repo root (or `~/relative` outside a repo). Long paths are compacted by collapsing intermediate segments.                          |
+| Branch         | Current git branch from HEAD, truncated to 20 characters                                                                                                                 |
+| Git indicators | `✓` when clean, `+N` staged (mint), `~N` unstaged/untracked (amber), `↑N` ahead (mint), `↓N` behind (amber)                                                        |
 
 ### Configuration
 
@@ -173,7 +173,7 @@ To install only the status line without the hooks, pass `--only=status-line`:
 scut claude config install --only=status-line
 ```
 
-See [docs/config-command.html](docs/config-command.html) for the full surface.
+See [Configure Claude Code](https://scut.ajbeck.dev/usage/configure-claude-code/) for the full surface.
 
 ### Performance
 

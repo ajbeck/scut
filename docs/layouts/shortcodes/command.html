@@ -1,0 +1,6 @@
+{{ $value := strings.TrimSpace .Inner }}
+<div class="command-row">
+  <span class="command-row__prompt" aria-hidden="true">$</span>
+  <code>{{ $value }}</code>
+  <button class="copy-button" type="button" data-copy-value="{{ $value }}">Copy</button>
+</div>

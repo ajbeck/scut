@@ -1,0 +1,13 @@
+{{ define "body" }}
+<div class="site-shell">
+  {{ partial "header.html" . }}
+  <div class="docs-grid docs-grid--notoc">
+    {{ partial "sidebar.html" . }}
+    <main class="content">
+      {{ partial "breadcrumbs.html" . }}
+      <p class="eyebrow">Changelog</p>
+      {{ .Content }}
+    </main>
+  </div>
+</div>
+{{ end }}

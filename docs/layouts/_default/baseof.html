@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="{{ site.Language.Locale }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ site.Params.description }}{{ end }}">
+  <title>{{ if .IsHome }}{{ site.Title }}{{ else }}{{ .Title }} - {{ site.Title }}{{ end }}</title>
+  {{ $css := resources.Get "css/scut.css" | minify | fingerprint }}
+  <link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}">
+</head>
+<body>
+  {{ block "body" . }}{{ end }}
+  {{ $js := resources.Get "js/scut.js" | minify | fingerprint }}
+  <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+Usage: scut gotools doc [<lookup> ...] [flags]
+
+Show Go documentation for a package or symbol.
+
+Arguments:
+  [<lookup> ...]    Optional package, symbol, or package symbol lookup.
+
+Flags:
+  -h, --help                       Show context-sensitive help.
+  -v, --version                    Print version and exit.
+
+      --all                        Show all documentation for the package.
+      --short                      Show one-line representation for each symbol.
+      --src                        Show full source for the selected symbol.
+  -u, --u                          Show unexported symbols as well as exported
+                                   symbols.
+  -c, --c                          Respect case when matching symbols.
+      --cmd                        Show symbols with package docs even if
+                                   package is a command.
+      --module-version="latest"    Module version query for external packages.

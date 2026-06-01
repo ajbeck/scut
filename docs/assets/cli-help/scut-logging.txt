@@ -1,0 +1,10 @@
+Usage: scut logging <command> [flags]
+
+Manage scut log files.
+
+Commands:
+  logging clean    Remove old log files from ~/.scut/logging/.
+
+Flags:
+  -h, --help       Show context-sensitive help.
+  -v, --version    Print version and exit.

@@ -1,0 +1,15 @@
+Usage: scut claude config status [flags]
+
+Show currently-installed scut entries in settings.json.
+
+Flags:
+  -h, --help               Show context-sensitive help.
+  -v, --version            Print version and exit.
+
+      --log                Enable logging to ~/.scut/logging/ at info level.
+      --log-level=LEVEL    Set log level: debug, info, warn, error (implies
+                           --log).
+
+      --scope="both"       Which scope(s) to inspect.
+      --json               Emit a structured JSON object instead of the
+                           human-readable table.

@@ -18,3 +18,7 @@ scut doctor --json
 ```
 
 The command reports `ok`, `info`, `warn`, and `error` findings. JSON output is intended for scripts and future integrations.
+
+## Generated help
+
+{{< clihelp file="scut-doctor" command="scut doctor --help" >}}

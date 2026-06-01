@@ -1,0 +1,14 @@
+Usage: scut doctor [flags]
+
+Diagnose scut hook setup for supported coding agents.
+
+Flags:
+  -h, --help            Show context-sensitive help.
+  -v, --version         Print version and exit.
+
+      --claude          Check Claude Code setup.
+      --codex           Check Codex setup.
+      --all             Check all supported agents.
+      --scope="both"    Configuration scope to inspect.
+      --json            Emit a structured JSON object instead of human-readable
+                        output.

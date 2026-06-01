@@ -1,0 +1,10 @@
+Usage: scut logging clean [flags]
+
+Remove old log files from ~/.scut/logging/.
+
+Flags:
+  -h, --help       Show context-sensitive help.
+  -v, --version    Print version and exit.
+
+      --all        Remove all log files regardless of age.
+      --days=N     Remove log files older than N days.

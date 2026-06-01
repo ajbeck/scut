@@ -1,0 +1,19 @@
+Usage: scut claude <command> [flags]
+
+Claude Code agent commands — hooks, status line, and configuration.
+
+Commands:
+  claude hook           Hook event handlers. Called by Claude Code as
+                        subprocesses during lifecycle events.
+  claude status-line    Render the Claude Code status bar. Reads session JSON
+                        from stdin, prints styled output to stdout.
+  claude config         Configure Claude Code settings.json — install or remove
+                        scut hooks and status line.
+
+Flags:
+  -h, --help               Show context-sensitive help.
+  -v, --version            Print version and exit.
+
+      --log                Enable logging to ~/.scut/logging/ at info level.
+      --log-level=LEVEL    Set log level: debug, info, warn, error (implies
+                           --log).

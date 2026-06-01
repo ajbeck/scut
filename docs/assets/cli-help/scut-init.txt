@@ -1,0 +1,21 @@
+Usage: scut init [flags]
+
+Set up scut hooks for detected or selected coding agents.
+
+Flags:
+  -h, --help                    Show context-sensitive help.
+  -v, --version                 Print version and exit.
+
+      --claude                  Set up Claude Code hooks.
+      --codex                   Set up Codex hooks.
+      --all                     Set up all supported agents, even if not
+                                detected.
+      --scope="project"         Configuration scope: project or user.
+      --bake-log                Bake --log into generated command strings.
+      --bake-log-level=LEVEL    Bake --log-level=LEVEL into generated command
+                                strings (implies --bake-log). One of: debug,
+                                info, warn, error.
+      --dry-run                 Print the planned config output without writing
+                                files.
+      --verbose                 With --dry-run, print the full rendered config
+                                for each selected agent.

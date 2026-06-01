@@ -1,0 +1,10 @@
+{{ $file := .Get "file" }}
+{{ $command := .Get "command" }}
+{{ with resources.Get (printf "cli-help/%s.txt" $file) }}
+  <section class="generated-help">
+    <p class="generated-help__label">Generated from <code>{{ $command }}</code>.</p>
+    <div class="highlight generated-help__code"><pre><code>{{ .Content | htmlEscape | safeHTML }}</code></pre></div>
+  </section>
+{{ else }}
+  {{ errorf "missing generated CLI help asset %q" $file }}
+{{ end }}

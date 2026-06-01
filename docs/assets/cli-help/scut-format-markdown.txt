@@ -1,0 +1,13 @@
+Usage: scut format markdown [<file> ...] [flags]
+
+Format Markdown files. Reads from stdin if no files specified.
+
+Arguments:
+  [<file> ...]    Files to format. If omitted, reads from stdin.
+
+Flags:
+  -h, --help       Show context-sensitive help.
+  -v, --version    Print version and exit.
+
+      --force      Format files even when ignored by .prettierignore or
+                   .scutignore.

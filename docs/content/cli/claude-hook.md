@@ -18,3 +18,7 @@ scut claude hook notification
 ```
 
 Scut exposes all currently modeled Claude Code hook events. The formatter behavior lives in `post-tool-use`; many other handlers currently validate payloads and return empty or placeholder JSON responses.
+
+## Generated help
+
+{{< clihelp file="scut-claude-hook" command="scut claude hook --help" >}}

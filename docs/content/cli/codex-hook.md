@@ -16,3 +16,7 @@ scut codex hook stop
 ```
 
 The `post-tool-use` command formats changed Go, Markdown, and MDX files after supported file-edit or patch tools run.
+
+## Generated help
+
+{{< clihelp file="scut-codex-hook" command="scut codex hook --help" >}}

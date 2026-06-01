@@ -1,0 +1,19 @@
+Usage: scut claude config <command> [flags]
+
+Configure Claude Code settings.json — install or remove scut hooks and status
+line.
+
+Commands:
+  claude config install      Write/merge scut hook and status-line entries into
+                             settings.json.
+  claude config uninstall    Remove scut entries from settings.json.
+  claude config status       Show currently-installed scut entries in
+                             settings.json.
+
+Flags:
+  -h, --help               Show context-sensitive help.
+  -v, --version            Print version and exit.
+
+      --log                Enable logging to ~/.scut/logging/ at info level.
+      --log-level=LEVEL    Set log level: debug, info, warn, error (implies
+                           --log).

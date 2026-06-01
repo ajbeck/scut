@@ -1,0 +1,7 @@
+Usage: scut version [flags]
+
+Print version and exit.
+
+Flags:
+  -h, --help       Show context-sensitive help.
+  -v, --version    Print version and exit.

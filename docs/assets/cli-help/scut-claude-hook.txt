@@ -1,0 +1,59 @@
+Usage: scut claude hook <command> [flags]
+
+Hook event handlers. Called by Claude Code as subprocesses during lifecycle
+events.
+
+Commands:
+  claude hook setup                Run explicit Claude Code setup or maintenance
+                                   work.
+  claude hook session-start        Inject context when a session begins or
+                                   resumes.
+  claude hook session-end          Record session termination.
+  claude hook instructions-loaded
+                                   Record when a CLAUDE.md or rules file is
+                                   loaded.
+  claude hook user-prompt-submit
+                                   Validate or annotate user prompts before
+                                   processing.
+  claude hook user-prompt-expansion
+                                   Validate or annotate slash-command prompt
+                                   expansions.
+  claude hook pre-tool-use         Allow, deny, or modify tool calls before
+                                   execution.
+  claude hook post-tool-use        Format files after successful write or edit
+                                   tool calls.
+  claude hook post-tool-use-failure
+                                   Record context after a tool call fails.
+  claude hook post-tool-batch      Inject context after a batch of parallel tool
+                                   calls resolves.
+  claude hook permission-request
+                                   Auto-approve or deny permission prompts.
+  claude hook permission-denied    Record or retry auto-mode permission denials.
+  claude hook notification         Record agent notifications.
+  claude hook subagent-start       Inject context when a subagent is spawned.
+  claude hook subagent-stop        Allow or block subagent termination.
+  claude hook stop                 Allow or block agent turn completion.
+  claude hook stop-failure         Record API errors that ended a turn.
+  claude hook task-created         Validate or block task creation.
+  claude hook task-completed       Validate or block task completion.
+  claude hook teammate-idle        Decide whether an idle teammate should
+                                   continue.
+  claude hook config-change        Allow or block configuration changes.
+  claude hook cwd-changed          React to working directory changes.
+  claude hook file-changed         React to watched file changes on disk.
+  claude hook worktree-create      Provide a custom worktree path.
+  claude hook worktree-remove      Record worktree removal.
+  claude hook pre-compact          Record before context compaction begins.
+  claude hook post-compact         Record after context compaction completes.
+  claude hook elicitation          Accept, decline, or cancel MCP user input
+                                   requests.
+  claude hook elicitation-result
+                                   Validate or modify MCP elicitation responses.
+
+Flags:
+  -h, --help               Show context-sensitive help.
+  -v, --version            Print version and exit.
+
+      --log                Enable logging to ~/.scut/logging/ at info level.
+      --log-level=LEVEL    Set log level: debug, info, warn, error (implies
+                           --log).

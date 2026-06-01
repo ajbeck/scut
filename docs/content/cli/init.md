@@ -17,12 +17,8 @@ scut init --codex
 scut init --all --dry-run --verbose
 ```
 
-| Flag                     | Behavior                                                 |
-| ------------------------ | -------------------------------------------------------- |
-| `--all`                  | Select all supported agents.                             |
-| `--claude`               | Select Claude Code.                                      |
-| `--codex`                | Select Codex.                                            |
-| `--scope=user`           | Write user-level config instead of project-level config. |
-| `--dry-run`              | Show planned changes without writing.                    |
-| `--verbose`              | Include rendered config in dry-run output.               |
-| `--bake-log-level=LEVEL` | Bake a log level into installed hook commands.           |
+Run `--dry-run` first when you want to inspect the generated agent configuration before writing files.
+
+## Generated help
+
+{{< clihelp file="scut-init" command="scut init --help" >}}

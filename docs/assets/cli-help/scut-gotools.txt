@@ -1,0 +1,10 @@
+Usage: scut gotools <command> [flags]
+
+Go tool-inspired commands for agents.
+
+Commands:
+  gotools doc    Show Go documentation for a package or symbol.
+
+Flags:
+  -h, --help       Show context-sensitive help.
+  -v, --version    Print version and exit.

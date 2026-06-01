@@ -1,5 +1,8 @@
 # Build output
 bin/
+public/
+.hugo_cache/
+.hugo_build.lock
 
 # Go
 *.exe

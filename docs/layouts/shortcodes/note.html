@@ -1,0 +1,4 @@
+<aside class="note note--{{ .Get "type" | default "info" }}">
+  <span class="note__icon" aria-hidden="true">{{ .Get "icon" | default "i" }}</span>
+  <div>{{ .Inner | markdownify }}</div>
+</aside>

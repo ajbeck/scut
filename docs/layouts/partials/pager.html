@@ -1,0 +1,12 @@
+{{ if or .PrevInSection .NextInSection }}
+<nav class="pager-nav" aria-label="Previous and next pages">
+  {{ with .PrevInSection }}
+    <a class="pager-card" href="{{ .RelPermalink }}"><small>Previous</small><span>{{ .Title }}</span></a>
+  {{ else }}
+    <span></span>
+  {{ end }}
+  {{ with .NextInSection }}
+    <a class="pager-card pager-card--next" href="{{ .RelPermalink }}"><small>Next</small><span>{{ .Title }}</span></a>
+  {{ end }}
+</nav>
+{{ end }}

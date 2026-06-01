@@ -1,0 +1,69 @@
+{{ define "body" }}
+<div class="site-shell">
+  {{ partial "header.html" . }}
+  <main>
+    <section class="hero">
+      <div class="hero__stars" aria-hidden="true"></div>
+      <div class="hero__inner">
+        <p class="hero__eyebrow">Agent setup that stays inspectable</p>
+        <h1>A practical toolset for agent-driven development.</h1>
+        <p>Scut installs agent hooks, formats files after edits, renders local status, and diagnoses setup drift so humans and agents can share the same development environment.</p>
+        <div class="hero__cta">
+          <a class="btn btn--primary" href="{{ relref . "/usage/quickstart" }}">Quickstart <span aria-hidden="true">→</span></a>
+          <a class="btn btn--ghost" href="{{ relref . "/cli" }}">Browse the CLI reference</a>
+        </div>
+        <div class="hero__install" data-copy-block>
+          <span class="hero__prompt">$</span>
+          <code>{{ site.Params.installCommand }}</code>
+          <button class="copy-button" type="button" data-copy-value="{{ site.Params.installCommand }}">Copy</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="home-section">
+      <p class="section-kicker">Start here</p>
+      <div class="card-grid">
+        <a class="doc-card" href="{{ relref . "/usage/quickstart" }}">
+          <span class="doc-card__icon doc-card__icon--indigo" aria-hidden="true">↯</span>
+          <h2>Start clean</h2>
+          <p>Install the CLI, wire supported agents, and verify the setup before hooks run.</p>
+          <span class="doc-card__arrow">Quickstart →</span>
+        </a>
+        <a class="doc-card" href="{{ relref . "/usage/configure-claude-code" }}">
+          <span class="doc-card__icon doc-card__icon--amber" aria-hidden="true">⌘</span>
+          <h2>Wire hooks</h2>
+          <p>Merge scut-owned Claude Code and Codex hook entries without overwriting user config.</p>
+          <span class="doc-card__arrow">Configure agents →</span>
+        </a>
+        <a class="doc-card" href="{{ relref . "/usage/doctor" }}">
+          <span class="doc-card__icon doc-card__icon--green" aria-hidden="true">⌁</span>
+          <h2>Check drift</h2>
+          <p>Run read-only diagnostics for PATH, config files, hook entries, and parse errors.</p>
+          <span class="doc-card__arrow">Doctor →</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="home-section home-section--split">
+      <div>
+        <p class="section-kicker">Usage</p>
+        <div class="link-list">
+          <a href="{{ relref . "/usage/configure-claude-code" }}">Configure Claude Code</a>
+          <a href="{{ relref . "/usage/configure-codex" }}">Configure Codex</a>
+          <a href="{{ relref . "/usage/doctor" }}">Diagnose setup</a>
+          <a href="{{ relref . "/usage/logging" }}">Inspect logs</a>
+        </div>
+      </div>
+      <div>
+        <p class="section-kicker">Contributing</p>
+        <div class="link-list">
+          <a href="{{ relref . "/contributing/architecture" }}">Project architecture</a>
+          <a href="{{ relref . "/contributing/claude-hooks" }}">Claude hook implementation</a>
+          <a href="{{ relref . "/contributing/codex-hooks" }}">Codex hook implementation</a>
+          <a href="{{ relref . "/contributing/release-workflows" }}">Release workflows</a>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+{{ end }}

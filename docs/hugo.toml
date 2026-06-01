@@ -1,0 +1,58 @@
+baseURL = 'https://scut.ajbeck.dev/'
+locale = 'en-us'
+title = 'Scut Docs'
+publishDir = '../public'
+resourceDir = '../.hugo_cache'
+disableKinds = ['taxonomy', 'term', 'RSS']
+
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
+  [markup.tableOfContents]
+    startLevel = 2
+    endLevel = 3
+    ordered = false
+  [markup.highlight]
+    noClasses = false
+
+[params]
+  description = 'Documentation for scut, the CLI tool for LLM agent hooks, setup, diagnostics, and formatting.'
+  github = 'https://github.com/ajbeck/scut'
+  installCommand = 'curl -fsSL https://install-scut.ajbeck.dev | sh'
+
+[[module.mounts]]
+  source = 'content'
+  target = 'content'
+
+[[module.mounts]]
+  source = 'assets'
+  target = 'assets'
+
+[[module.mounts]]
+  source = '../CHANGELOG.md'
+  target = 'assets/changelog.md'
+
+[[module.mounts]]
+  source = 'static'
+  target = 'static'
+
+[[menus.main]]
+  name = 'Usage'
+  pageRef = '/usage'
+  weight = 10
+
+[[menus.main]]
+  name = 'Contributing'
+  pageRef = '/contributing'
+  weight = 20
+
+[[menus.main]]
+  name = 'CLI Reference'
+  pageRef = '/cli'
+  weight = 30
+
+[[menus.main]]
+  name = 'Changelog'
+  pageRef = '/changelog'
+  weight = 40

@@ -94,3 +94,5 @@ Implementation docs live in `docs/` as standalone HTML files styled by the share
 - Any new `docs/*.html` documentation file → add it to the index table above
 
 If a matching document exists and the commit changes behavior it describes (new bindings, new command groups, changed struct tags, altered command tree layout), update the HTML to reflect the current state **in the same commit**.
+
+@RTK.md

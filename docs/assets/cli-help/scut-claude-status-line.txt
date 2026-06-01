@@ -1,0 +1,17 @@
+Usage: scut claude status-line [flags]
+
+Render the Claude Code status bar. Reads session JSON from stdin, prints styled
+output to stdout.
+
+Renders a status line for the Claude Code terminal. Reads the session snapshot
+JSON from stdin and prints styled output to stdout. Designed for low-latency
+execution — uses go-git for branch detection (no subprocess) and lipgloss for
+ANSI styling.
+
+Flags:
+  -h, --help               Show context-sensitive help.
+  -v, --version            Print version and exit.
+
+      --log                Enable logging to ~/.scut/logging/ at info level.
+      --log-level=LEVEL    Set log level: debug, info, warn, error (implies
+                           --log).

@@ -1,0 +1,22 @@
+Usage: scut claude config install [flags]
+
+Write/merge scut hook and status-line entries into settings.json.
+
+Flags:
+  -h, --help                    Show context-sensitive help.
+  -v, --version                 Print version and exit.
+
+      --log                     Enable logging to ~/.scut/logging/ at info
+                                level.
+      --log-level=LEVEL         Set log level: debug, info, warn, error (implies
+                                --log).
+
+      --scope="project"         Settings scope: project or user.
+      --only=ONLY,...           Comma-separated list of items to install (hook
+                                event slugs and/or 'status-line').
+      --bake-log                Bake --log into generated command strings.
+      --bake-log-level=LEVEL    Bake --log-level=LEVEL into generated command
+                                strings (implies --bake-log). One of: debug,
+                                info, warn, error.
+      --dry-run                 Print resulting JSON to stdout instead of
+                                writing.

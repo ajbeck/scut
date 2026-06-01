@@ -1,0 +1,20 @@
+Usage: scut <command> [flags]
+
+CLI tool for managing AI coding agents. Called as a subprocess by agent hooks —
+reads JSON from stdin, writes JSON to stdout.
+
+Commands:
+  version    Print version and exit.
+  claude     Claude Code agent commands — hooks, status line, and configuration.
+  codex      Codex agent commands — hooks and lifecycle integrations.
+  init       Set up scut hooks for detected or selected coding agents.
+  doctor     Diagnose scut hook setup for supported coding agents.
+  format     Format source code files.
+  gotools    Go tool-inspired commands for agents.
+  logging    Manage scut log files.
+
+Flags:
+  -h, --help       Show context-sensitive help.
+  -v, --version    Print version and exit.
+
+Run "scut <command> --help" for more information on a command.

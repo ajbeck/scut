@@ -1,0 +1,27 @@
+Usage: scut codex hook <command> [flags]
+
+Hook event handlers. Called by Codex as subprocesses during lifecycle events.
+
+Commands:
+  codex hook session-start         Inject context when a Codex session begins or
+                                   resumes.
+  codex hook subagent-start        Inject context when a Codex subagent starts.
+  codex hook pre-tool-use          Inspect supported tool calls before
+                                   execution.
+  codex hook permission-request    Allow, deny, or decline Codex approval
+                                   requests.
+  codex hook post-tool-use         Inspect supported tool calls after execution.
+  codex hook pre-compact           React before Codex compacts the conversation.
+  codex hook post-compact          React after Codex compacts the conversation.
+  codex hook user-prompt-submit    Validate or annotate user prompts before
+                                   processing.
+  codex hook subagent-stop         Allow or continue Codex subagent termination.
+  codex hook stop                  Allow or continue Codex turn completion.
+
+Flags:
+  -h, --help               Show context-sensitive help.
+  -v, --version            Print version and exit.
+
+      --log                Enable logging to ~/.scut/logging/ at info level.
+      --log-level=LEVEL    Set log level: debug, info, warn, error (implies
+                           --log).

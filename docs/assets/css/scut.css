@@ -16,7 +16,7 @@
   --line-strong: #c7d2e4;
   --text: #172033;
   --text-soft: #475570;
-  --text-muted: #73809a;
+  --text-muted: #596984;
   --code-bg: #101937;
   --code-text: #edf3ff;
   --radius: 8px;
@@ -350,6 +350,15 @@ a:hover {
   grid-template-columns: 270px minmax(0, 900px);
 }
 
+.docs-plain {
+  min-height: calc(100vh - 60px);
+}
+
+.content--standalone {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
 .sidebar {
   position: sticky;
   top: 0;
@@ -455,6 +464,12 @@ a:hover {
   margin-bottom: 7px;
 }
 
+.content :where(p, li, h2, h3) a {
+  text-decoration: underline;
+  text-decoration-thickness: .08em;
+  text-underline-offset: .16em;
+}
+
 .lede {
   color: var(--text-soft);
   font-size: 19px;
@@ -499,18 +514,6 @@ a:hover {
   background: var(--code-bg);
 }
 
-.highlight::before {
-  content: "";
-  display: block;
-  height: 46px;
-  border-bottom: 1px solid rgba(255, 255, 255, .07);
-  background:
-    radial-gradient(circle at 22px 23px, #da2c38 0 5px, transparent 6px),
-    radial-gradient(circle at 42px 23px, #f9c80e 0 5px, transparent 6px),
-    radial-gradient(circle at 62px 23px, #248232 0 5px, transparent 6px),
-    rgba(255, 255, 255, .04);
-}
-
 .highlight pre {
   margin: 0;
   overflow-x: auto;
@@ -524,6 +527,21 @@ a:hover {
   font-size: 13.5px;
   line-height: 1.72;
   padding: 0;
+}
+
+.generated-help {
+  margin: 30px 0 34px;
+}
+
+.generated-help__label {
+  margin-bottom: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.generated-help__code {
+  max-width: 880px;
 }
 
 .command-row {

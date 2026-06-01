@@ -1,0 +1,16 @@
+Usage: scut codex <command> [flags]
+
+Codex agent commands — hooks and lifecycle integrations.
+
+Commands:
+  codex hook      Hook event handlers. Called by Codex as subprocesses during
+                  lifecycle events.
+  codex config    Configure Codex hooks.json — install or remove scut hooks.
+
+Flags:
+  -h, --help               Show context-sensitive help.
+  -v, --version            Print version and exit.
+
+      --log                Enable logging to ~/.scut/logging/ at info level.
+      --log-level=LEVEL    Set log level: debug, info, warn, error (implies
+                           --log).

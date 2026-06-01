@@ -1,0 +1,13 @@
+Usage: scut format <command> [flags]
+
+Format source code files.
+
+Commands:
+  format go          Format Go source files. Reads from stdin if no files
+                     specified.
+  format markdown    Format Markdown files. Reads from stdin if no files
+                     specified.
+
+Flags:
+  -h, --help       Show context-sensitive help.
+  -v, --version    Print version and exit.

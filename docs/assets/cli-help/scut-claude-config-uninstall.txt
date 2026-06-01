@@ -1,0 +1,16 @@
+Usage: scut claude config uninstall [flags]
+
+Remove scut entries from settings.json.
+
+Flags:
+  -h, --help               Show context-sensitive help.
+  -v, --version            Print version and exit.
+
+      --log                Enable logging to ~/.scut/logging/ at info level.
+      --log-level=LEVEL    Set log level: debug, info, warn, error (implies
+                           --log).
+
+      --scope="project"    Settings scope: project or user.
+      --only=ONLY,...      Comma-separated list of items to remove (hook event
+                           slugs and/or 'status-line').
+      --dry-run            Print resulting JSON to stdout instead of writing.

@@ -37,6 +37,7 @@ var cliHelpDocs = []cliHelpDoc{
 	{Name: "scut-codex-hook", Command: "scut codex hook --help", Args: []string{"codex", "hook", "--help"}},
 	{Name: "scut-init", Command: "scut init --help", Args: []string{"init", "--help"}},
 	{Name: "scut-doctor", Command: "scut doctor --help", Args: []string{"doctor", "--help"}},
+	{Name: "scut-update", Command: "scut update --help", Args: []string{"update", "--help"}},
 	{Name: "scut-format", Command: "scut format --help", Args: []string{"format", "--help"}},
 	{Name: "scut-format-go", Command: "scut format go --help", Args: []string{"format", "go", "--help"}},
 	{Name: "scut-format-markdown", Command: "scut format markdown --help", Args: []string{"format", "markdown", "--help"}},

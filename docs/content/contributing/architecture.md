@@ -34,6 +34,7 @@ err = ctx.Run(bindings...)
 | `internal/cmd/codex`   | Codex command tree, config, and hooks.               |
 | `internal/cmd/initcmd` | Unified setup across supported agents.               |
 | `internal/cmd/doctor`  | Read-only diagnostics.                               |
+| `internal/cmd/update`  | Install-method detection and release binary updates. |
 | `internal/format`      | Formatter dispatch and ignore handling.              |
 | `hooks/claudecode`     | Public Claude Code hook payload types.               |
 | `hooks/codex`          | Public Codex hook payload types.                     |

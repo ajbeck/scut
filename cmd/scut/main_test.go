@@ -63,6 +63,25 @@ func TestGotoolsDocCommandParses(t *testing.T) {
 	}
 }
 
+func TestUpdateCommandParses(t *testing.T) {
+	var c cli
+	var stdout bytes.Buffer
+	parser := kong.Must(&c,
+		kong.Name("scut"),
+		kong.Vars{"version": versionmeta.String()},
+		kong.BindTo(&stdout, (*io.Writer)(nil)),
+		kong.BindTo(afero.NewMemMapFs(), (*afero.Fs)(nil)),
+	)
+
+	ctx, err := parser.Parse([]string{"update", "--dry-run", "--target-version", "v1.2.3"})
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+	if got, want := ctx.Command(), "update"; got != want {
+		t.Errorf("Command() = %q, want %q", got, want)
+	}
+}
+
 func TestCodexHookCommandParses(t *testing.T) {
 	var c cli
 	var stdout bytes.Buffer

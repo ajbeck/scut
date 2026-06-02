@@ -1,0 +1,15 @@
+Usage: scut update [<version>] [flags]
+
+Update scut when the install method supports automatic updates.
+
+Arguments:
+  [<version>]    Target release version. Defaults to latest stable release.
+
+Flags:
+  -h, --help                      Show context-sensitive help.
+  -v, --version                   Print version and exit.
+
+      --target-version=VERSION    Target release version. Defaults to latest
+                                  stable release.
+      --dry-run                   Show detected install method and planned
+                                  action without changing files.

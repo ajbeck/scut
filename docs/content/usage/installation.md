@@ -24,6 +24,22 @@ Pin a release or choose another directory with installer flags:
 | `--version VERSION` | Install a specific GitHub Release. The leading `v` is optional.    |
 | `--bin-dir DIR`     | Install `scut` into the given directory instead of `~/.local/bin`. |
 
+## Updates
+
+Check how the current binary would update before changing anything:
+
+{{< command >}}scut update --dry-run{{< /command >}}
+
+For install-script managed binaries, such as `~/.local/bin/scut`, `scut update` downloads the selected GitHub Release asset, verifies it against `checksums.txt`, and replaces the current executable:
+
+{{< command >}}scut update{{< /command >}}
+
+Pin a specific release with either positional version syntax or `--target-version`:
+
+{{< command >}}scut update v0.3.4{{< /command >}}
+
+Homebrew and source-managed installs are not overwritten by `scut update`. The command prints the appropriate `brew` or source-build guidance instead.
+
 ## Release assets
 
 Each stable release publishes one tarball per platform plus a checksum manifest:

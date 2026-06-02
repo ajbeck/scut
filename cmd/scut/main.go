@@ -18,6 +18,7 @@ import (
 	gotoolscmd "github.com/ajbeck/scut/internal/cmd/gotools"
 	initcmd "github.com/ajbeck/scut/internal/cmd/initcmd"
 	loggingcmd "github.com/ajbeck/scut/internal/cmd/logging"
+	updatecmd "github.com/ajbeck/scut/internal/cmd/update"
 	versioncmd "github.com/ajbeck/scut/internal/cmd/version"
 	"github.com/ajbeck/scut/internal/logging"
 	"github.com/ajbeck/scut/internal/version"
@@ -33,6 +34,7 @@ type cli struct {
 	Format      formatcmd.Cmd  `cmd:"format" help:"Format source code files."`
 	Gotools     gotoolscmd.Cmd `cmd:"gotools" help:"Go tool-inspired commands for agents."`
 	Logging     loggingcmd.Cmd `cmd:"logging" help:"Manage scut log files."`
+	Update      updatecmd.Cmd  `cmd:"update" help:"Update scut when the install method supports automatic updates."`
 }
 
 // versionFlag is a kong flag type that prints the version and exits.

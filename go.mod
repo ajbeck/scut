@@ -9,7 +9,7 @@ require (
 
 require (
 	charm.land/lipgloss/v2 v2.0.3
-	github.com/ajbeck/goldmark-prettier-markdown v0.2.0
+	github.com/ajbeck/goldmark-prettier-markdown v0.2.1
 	github.com/go-git/go-billy/v5 v5.9.0
 	github.com/go-git/go-git/v5 v5.19.1
 	github.com/spf13/afero v1.15.0

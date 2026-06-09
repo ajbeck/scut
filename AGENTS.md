@@ -4,7 +4,8 @@ CLI tool to be used by LLM agents via hooks, rules and instructions. Provides a 
 
 ## Development Rules and Process
 
-- Always use conventional commit syntax, for details see https://www.conventionalcommits.org/en/v1.0.0/. This is required for clean commit history and automated changelog generation.
+- Always use conventional commit syntax, for details see https://www.conventionalcommits.org/en/v1.0.0/. This is required for clean commit history and automated changelog
+  generation.
 - The allowed conventional commit types are `feat`, `patch`, `docs`, `refactor`, `test`, and `chore`. Never use other types.
 - Never push a branch to a remote without explicit approval from a user.
 - Never add a new direct dependency without explicit approval from a user.
@@ -33,10 +34,11 @@ Target version is **Go 1.26**. Use these features where appropriate:
 
 ## Mage Targets
 
-**DO NOT run `go test`, `go build`, `go vet`, or `gofmt` directly.** Always use the corresponding Mage target. Magefiles set `GOEXPERIMENT=jsonv2` and other required environment configuration automatically. Running Go toolchain commands directly will produce incorrect results or miss build tags.
+**DO NOT run `go test`, `go build`, `go vet`, or `gofmt` directly.** Always use the corresponding Mage target. Magefiles set `GOEXPERIMENT=jsonv2` and other required environment
+configuration automatically. Running Go toolchain commands directly will produce incorrect results or miss build tags.
 
 | Command            | What it does                                             |
-| ------------------ | -------------------------------------------------------- |
+|--------------------|----------------------------------------------------------|
 | `mage test`        | Run all tests with race detector (`go test -race ./...`) |
 | `mage build`       | Compile binary into `bin/` with version ldflags          |
 | `mage vet`         | Run `go vet` across all packages                         |
@@ -44,7 +46,8 @@ Target version is **Go 1.26**. Use these features where appropriate:
 | `mage localDeploy` | Build and copy binary to local bin directory             |
 | `mage docs`        | Build the Hugo documentation site into `public/`         |
 
-This applies to all contexts: manual terminal use, CI, agent tool calls, and hook scripts. If you need to run tests for a single package, use `mage test` — do not construct a `go test` invocation yourself.
+This applies to all contexts: manual terminal use, CI, agent tool calls, and hook scripts. If you need to run tests for a single package, use `mage test` — do not construct a
+`go test` invocation yourself.
 
 ## JSON v2
 
@@ -56,10 +59,11 @@ We use `encoding/json/v2` (the new JSON package). This requires:
 
 ## Documentation
 
-Documentation lives in `docs/` as a Hugo site. Markdown files under `docs/content/` are the content source of truth, custom templates live under `docs/layouts/`, and CSS/JS assets live under `docs/assets/`. Build the site with `mage docs`; generated output goes to `public/` and is not committed.
+Documentation lives in `docs/` as a Hugo site. Markdown files under `docs/content/` are the content source of truth, custom templates live under `docs/layouts/`, and CSS/JS assets
+live under `docs/assets/`. Build the site with `mage docs`; generated output goes to `public/` and is not committed.
 
 | Document                                                                            | Covers                                                                             |
-| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+|-------------------------------------------------------------------------------------|------------------------------------------------------------------------------------|
 | [usage/installation.md](docs/content/usage/installation.md)                         | Install script, release assets, checksums, and source installs                     |
 | [usage/quickstart.md](docs/content/usage/quickstart.md)                             | User-facing setup flow for installing scut, wiring agents, and running diagnostics |
 | [usage/configure-claude-code.md](docs/content/usage/configure-claude-code.md)       | Claude Code config install/status/uninstall behavior                               |
@@ -83,7 +87,8 @@ Documentation lives in `docs/` as a Hugo site. Markdown files under `docs/conten
 - `cmd/scut/main.go` or `internal/cmd/**` changes → review `docs/content/contributing/architecture.md`
 - `hooks/claudecode/**` or `internal/cmd/claude/hook/**` changes → review `docs/content/contributing/claude-hooks.md`
 - `hooks/codex/**` or `internal/cmd/codex/hook/**` changes → review `docs/content/contributing/codex-hooks.md`
-- `internal/cmd/claude/hook/posttooluse.go` or `internal/cmd/codex/hook/posttooluse.go` or `PostToolUseInput`/`PostToolUseOutput` changes → review `docs/content/contributing/post-tool-use.md`
+- `internal/cmd/claude/hook/posttooluse.go` or `internal/cmd/codex/hook/posttooluse.go` or `PostToolUseInput`/`PostToolUseOutput` changes → review
+  `docs/content/contributing/post-tool-use.md`
 - `internal/cmd/claude/statusline.go` or `hooks/claudecode/statusline.go` changes → review `docs/content/usage/status-line.md`
 - `internal/logging/**` or `internal/cmd/logging/**` or `--log`/`--log-level` flag changes → review `docs/content/usage/logging.md`
 - `internal/cmd/claude/config/**` changes → review `docs/content/usage/configure-claude-code.md` and `docs/content/contributing/config-commands.md`
@@ -93,6 +98,7 @@ Documentation lives in `docs/` as a Hugo site. Markdown files under `docs/conten
 - `docs/layouts/**` or `docs/assets/**` changes → run `mage docs` and inspect the site in a browser
 - Any new docs content page → add it to the documentation index above when it describes tracked behavior
 
-If a matching document exists and the commit changes behavior it describes (new bindings, new command groups, changed struct tags, altered command tree layout), update the Markdown docs to reflect the current state **in the same commit**.
+If a matching document exists and the commit changes behavior it describes (new bindings, new command groups, changed struct tags, altered command tree layout), update the Markdown
+docs to reflect the current state **in the same commit**.
 
 @RTK.md

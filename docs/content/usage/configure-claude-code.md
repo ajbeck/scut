@@ -32,7 +32,7 @@ scut claude config install --dry-run --json
 
 ## Installed entries
 
-Claude setup installs entries for all supported Claude Code hook events plus the status line. The formatter entry is the one most users notice:
+By default, Claude setup installs only the entries with real behavior: the `post-tool-use` formatter hook and the status line. Every other supported hook event remains installable explicitly with `--only` (for example `--only=session-start,stop`). The formatter entry looks like this:
 
 ```json
 {
@@ -68,6 +68,8 @@ Remove scut-owned entries while preserving foreign settings:
 scut claude config uninstall
 scut claude config uninstall --scope=user
 ```
+
+A bare `uninstall` removes every scut-owned entry, including hooks that were installed explicitly with `--only`. Pass `--only` to uninstall to remove a narrower set.
 
 {{< note type="warn" icon="!" >}}
 If a `statusLine` entry exists and is not scut-owned, install refuses to replace it. Remove or migrate that entry intentionally before re-running install.

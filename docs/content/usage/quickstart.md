@@ -25,7 +25,7 @@ Preview the planned config changes, then apply them:
 
 {{< command >}}scut init --all{{< /command >}}
 
-The dry run shows which agent configuration files would be changed. The real run writes scut-owned hook entries into `.claude/settings.json` and `.codex/hooks.json` when those agents are selected.
+The dry run shows which agent configuration files would be changed. The real run writes scut-owned entries into `.claude/settings.json` and `.codex/hooks.json` when those agents are selected: the `post-tool-use` formatter hook for both agents, plus the status line for Claude Code. Other hook events are opt-in via `scut claude config install --only=...`.
 
 {{< note type="tip" icon="✓" >}}
 Project scope is intentionally conservative. `scut init` auto-detects Claude Code only when `.claude/` exists and Codex only when `.codex/` exists. Use `--all`, `--claude`, or `--codex` when you want to force setup.

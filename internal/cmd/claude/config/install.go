@@ -152,15 +152,13 @@ func PathForScope(scope string) (string, error) {
 }
 
 // resolveInstallSet converts a list of --only tokens to a set of slugs to install.
-// An empty list installs all hook slugs plus "status-line".
+// An empty list installs the default set (defaultInstallSlugs).
 func resolveInstallSet(only []string) (map[string]bool, error) {
 	if len(only) == 0 {
-		// Install everything.
-		set := make(map[string]bool, len(hookSpecs)+1)
-		for _, s := range hookSpecs {
-			set[s.Slug] = true
+		set := make(map[string]bool, len(defaultInstallSlugs))
+		for _, slug := range defaultInstallSlugs {
+			set[slug] = true
 		}
-		set["status-line"] = true
 		return set, nil
 	}
 
@@ -176,6 +174,20 @@ func resolveInstallSet(only []string) (map[string]bool, error) {
 		set[tok] = true
 	}
 	return set, nil
+}
+
+// resolveRemoveSet converts a list of --only tokens to a set of slugs to remove.
+// An empty list removes all hook slugs plus "status-line".
+func resolveRemoveSet(only []string) (map[string]bool, error) {
+	if len(only) == 0 {
+		set := make(map[string]bool, len(hookSpecs)+1)
+		for _, s := range hookSpecs {
+			set[s.Slug] = true
+		}
+		set["status-line"] = true
+		return set, nil
+	}
+	return resolveInstallSet(only)
 }
 
 // validTokenSet returns a map of all valid --only tokens.

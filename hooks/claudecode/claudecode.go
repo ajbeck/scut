@@ -25,6 +25,7 @@ const (
 	EventInstructionsLoaded  EventName = "InstructionsLoaded"
 	EventUserPromptSubmit    EventName = "UserPromptSubmit"
 	EventUserPromptExpansion EventName = "UserPromptExpansion"
+	EventMessageDisplay      EventName = "MessageDisplay"
 	EventPreToolUse          EventName = "PreToolUse"
 	EventPostToolUse         EventName = "PostToolUse"
 	EventPostToolUseFailure  EventName = "PostToolUseFailure"
@@ -78,6 +79,14 @@ const (
 type Effort struct {
 	Level EffortLevel `json:"level"`
 }
+
+// SetupTrigger describes what invoked a Setup event.
+type SetupTrigger string
+
+const (
+	SetupTriggerInit        SetupTrigger = "init"
+	SetupTriggerMaintenance SetupTrigger = "maintenance"
+)
 
 // SessionSource describes what triggered a SessionStart event.
 type SessionSource string
@@ -157,9 +166,12 @@ type StopError string
 
 const (
 	StopErrorRateLimit            StopError = "rate_limit"
+	StopErrorOverloaded           StopError = "overloaded"
 	StopErrorAuthenticationFailed StopError = "authentication_failed"
+	StopErrorOAuthOrgNotAllowed   StopError = "oauth_org_not_allowed"
 	StopErrorBillingError         StopError = "billing_error"
 	StopErrorInvalidRequest       StopError = "invalid_request"
+	StopErrorModelNotFound        StopError = "model_not_found"
 	StopErrorServerError          StopError = "server_error"
 	StopErrorMaxOutputTokens      StopError = "max_output_tokens"
 	StopErrorUnknown              StopError = "unknown"
@@ -176,13 +188,13 @@ const (
 	ConfigSkills          ConfigSource = "skills"
 )
 
-// FileChangeType describes how a watched file changed.
-type FileChangeType string
+// FileChangeEvent describes how a watched file changed.
+type FileChangeEvent string
 
 const (
-	FileChangeCreate FileChangeType = "create"
-	FileChangeModify FileChangeType = "modify"
-	FileChangeDelete FileChangeType = "delete"
+	FileChangeAdd    FileChangeEvent = "add"
+	FileChangeChange FileChangeEvent = "change"
+	FileChangeUnlink FileChangeEvent = "unlink"
 )
 
 // CompactTrigger describes what initiated context compaction.
@@ -191,6 +203,14 @@ type CompactTrigger string
 const (
 	CompactManual CompactTrigger = "manual"
 	CompactAuto   CompactTrigger = "auto"
+)
+
+// ElicitationMode distinguishes form-based from browser-based elicitation.
+type ElicitationMode string
+
+const (
+	ElicitationModeForm ElicitationMode = "form"
+	ElicitationModeURL  ElicitationMode = "url"
 )
 
 // ElicitationAction is the hook's ruling on an MCP elicitation.
@@ -263,14 +283,15 @@ type Input struct {
 // SessionStartInput is sent when a session begins or resumes.
 type SessionStartInput struct {
 	Input
-	Source SessionSource `json:"source"`
-	Model  string        `json:"model"`
+	Source       SessionSource `json:"source"`
+	Model        string        `json:"model"`
+	SessionTitle string        `json:"session_title,omitempty"`
 }
 
 // SetupInput is sent by explicit setup and maintenance invocations.
 type SetupInput struct {
 	Input
-	Matcher string `json:"matcher,omitempty"`
+	Trigger SetupTrigger `json:"trigger"`
 }
 
 // SessionEndInput is sent when a session terminates.
@@ -321,6 +342,7 @@ type PostToolUseInput struct {
 	ToolUseID    string          `json:"tool_use_id"`
 	ToolInput    json.RawMessage `json:"tool_input"`
 	ToolResponse json.RawMessage `json:"tool_response"`
+	DurationMS   int64           `json:"duration_ms,omitempty"`
 }
 
 // FilePath extracts the file_path field from ToolInput.
@@ -346,6 +368,17 @@ type PostToolUseFailureInput struct {
 	ToolInput   json.RawMessage `json:"tool_input"`
 	Error       string          `json:"error"`
 	IsInterrupt *bool           `json:"is_interrupt,omitempty"`
+	DurationMS  int64           `json:"duration_ms,omitempty"`
+}
+
+// MessageDisplayInput is sent as assistant message text streams to the display.
+type MessageDisplayInput struct {
+	Input
+	TurnID    string `json:"turn_id"`
+	MessageID string `json:"message_id"`
+	Index     int    `json:"index"`
+	Final     bool   `json:"final"`
+	Delta     string `json:"delta"`
 }
 
 // ToolCall describes one tool result in a PostToolBatch event.
@@ -406,19 +439,47 @@ type SubagentStartInput struct {
 	Input
 }
 
+// BackgroundTask describes one in-flight background task in a Stop or
+// SubagentStop event. Type-specific fields are present only for the task
+// types noted in their comments.
+type BackgroundTask struct {
+	ID          string `json:"id"`
+	Type        string `json:"type"`
+	Status      string `json:"status"`
+	Description string `json:"description"`
+	Command     string `json:"command,omitempty"`    // shell tasks only
+	AgentType   string `json:"agent_type,omitempty"` // subagent tasks only
+	Server      string `json:"server,omitempty"`     // monitor and MCP tasks only
+	Tool        string `json:"tool,omitempty"`       // monitor and MCP tasks only
+	Name        string `json:"name,omitempty"`       // workflow tasks only
+}
+
+// SessionCron describes one session-scoped scheduled wakeup in a Stop or
+// SubagentStop event.
+type SessionCron struct {
+	ID        string `json:"id"`
+	Schedule  string `json:"schedule"`
+	Recurring bool   `json:"recurring"`
+	Prompt    string `json:"prompt"`
+}
+
 // SubagentStopInput is sent when a subagent finishes.
 type SubagentStopInput struct {
 	Input
-	StopHookActive       *bool  `json:"stop_hook_active"`
-	AgentTranscriptPath  string `json:"agent_transcript_path"`
-	LastAssistantMessage string `json:"last_assistant_message"`
+	StopHookActive       *bool            `json:"stop_hook_active"`
+	AgentTranscriptPath  string           `json:"agent_transcript_path"`
+	LastAssistantMessage string           `json:"last_assistant_message"`
+	BackgroundTasks      []BackgroundTask `json:"background_tasks,omitempty"`
+	SessionCrons         []SessionCron    `json:"session_crons,omitempty"`
 }
 
 // StopInput is sent when Claude finishes responding.
 type StopInput struct {
 	Input
-	StopHookActive       *bool  `json:"stop_hook_active"`
-	LastAssistantMessage string `json:"last_assistant_message"`
+	StopHookActive       *bool            `json:"stop_hook_active"`
+	LastAssistantMessage string           `json:"last_assistant_message"`
+	BackgroundTasks      []BackgroundTask `json:"background_tasks,omitempty"`
+	SessionCrons         []SessionCron    `json:"session_crons,omitempty"`
 }
 
 // StopFailureInput is sent when a turn ends due to an API error.
@@ -466,21 +527,22 @@ type ConfigChangeInput struct {
 // CwdChangedInput is sent when the working directory changes.
 type CwdChangedInput struct {
 	Input
-	NewCWD      string `json:"new_cwd"`
-	PreviousCWD string `json:"previous_cwd"`
+	OldCWD string `json:"old_cwd"`
+	NewCWD string `json:"new_cwd"`
 }
 
 // FileChangedInput is sent when a watched file changes on disk.
 type FileChangedInput struct {
 	Input
-	FilePath    string         `json:"file_path"`
-	ChangedType FileChangeType `json:"changed_type"`
+	FilePath string          `json:"file_path"`
+	Event    FileChangeEvent `json:"event"`
 }
 
-// WorktreeCreateInput is sent when a worktree is being created.
+// WorktreeCreateInput is sent when a worktree is being created. Name is a
+// slug identifier for the new worktree, user-specified or auto-generated.
 type WorktreeCreateInput struct {
 	Input
-	WorktreeName string `json:"worktree_name"`
+	Name string `json:"name"`
 }
 
 // WorktreeRemoveInput is sent when a worktree is being removed.
@@ -489,30 +551,41 @@ type WorktreeRemoveInput struct {
 	WorktreePath string `json:"worktree_path"`
 }
 
-// PreCompactInput is sent before context compaction.
+// PreCompactInput is sent before context compaction. CustomInstructions holds
+// what the user passed to /compact for manual triggers and is empty for auto.
 type PreCompactInput struct {
 	Input
-	Trigger CompactTrigger `json:"trigger"`
+	Trigger            CompactTrigger `json:"trigger"`
+	CustomInstructions string         `json:"custom_instructions"`
 }
 
 // PostCompactInput is sent after context compaction completes.
 type PostCompactInput struct {
 	Input
-	Trigger CompactTrigger `json:"trigger"`
+	Trigger        CompactTrigger `json:"trigger"`
+	CompactSummary string         `json:"compact_summary"`
 }
 
 // ElicitationInput is sent when an MCP server requests user input.
+// RequestedSchema is set in form mode; URL is set in url mode.
 type ElicitationInput struct {
 	Input
-	MCPServerName string          `json:"mcp_server_name"`
-	FormSchema    json.RawMessage `json:"form_schema"`
+	MCPServerName   string          `json:"mcp_server_name"`
+	Message         string          `json:"message"`
+	Mode            ElicitationMode `json:"mode,omitempty"`
+	URL             string          `json:"url,omitempty"`
+	ElicitationID   string          `json:"elicitation_id,omitempty"`
+	RequestedSchema json.RawMessage `json:"requested_schema,omitempty"`
 }
 
 // ElicitationResultInput is sent after the user responds to an MCP elicitation.
 type ElicitationResultInput struct {
 	Input
-	MCPServerName string          `json:"mcp_server_name"`
-	UserResponse  json.RawMessage `json:"user_response"`
+	MCPServerName string            `json:"mcp_server_name"`
+	Action        ElicitationAction `json:"action"`
+	Mode          ElicitationMode   `json:"mode,omitempty"`
+	ElicitationID string            `json:"elicitation_id,omitempty"`
+	Content       json.RawMessage   `json:"content,omitempty"`
 }
 
 // ---------------------------------------------------------------------------
@@ -528,20 +601,32 @@ type BaseOutput struct {
 	TerminalSequence *string `json:"terminalSequence,omitempty"`
 }
 
+// SessionStartHookOutput contains SessionStart-specific output fields.
+type SessionStartHookOutput struct {
+	HookEventName      EventName `json:"hookEventName"`
+	AdditionalContext  *string   `json:"additionalContext,omitempty"`
+	InitialUserMessage *string   `json:"initialUserMessage,omitempty"`
+	SessionTitle       *string   `json:"sessionTitle,omitempty"`
+	WatchPaths         []string  `json:"watchPaths,omitempty"`
+	ReloadSkills       *bool     `json:"reloadSkills,omitempty"`
+}
+
 // SessionStartOutput is the response for a SessionStart hook.
 type SessionStartOutput struct {
 	BaseOutput
-	AdditionalContext *string `json:"additionalContext,omitempty"`
+	AdditionalContext  *string                 `json:"additionalContext,omitempty"`
+	HookSpecificOutput *SessionStartHookOutput `json:"hookSpecificOutput,omitempty"`
 }
 
 // UserPromptSubmitOutput is the response for a UserPromptSubmit hook.
 type UserPromptSubmitOutput struct {
 	BaseOutput
-	Decision           *Decision             `json:"decision,omitempty"`
-	Reason             *string               `json:"reason,omitempty"`
-	AdditionalContext  *string               `json:"additionalContext,omitempty"`
-	SessionTitle       *string               `json:"sessionTitle,omitempty"`
-	HookSpecificOutput *UserPromptHookOutput `json:"hookSpecificOutput,omitempty"`
+	Decision               *Decision             `json:"decision,omitempty"`
+	Reason                 *string               `json:"reason,omitempty"`
+	AdditionalContext      *string               `json:"additionalContext,omitempty"`
+	SessionTitle           *string               `json:"sessionTitle,omitempty"`
+	SuppressOriginalPrompt *bool                 `json:"suppressOriginalPrompt,omitempty"`
+	HookSpecificOutput     *UserPromptHookOutput `json:"hookSpecificOutput,omitempty"`
 }
 
 // UserPromptHookOutput contains context fields for prompt events.
@@ -576,10 +661,13 @@ type PreToolUseOutput struct {
 }
 
 // PostToolUseHookOutput contains PostToolUse-specific output fields.
+// UpdatedMCPToolOutput replaces output for MCP tools only; prefer
+// UpdatedToolOutput, which works for all tools.
 type PostToolUseHookOutput struct {
-	HookEventName     EventName       `json:"hookEventName"`
-	AdditionalContext *string         `json:"additionalContext,omitempty"`
-	UpdatedToolOutput json.RawMessage `json:"updatedToolOutput,omitempty"`
+	HookEventName        EventName       `json:"hookEventName"`
+	AdditionalContext    *string         `json:"additionalContext,omitempty"`
+	UpdatedToolOutput    json.RawMessage `json:"updatedToolOutput,omitempty"`
+	UpdatedMCPToolOutput json.RawMessage `json:"updatedMCPToolOutput,omitempty"`
 }
 
 // PostToolUseOutput is the response for a PostToolUse hook.
@@ -665,18 +753,28 @@ type SubagentStartOutput struct {
 	AdditionalContext *string `json:"additionalContext,omitempty"`
 }
 
+// StopHookOutput contains Stop- and SubagentStop-specific output fields.
+// AdditionalContext keeps the conversation going as non-error hook feedback,
+// unlike decision "block" which surfaces as a hook error.
+type StopHookOutput struct {
+	HookEventName     EventName `json:"hookEventName"`
+	AdditionalContext *string   `json:"additionalContext,omitempty"`
+}
+
 // SubagentStopOutput is the response for a SubagentStop hook.
 type SubagentStopOutput struct {
 	BaseOutput
-	Decision *Decision `json:"decision,omitempty"`
-	Reason   *string   `json:"reason,omitempty"`
+	Decision           *Decision       `json:"decision,omitempty"`
+	Reason             *string         `json:"reason,omitempty"`
+	HookSpecificOutput *StopHookOutput `json:"hookSpecificOutput,omitempty"`
 }
 
 // StopOutput is the response for a Stop hook.
 type StopOutput struct {
 	BaseOutput
-	Decision *Decision `json:"decision,omitempty"`
-	Reason   *string   `json:"reason,omitempty"`
+	Decision           *Decision       `json:"decision,omitempty"`
+	Reason             *string         `json:"reason,omitempty"`
+	HookSpecificOutput *StopHookOutput `json:"hookSpecificOutput,omitempty"`
 }
 
 // TaskOutput is the response for TaskCreated and TaskCompleted hooks.
@@ -720,8 +818,20 @@ type ElicitationOutput struct {
 }
 
 // ElicitationResultOutput is the response for an ElicitationResult hook.
+// HookSpecificOutput overrides the user's action and form values.
 type ElicitationResultOutput struct {
 	BaseOutput
-	Action  *ElicitationAction `json:"action,omitempty"`
-	Content json.RawMessage    `json:"content,omitempty"`
+	HookSpecificOutput *ElicitationHookOutput `json:"hookSpecificOutput,omitempty"`
+}
+
+// MessageDisplayHookOutput contains MessageDisplay-specific output fields.
+type MessageDisplayHookOutput struct {
+	HookEventName  EventName `json:"hookEventName"`
+	DisplayContent *string   `json:"displayContent,omitempty"`
+}
+
+// MessageDisplayOutput is the response for a MessageDisplay hook.
+type MessageDisplayOutput struct {
+	BaseOutput
+	HookSpecificOutput *MessageDisplayHookOutput `json:"hookSpecificOutput,omitempty"`
 }

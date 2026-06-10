@@ -20,13 +20,13 @@ The model preserves foreign top-level keys and non-scut hook groups. A foreign `
 
 Claude uses typed fields for the pieces scut owns and an inline fallback map for unknown top-level keys. That gives us type-safe writes for `hooks` and `statusLine` while preserving future Claude Code settings that scut does not understand.
 
-Default Claude install writes:
+Default Claude install writes only the entries with real behavior, listed in `defaultInstallSlugs`:
 
-- every registered `scut claude hook <slug>` entry
+- the `post-tool-use` formatter hook entry
 - `statusLine.command = "scut claude status-line"`
 - optional baked logging flags between `scut claude` and the leaf command
 
-`--only` may target any hook slug or the literal `status-line`.
+`--only` may target any hook slug or the literal `status-line`. A bare `uninstall` resolves through `resolveRemoveSet`, which defaults to every registered slug plus `status-line` so explicitly installed hooks are still removed.
 
 ## Codex hooks model
 
@@ -39,7 +39,7 @@ Foreign top-level keys, matcher fields, and command fields round-trip through in
 
 Codex can load hooks from `hooks.json` or inline TOML tables. scut writes `hooks.json` only. That avoids TOML rewrites, keeps ownership narrow, and follows Codex's guidance to avoid mixing hook representations in one config layer.
 
-Default Codex install writes only `post-tool-use`, because it is the Codex hook with real formatter behavior. Explicit `--only` values can install any known Codex hook event.
+Default Codex install writes only `post-tool-use`, because it is the Codex hook with real formatter behavior. Explicit `--only` values can install any known Codex hook event. Both agents follow the same rule: defaults cover real features, `--only` covers the full registry.
 
 ## Operations
 

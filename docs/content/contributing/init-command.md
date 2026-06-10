@@ -11,6 +11,8 @@ weight: 70
 
 Init does not maintain a separate config writer. It delegates to the same Claude and Codex install functions used by the agent-specific command groups, so merge behavior, ownership rules, and dry-run output stay aligned.
 
+Init never passes `--only`, so each installer's default set applies: the `post-tool-use` formatter hook for both agents, plus the status line for Claude Code. Hooks without real behavior are opt-in through `scut claude config install --only=...` or the Codex equivalent.
+
 ## Detection rules
 
 In project scope, init auto-detects supported agents from local config directories:

@@ -30,6 +30,7 @@ type Cmd struct {
 	InstructionsLoaded  instructionsLoadedCmd  `cmd:"instructions-loaded" help:"Record when a CLAUDE.md or rules file is loaded."`
 	UserPromptSubmit    userPromptSubmitCmd    `cmd:"user-prompt-submit" help:"Validate or annotate user prompts before processing."`
 	UserPromptExpansion userPromptExpansionCmd `cmd:"user-prompt-expansion" help:"Validate or annotate slash-command prompt expansions."`
+	MessageDisplay      messageDisplayCmd      `cmd:"message-display" help:"Rewrite assistant message text before display."`
 	PreToolUse          preToolUseCmd          `cmd:"pre-tool-use" help:"Allow, deny, or modify tool calls before execution."`
 	PostToolUse         postToolUseCmd         `cmd:"post-tool-use" help:"Format files after successful write or edit tool calls."`
 	PostToolUseFailure  postToolUseFailureCmd  `cmd:"post-tool-use-failure" help:"Record context after a tool call fails."`
@@ -74,7 +75,7 @@ func (c *setupCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) e
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding Setup input: %w", err)
 	}
-	logger.Info("handled", "hook", "setup", "session_id", in.SessionID, "matcher", in.Matcher, "duration_ms", ms(start))
+	logger.Info("handled", "hook", "setup", "session_id", in.SessionID, "trigger", in.Trigger, "duration_ms", ms(start))
 	return writeJSON(stdout, cc.BaseOutput{})
 }
 
@@ -159,6 +160,20 @@ func (c *userPromptExpansionCmd) Run(stdin io.Reader, stdout io.Writer, logger *
 			AdditionalContext: new("hello from scut user-prompt-expansion"),
 		},
 	})
+}
+
+// ---------------------------------------------------------------------------
+// MessageDisplay
+// ---------------------------------------------------------------------------
+
+type messageDisplayCmd struct{ trailingArgs }
+
+func (c *messageDisplayCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
+	var in cc.MessageDisplayInput
+	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
+		return fmt.Errorf("decoding MessageDisplay input: %w", err)
+	}
+	return writeJSON(stdout, cc.MessageDisplayOutput{})
 }
 
 // ---------------------------------------------------------------------------
@@ -509,8 +524,10 @@ func (c *elicitationResultCmd) Run(stdin io.Reader, stdout io.Writer, logger *sl
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
 		return fmt.Errorf("decoding ElicitationResult input: %w", err)
 	}
-	a := cc.ElicitationAccept
 	return writeJSON(stdout, cc.ElicitationResultOutput{
-		Action: &a,
+		HookSpecificOutput: &cc.ElicitationHookOutput{
+			HookEventName: cc.EventElicitationResult,
+			Action:        cc.ElicitationAccept,
+		},
 	})
 }

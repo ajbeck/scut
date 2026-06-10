@@ -39,7 +39,7 @@ func (c *uninstallCmd) Run(stdout io.Writer, stderr io.Writer, fs afero.Fs, logg
 	}
 
 	// Compute the remove set.
-	removeSet, err := resolveInstallSet(c.Only)
+	removeSet, err := resolveRemoveSet(c.Only)
 	if err != nil {
 		return err
 	}

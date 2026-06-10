@@ -26,6 +26,7 @@ var hookSpecs = []hookSpec{
 	{Slug: "instructions-loaded", Event: "InstructionsLoaded", Matcher: "*"},
 	{Slug: "user-prompt-submit", Event: "UserPromptSubmit", Matcher: "*"},
 	{Slug: "user-prompt-expansion", Event: "UserPromptExpansion", Matcher: "*"},
+	{Slug: "message-display", Event: "MessageDisplay", Matcher: "*"},
 	{Slug: "pre-tool-use", Event: "PreToolUse", Matcher: "*"},
 	{Slug: "post-tool-use", Event: "PostToolUse", Matcher: "Write|Edit", StatusMessage: "Formatting..."},
 	{Slug: "post-tool-use-failure", Event: "PostToolUseFailure", Matcher: "*"},
@@ -50,6 +51,11 @@ var hookSpecs = []hookSpec{
 	{Slug: "elicitation", Event: "Elicitation", Matcher: "*"},
 	{Slug: "elicitation-result", Event: "ElicitationResult", Matcher: "*"},
 }
+
+// defaultInstallSlugs are installed when --only is omitted. Only entries with
+// real behavior belong here; every other registry entry stays installable
+// explicitly via --only.
+var defaultInstallSlugs = []string{"post-tool-use", "status-line"}
 
 // hookSpecBySlug returns the hookSpec for the given slug, and reports whether
 // the slug was found.

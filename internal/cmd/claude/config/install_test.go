@@ -62,10 +62,13 @@ func TestInstall(t *testing.T) {
 		if m["hooks"] == nil {
 			t.Errorf("expected hooks in output, got none\n%s", data)
 		}
-		// All hook events should be present.
+		// Only default hook events should be present.
 		hooks, _ := m["hooks"].(map[string]interface{})
-		if len(hooks) != len(hookSpecs) {
-			t.Errorf("expected %d hook events, got %d\n%s", len(hookSpecs), len(hooks), data)
+		if len(hooks) != 1 {
+			t.Errorf("expected 1 hook event, got %d\n%s", len(hooks), data)
+		}
+		if hooks["PostToolUse"] == nil {
+			t.Errorf("expected PostToolUse in default install set\n%s", data)
 		}
 	})
 

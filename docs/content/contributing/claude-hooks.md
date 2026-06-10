@@ -34,7 +34,7 @@ Every Claude hook input embeds `claudecode.Input`, which carries common fields:
 - `agent_id`
 - `agent_type`
 
-Polymorphic fields such as `tool_input`, `tool_response`, `form_schema`, and `user_response` use `json.RawMessage`.
+Polymorphic fields such as `tool_input`, `tool_response`, `requested_schema`, and elicitation `content` use `json.RawMessage`.
 
 ## Command structure
 
@@ -57,7 +57,7 @@ Each leaf command embeds hidden trailing positional args. This keeps the command
 | Area                     | Commands                                                                             |
 | ------------------------ | ------------------------------------------------------------------------------------ |
 | Setup/session            | `setup`, `session-start`, `session-end`                                              |
-| Instructions and prompts | `instructions-loaded`, `user-prompt-submit`, `user-prompt-expansion`                 |
+| Instructions and prompts | `instructions-loaded`, `user-prompt-submit`, `user-prompt-expansion`, `message-display` |
 | Tool use                 | `pre-tool-use`, `post-tool-use`, `post-tool-use-failure`, `post-tool-batch`          |
 | Permissions              | `permission-request`, `permission-denied`                                            |
 | Notifications            | `notification`                                                                       |
@@ -72,7 +72,7 @@ Decision-capable events use event-specific output shapes rather than a single un
 
 `PostToolUse` is the primary behavior-bearing hook. For Claude Code it matches `Write|Edit`, extracts `file_path` from `tool_input`, checks ignore rules, dispatches by extension, and writes formatted content back to the file.
 
-Most other Claude hook commands currently validate that payloads deserialize and return empty or placeholder outputs. That still gives scut a stable command surface for installing complete hook sets.
+Most other Claude hook commands currently validate that payloads deserialize and return empty or placeholder outputs. They are not installed by default, but the stable command surface lets users opt in to any event with `--only`.
 
 ## Implementation maturity
 

@@ -18,6 +18,8 @@ Commands:
   claude hook user-prompt-expansion
                                    Validate or annotate slash-command prompt
                                    expansions.
+  claude hook message-display      Rewrite assistant message text before
+                                   display.
   claude hook pre-tool-use         Allow, deny, or modify tool calls before
                                    execution.
   claude hook post-tool-use        Format files after successful write or edit

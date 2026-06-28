@@ -38,7 +38,7 @@ Target version is **Go 1.26**. Use these features where appropriate:
 configuration automatically. Running Go toolchain commands directly will produce incorrect results or miss build tags.
 
 | Command            | What it does                                             |
-|--------------------|----------------------------------------------------------|
+| ------------------ | -------------------------------------------------------- |
 | `mage test`        | Run all tests with race detector (`go test -race ./...`) |
 | `mage build`       | Compile binary into `bin/` with version ldflags          |
 | `mage vet`         | Run `go vet` across all packages                         |
@@ -63,7 +63,7 @@ Documentation lives in `docs/` as a Hugo site. Markdown files under `docs/conten
 live under `docs/assets/`. Build the site with `mage docs`; generated output goes to `public/` and is not committed.
 
 | Document                                                                            | Covers                                                                             |
-|-------------------------------------------------------------------------------------|------------------------------------------------------------------------------------|
+| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | [usage/installation.md](docs/content/usage/installation.md)                         | Install script, release assets, checksums, and source installs                     |
 | [usage/quickstart.md](docs/content/usage/quickstart.md)                             | User-facing setup flow for installing scut, wiring agents, and running diagnostics |
 | [usage/configure-claude-code.md](docs/content/usage/configure-claude-code.md)       | Claude Code config install/status/uninstall behavior                               |
@@ -101,5 +101,3 @@ live under `docs/assets/`. Build the site with `mage docs`; generated output goe
 
 If a matching document exists and the commit changes behavior it describes (new bindings, new command groups, changed struct tags, altered command tree layout), update the Markdown
 docs to reflect the current state **in the same commit**.
-
-@RTK.md

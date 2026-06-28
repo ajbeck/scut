@@ -71,6 +71,7 @@ live under `docs/assets/`. Build the site with `mage docs`; generated output goe
 | [usage/status-line.md](docs/content/usage/status-line.md)                           | Claude Code status line behavior and displayed fields                              |
 | [usage/logging.md](docs/content/usage/logging.md)                                   | Structured JSONL logging and cleanup behavior                                      |
 | [usage/doctor.md](docs/content/usage/doctor.md)                                     | Read-only setup diagnostics and severity model                                     |
+| [cli/mcp.md](docs/content/cli/mcp.md)                                               | MCP utility commands and AWS MCP proxy behavior                                    |
 | [contributing/architecture.md](docs/content/contributing/architecture.md)           | Package layout, Kong setup, and build rules                                        |
 | [contributing/claude-hooks.md](docs/content/contributing/claude-hooks.md)           | Claude Code hook command implementation and payload types                          |
 | [contributing/codex-hooks.md](docs/content/contributing/codex-hooks.md)             | Codex hook command implementation and parity boundaries                            |

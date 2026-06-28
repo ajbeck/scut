@@ -63,6 +63,30 @@ func TestGotoolsDocCommandParses(t *testing.T) {
 	}
 }
 
+func TestMCPAWSProxyCommandParses(t *testing.T) {
+	var c cli
+	var stdout bytes.Buffer
+	parser := kong.Must(&c,
+		kong.Name("scut"),
+		kong.Vars{"version": versionmeta.String()},
+		kong.BindTo(&stdout, (*io.Writer)(nil)),
+		kong.BindTo(afero.NewMemMapFs(), (*afero.Fs)(nil)),
+	)
+
+	ctx, err := parser.Parse([]string{
+		"mcp",
+		"aws-proxy",
+		"https://aws-mcp.us-east-1.api.aws/mcp",
+		"--skip-auth",
+	})
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+	if got, want := ctx.Command(), "mcp aws-proxy <endpoint>"; got != want {
+		t.Errorf("Command() = %q, want %q", got, want)
+	}
+}
+
 func TestUpdateCommandParses(t *testing.T) {
 	var c cli
 	var stdout bytes.Buffer

@@ -1,0 +1,41 @@
+Usage: scut mcp aws-proxy <endpoint> [flags]
+
+Run an MCP stdio proxy for SigV4-protected AWS MCP endpoints.
+
+Arguments:
+  <endpoint>    SigV4 MCP endpoint URL.
+
+Flags:
+  -h, --help                   Show context-sensitive help.
+  -v, --version                Print version and exit.
+
+      --service=SERVICE        AWS service name for SigV4 signing. Inferred from
+                               endpoint when omitted.
+      --profile=PROFILE ...    AWS profile(s) to use. First profile is the
+                               default ($AWS_MCP_PROXY_PROFILES, $AWS_PROFILE).
+      --region=REGION          AWS region to sign. Inferred from endpoint or
+                               AWS_REGION when omitted.
+      --ca-bundle=PATH         Path to a PEM certificate bundle to trust in
+                               addition to the system roots ($AWS_CA_BUNDLE).
+      --metadata=KEY=VALUE     Metadata to inject into MCP requests as key=value
+                               pairs.
+      --read-only              Disable tools that do not advertise
+                               readOnlyHint=true.
+      --log-level=LOG-LEVEL    Set the logging level.
+      --retries=RETRIES        Number of retries when calling endpoint MCP.
+                               Defaults to 3; 0 disables retries.
+      --timeout=TIMEOUT        Total timeout in seconds when connecting to
+                               endpoint.
+      --connect-timeout=CONNECT-TIMEOUT
+                               Connection timeout in seconds.
+      --read-timeout=READ-TIMEOUT
+                               Read timeout in seconds.
+      --write-timeout=WRITE-TIMEOUT
+                               Write timeout in seconds.
+      --tool-timeout=TOOL-TIMEOUT
+                               Maximum seconds a tool call may take before
+                               cancellation.
+      --disable-telemetry      Disable client telemetry in outbound user-agent
+                               data.
+      --skip-auth              Send unsigned requests when AWS credentials are
+                               unavailable.

@@ -18,6 +18,7 @@ import (
 	gotoolscmd "github.com/ajbeck/scut/internal/cmd/gotools"
 	initcmd "github.com/ajbeck/scut/internal/cmd/initcmd"
 	loggingcmd "github.com/ajbeck/scut/internal/cmd/logging"
+	mcpcmd "github.com/ajbeck/scut/internal/cmd/mcp"
 	updatecmd "github.com/ajbeck/scut/internal/cmd/update"
 	versioncmd "github.com/ajbeck/scut/internal/cmd/version"
 	"github.com/ajbeck/scut/internal/logging"
@@ -34,6 +35,7 @@ type cli struct {
 	Format      formatcmd.Cmd  `cmd:"format" help:"Format source code files."`
 	Gotools     gotoolscmd.Cmd `cmd:"gotools" help:"Go tool-inspired commands for agents."`
 	Logging     loggingcmd.Cmd `cmd:"logging" help:"Manage scut log files."`
+	MCP         mcpcmd.Cmd     `cmd:"mcp" help:"MCP utility commands for agents."`
 	Update      updatecmd.Cmd  `cmd:"update" help:"Update scut when the install method supports automatic updates."`
 }
 

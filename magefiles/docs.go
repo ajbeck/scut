@@ -45,6 +45,8 @@ var cliHelpDocs = []cliHelpDoc{
 	{Name: "scut-gotools-doc", Command: "scut gotools doc --help", Args: []string{"gotools", "doc", "--help"}},
 	{Name: "scut-logging", Command: "scut logging --help", Args: []string{"logging", "--help"}},
 	{Name: "scut-logging-clean", Command: "scut logging clean --help", Args: []string{"logging", "clean", "--help"}},
+	{Name: "scut-mcp", Command: "scut mcp --help", Args: []string{"mcp", "--help"}},
+	{Name: "scut-mcp-aws-proxy", Command: "scut mcp aws-proxy --help", Args: []string{"mcp", "aws-proxy", "--help"}},
 }
 
 // Docs builds the Hugo documentation site into public/.

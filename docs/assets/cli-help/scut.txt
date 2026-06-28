@@ -12,6 +12,7 @@ Commands:
   format     Format source code files.
   gotools    Go tool-inspired commands for agents.
   logging    Manage scut log files.
+  mcp        MCP utility commands for agents.
   update     Update scut when the install method supports automatic updates.
 
 Flags:

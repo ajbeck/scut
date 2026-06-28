@@ -1,0 +1,10 @@
+Usage: scut mcp <command> [flags]
+
+MCP utility commands for agents.
+
+Commands:
+  mcp aws-proxy    Run an MCP stdio proxy for SigV4-protected AWS MCP endpoints.
+
+Flags:
+  -h, --help       Show context-sensitive help.
+  -v, --version    Print version and exit.

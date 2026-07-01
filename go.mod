@@ -2,10 +2,7 @@ module github.com/ajbeck/scut
 
 go 1.26.3
 
-require (
-	github.com/alecthomas/kong v1.15.0
-	github.com/magefile/mage v1.17.2
-)
+require github.com/alecthomas/kong v1.15.0
 
 require (
 	charm.land/lipgloss/v2 v2.0.3

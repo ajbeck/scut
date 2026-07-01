@@ -62,14 +62,14 @@ jobs:
 
       - name: Format
         run: |
-          go run github.com/magefile/mage@v1.17.0 -d magefiles -w . fmt
+          ./walle fmt
           git diff --exit-code
 
       - name: Vet
-        run: go run github.com/magefile/mage@v1.17.0 -d magefiles -w . vet
+        run: ./walle vet
 
       - name: Test
-        run: go run github.com/magefile/mage@v1.17.0 -d magefiles -w . test
+        run: ./walle test
 
   build:
     name: Build (${{ matrix.goos }}/${{ matrix.goarch }})
@@ -120,7 +120,7 @@ jobs:
           BUILD_METADATA: gh:${{ github.run_id }}:${{ steps.vars.outputs.sha_short }}
           RELEASE: ${{ inputs.mode == 'release' }}
           RELEASE_VERSION: ${{ inputs.release_tag }}
-        run: go run github.com/magefile/mage@v1.17.0 -d magefiles -w . buildPlatform ${{ matrix.goos }} ${{ matrix.goarch }}
+        run: ./walle build-platform ${{ matrix.goos }} ${{ matrix.goarch }}
 
       - name: Package
         env:

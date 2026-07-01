@@ -4,10 +4,10 @@ Describe the change.
 
 ## Verification
 
-- [ ] `mage fmt`
-- [ ] `mage test`
-- [ ] `mage vet`
-- [ ] `mage build`
+- [ ] `./walle fmt`
+- [ ] `./walle test`
+- [ ] `./walle vet`
+- [ ] `./walle build`
 
 ## Notes
 

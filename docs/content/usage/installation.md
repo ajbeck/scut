@@ -66,10 +66,10 @@ Go users can install from source:
 go install github.com/ajbeck/scut@latest
 ```
 
-For local development, use Mage so the JSON v2 experiment and build metadata are set consistently:
+For local development, use Walle so the JSON v2 experiment and build metadata are set consistently:
 
 ```bash
-mage build
+./walle build
 ```
 
 The local binary is written to `bin/scut`.

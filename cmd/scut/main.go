@@ -52,11 +52,12 @@ func main() {
 	var c cli
 	parser := kong.Must(&c,
 		kong.Name("scut"),
-		kong.Description("CLI tool for managing AI coding agents. Called as a subprocess by agent hooks — reads JSON from stdin, writes JSON to stdout."),
+		kong.Description("CLI tool for managing AI coding agents, hooks, MCP utilities, and developer helper commands."),
 		kong.Vars{"version": version.String()},
 		kong.BindTo(os.Stdin, (*io.Reader)(nil)),
 		kong.BindTo(os.Stdout, (*io.Writer)(nil)),
 		kong.BindTo(afero.NewOsFs(), (*afero.Fs)(nil)),
+		kong.Help(rootHelpPrinter),
 		kong.HelpOptions{
 			NoExpandSubcommands: true,
 			FlagsLast:           true,
@@ -78,6 +79,41 @@ func main() {
 	logger.Debug("invoked", "args", os.Args, "command", ctx.Command())
 
 	ctx.FatalIfErrorf(ctx.Run(logger))
+}
+
+func rootHelpPrinter(options kong.HelpOptions, ctx *kong.Context) error {
+	if ctx.Selected() != nil {
+		return kong.DefaultHelpPrinter(options, ctx)
+	}
+	_, err := fmt.Fprint(ctx.Stdout, `Usage: scut <command-or-group> [flags]
+
+CLI tool for managing AI coding agents, hooks, MCP utilities, and developer
+helper commands.
+
+Commands:
+  version    Print version and exit.
+  init       Set up scut hooks for detected or selected coding agents.
+  doctor     Diagnose scut hook setup for supported coding agents.
+  update     Update scut when the install method supports automatic updates.
+
+Command groups:
+  Command groups contain related subcommands. Run "scut <group> --help" to list
+  the commands inside a group.
+
+  claude     Claude Code agent commands — hooks, status line, and configuration.
+  codex      Codex agent commands — hooks and lifecycle integrations.
+  format     Format source code files.
+  gotools    Go tool-inspired commands for agents.
+  logging    Manage scut log files.
+  mcp        MCP utility commands for agents.
+
+Flags:
+  -h, --help       Show context-sensitive help.
+  -v, --version    Print version and exit.
+
+Run "scut <command-or-group> --help" for more information.
+`)
+	return err
 }
 
 func (c *cli) openLogger(command string) (*slog.Logger, io.Closer) {

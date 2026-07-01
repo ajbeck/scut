@@ -7,11 +7,11 @@ tags: ["release", "GitHub Actions"]
 weight: 90
 ---
 
-Scut uses GitHub Actions for pull requests, reusable builds, releases, Homebrew tap updates, and documentation deployment. Mage owns Go build, format, vet, and test commands.
+Scut uses GitHub Actions for pull requests, reusable builds, releases, Homebrew tap updates, and documentation deployment. Walle owns Go build, format, vet, and test commands.
 
 ## Pull requests
 
-The pull request workflow runs formatting, vet, and tests through Mage. This keeps local and CI behavior aligned with the repo's JSON v2 build requirements.
+The pull request workflow runs formatting, vet, and tests through Walle. This keeps local and CI behavior aligned with the repo's JSON v2 build requirements.
 
 PR runs use read-only permissions and a concurrency group based on workflow name and PR ref. New pushes cancel older runs for the same PR.
 
@@ -21,7 +21,7 @@ The build workflow supports manual dispatch and workflow calls. In pull-request 
 
 The reusable build has three conceptual phases:
 
-1. `verify`: run `mage fmt`, `mage vet`, and `mage test`.
+1. `verify`: run `./walle fmt`, `./walle vet`, and `./walle test`.
 2. `build`: matrix build for `darwin/amd64`, `darwin/arm64`, `linux/amd64`, and `linux/arm64`.
 3. `assemble`: download platform artifacts, build tarballs, write `checksums.txt`, and upload the `release-assets` artifact.
 
@@ -57,7 +57,7 @@ If an exact release tag exists at a different commit, the workflow fails. Exact 
 
 Release versions come from tags. `internal/version.Version` defaults to `v0.0.0-dev`; release builds override it through linker flags by setting `RELEASE_VERSION=vM.m.p`. Build metadata is injected separately.
 
-Source installs such as `go install github.com/ajbeck/scut@vM.m.p` use Go build information as a fallback when linker flags are not set. Local Mage builds report the development version plus local timestamp metadata.
+Source installs such as `go install github.com/ajbeck/scut@vM.m.p` use Go build information as a fallback when linker flags are not set. Local Walle builds report the development version plus local timestamp metadata.
 
 ## Dependabot
 

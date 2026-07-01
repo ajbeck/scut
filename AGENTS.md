@@ -32,21 +32,21 @@ Target version is **Go 1.26**. Use these features where appropriate:
 - `io.ReadAll()` is faster and allocates less.
 - `bytes.Buffer.Peek(n)` — read without advancing.
 
-## Mage Targets
+## Walle Tasks
 
-**DO NOT run `go test`, `go build`, `go vet`, or `gofmt` directly.** Always use the corresponding Mage target. Magefiles set `GOEXPERIMENT=jsonv2` and other required environment
+**DO NOT run `go test`, `go build`, `go vet`, or `gofmt` directly.** Always use the corresponding Walle task. Walle sets `GOEXPERIMENT=jsonv2` and other required environment
 configuration automatically. Running Go toolchain commands directly will produce incorrect results or miss build tags.
 
-| Command            | What it does                                             |
-| ------------------ | -------------------------------------------------------- |
-| `mage test`        | Run all tests with race detector (`go test -race ./...`) |
-| `mage build`       | Compile binary into `bin/` with version ldflags          |
-| `mage vet`         | Run `go vet` across all packages                         |
-| `mage fmt`         | Run `gofmt -w` on all source files                       |
-| `mage localDeploy` | Build and copy binary to local bin directory             |
-| `mage docs`        | Build the Hugo documentation site into `public/`         |
+| Command                     | What it does                                             |
+| --------------------------- | -------------------------------------------------------- |
+| `./walle test`              | Run all tests with race detector (`go test -race ./...`) |
+| `./walle build`             | Compile binary into `bin/` with version ldflags          |
+| `./walle vet`               | Run `go vet` across all packages                         |
+| `./walle fmt`               | Run `gofmt -w` on all source files                       |
+| `./walle local-deploy DEST` | Build and copy binary to local bin directory             |
+| `./walle docs`              | Build the Hugo documentation site into `public/`         |
 
-This applies to all contexts: manual terminal use, CI, agent tool calls, and hook scripts. If you need to run tests for a single package, use `mage test` — do not construct a
+This applies to all contexts: manual terminal use, CI, agent tool calls, and hook scripts. If you need to run tests for a single package, use `./walle test` — do not construct a
 `go test` invocation yourself.
 
 ## JSON v2
@@ -54,13 +54,13 @@ This applies to all contexts: manual terminal use, CI, agent tool calls, and hoo
 We use `encoding/json/v2` (the new JSON package). This requires:
 
 - **Build tag**: All `.go` files that import `encoding/json/v2` or `encoding/json` (v1 shimmed by v2) must include `//go:build goexperiment.jsonv2` at the top.
-- **GOEXPERIMENT**: Set `GOEXPERIMENT=jsonv2` when building/testing (Magefiles should set this).
+- **GOEXPERIMENT**: Set `GOEXPERIMENT=jsonv2` when building/testing (Walle should set this).
 - Import `encoding/json/v2` for the new API. The v1 `encoding/json` package still works but its behavior is altered by the experiment flag.
 
 ## Documentation
 
 Documentation lives in `docs/` as a Hugo site. Markdown files under `docs/content/` are the content source of truth, custom templates live under `docs/layouts/`, and CSS/JS assets
-live under `docs/assets/`. Build the site with `mage docs`; generated output goes to `public/` and is not committed.
+live under `docs/assets/`. Build the site with `./walle docs`; generated output goes to `public/` and is not committed.
 
 | Document                                                                            | Covers                                                                             |
 | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
@@ -96,7 +96,7 @@ live under `docs/assets/`. Build the site with `mage docs`; generated output goe
 - `internal/cmd/codex/config/**` changes → review `docs/content/usage/configure-codex.md` and `docs/content/contributing/config-commands.md`
 - `internal/cmd/initcmd/**` changes → review `docs/content/usage/quickstart.md` and `docs/content/contributing/init-command.md`
 - `internal/cmd/doctor/**` changes → review `docs/content/usage/doctor.md` and `docs/content/contributing/doctor-command.md`
-- `docs/layouts/**` or `docs/assets/**` changes → run `mage docs` and inspect the site in a browser
+- `docs/layouts/**` or `docs/assets/**` changes → run `./walle docs` and inspect the site in a browser
 - Any new docs content page → add it to the documentation index above when it describes tracked behavior
 
 If a matching document exists and the commit changes behavior it describes (new bindings, new command groups, changed struct tags, altered command tree layout), update the Markdown

@@ -31,7 +31,7 @@ go install github.com/ajbeck/scut@latest
 Or build locally:
 
 ```bash
-mage build
+./walle build
 ```
 
 The binary is written to `bin/scut`.

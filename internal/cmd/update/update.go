@@ -244,7 +244,7 @@ func plannedAction(p plan) string {
 		return homebrewAction()
 	case methodSource:
 		if isDevVersion(p.CurrentVersion) {
-			return "source/development build detected; rebuild with mage build or install with go install github.com/ajbeck/scut@latest"
+			return "source/development build detected; rebuild with ./walle build or install with go install github.com/ajbeck/scut@latest"
 		}
 		return "source-managed install detected; update with go install github.com/ajbeck/scut@latest"
 	default:

@@ -113,9 +113,9 @@ Tags used most often in this repo:
 
 | Tag              | Purpose                                      | Example                             |
 | ---------------- | -------------------------------------------- | ----------------------------------- |
-| `cmd:""`         | Marks a struct field as a command.           | `cmd:"post-tool-use"`               |
+| `cmd:""`         | Marks a struct field as a command.           | `cmd:""`                            |
 | `help:""`        | Short help text shown in generated `--help`. | `help:"Handle PostToolUse events."` |
-| `name:""`        | Overrides a flag name.                       | `name:"dry-run"`                    |
+| `name:""`        | Overrides a command or flag name.            | `name:"post-tool-use"`              |
 | `short:""`       | Adds a single-letter flag alias.             | `short:"v"`                         |
 | `arg:""`         | Marks a positional argument.                 | `arg:""`                            |
 | `optional:""`    | Makes a positional argument optional.        | `optional:""`                       |
@@ -124,4 +124,4 @@ Tags used most often in this repo:
 | `placeholder:""` | Controls placeholder text in help.           | `placeholder:"LEVEL"`               |
 | `hidden:""`      | Hides a field from help output.              | `hidden:""`                         |
 
-Every user-facing command/flag tag feeds the generated CLI reference. After command-tree changes, run `mage docs` so generated help assets are refreshed.
+Every user-facing command/flag tag feeds the generated CLI reference. After command-tree changes, run `./walle docs` so generated help assets are refreshed.

@@ -29,7 +29,8 @@ err = ctx.Run(bindings...)
 
 | Area                   | Purpose                                              |
 | ---------------------- | ---------------------------------------------------- |
-| `cmd/scut`             | Main binary entrypoint.                              |
+| `cmd/scut`             | Main released binary entrypoint.                     |
+| `cmd/walle`            | Repository-local task runner for development.        |
 | `internal/cmd/claude`  | Claude command tree, status line, config, and hooks. |
 | `internal/cmd/codex`   | Codex command tree, config, and hooks.               |
 | `internal/cmd/initcmd` | Unified setup across supported agents.               |
@@ -42,13 +43,13 @@ err = ctx.Run(bindings...)
 
 ## Build rules
 
-Use Mage for all Go operations. The Magefiles set `GOEXPERIMENT=jsonv2` and other required build metadata.
+Use Walle for all Go operations. The task runner sets `GOEXPERIMENT=jsonv2` and other required build metadata.
 
 ```bash
-mage fmt
-mage vet
-mage test
-mage build
+./walle fmt
+./walle vet
+./walle test
+./walle build
 ```
 
 Do not call `go test`, `go build`, `go vet`, or `gofmt` directly in this repo.

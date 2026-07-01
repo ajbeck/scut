@@ -63,6 +63,61 @@ func TestGotoolsDocCommandParses(t *testing.T) {
 	}
 }
 
+func TestRootHelpSeparatesCommandsAndCommandGroups(t *testing.T) {
+	var c cli
+	var stdout bytes.Buffer
+	parser := kong.Must(&c,
+		kong.Name("scut"),
+		kong.Description("CLI tool for managing AI coding agents, hooks, MCP utilities, and developer helper commands."),
+		kong.Vars{"version": versionmeta.String()},
+		kong.BindTo(&stdout, (*io.Writer)(nil)),
+		kong.BindTo(afero.NewMemMapFs(), (*afero.Fs)(nil)),
+		kong.Writers(&stdout, &stdout),
+		kong.Help(rootHelpPrinter),
+		kong.HelpOptions{
+			NoExpandSubcommands: true,
+			FlagsLast:           true,
+			Compact:             true,
+		},
+		kong.Exit(func(int) {
+			panic("exit")
+		}),
+	)
+
+	func() {
+		defer func() {
+			if recovered := recover(); recovered != "exit" {
+				t.Fatalf("Parse() panic = %v, want exit", recovered)
+			}
+		}()
+		_, err := parser.Parse([]string{"--help"})
+		if err != nil {
+			t.Fatalf("Parse() error = %v", err)
+		}
+	}()
+
+	help := stdout.String()
+	if !strings.Contains(help, "Usage: scut <command-or-group> [flags]") {
+		t.Fatalf("root help = %q, want command-or-group usage", help)
+	}
+	commands := strings.Index(help, "Commands:")
+	commandGroups := strings.Index(help, "Command groups:")
+	if commands < 0 || commandGroups < 0 {
+		t.Fatalf("root help = %q, want Commands and Command groups sections", help)
+	}
+	if commands > commandGroups {
+		t.Fatalf("Commands section appears after Command groups section:\n%s", help)
+	}
+	if !strings.Contains(help, "  version    Print version and exit.") ||
+		!strings.Contains(help, "  update     Update scut when the install method supports automatic updates.") {
+		t.Fatalf("root help Commands section missing top-level commands:\n%s", help)
+	}
+	if !strings.Contains(help, "  claude     Claude Code agent commands") ||
+		!strings.Contains(help, "  mcp        MCP utility commands for agents.") {
+		t.Fatalf("root help Command groups section missing command groups:\n%s", help)
+	}
+}
+
 func TestMCPAWSProxyCommandParses(t *testing.T) {
 	var c cli
 	var stdout bytes.Buffer

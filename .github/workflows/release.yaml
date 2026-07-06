@@ -33,7 +33,7 @@ jobs:
       minor_tag: ${{ steps.tag.outputs.minor_tag }}
     steps:
       - name: Checkout main
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 0
@@ -205,7 +205,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout release commit
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ needs.tag-release.outputs.commit_sha }}
           fetch-depth: 0

@@ -5,14 +5,14 @@ go 1.26.3
 require github.com/alecthomas/kong v1.15.0
 
 require (
-	charm.land/lipgloss/v2 v2.0.3
+	charm.land/lipgloss/v2 v2.0.5
 	github.com/ajbeck/go-aws-mcp-proxy v0.1.0
 	github.com/ajbeck/goldmark-prettier-markdown v0.2.1
 	github.com/go-git/go-billy/v5 v5.9.0
 	github.com/go-git/go-git/v5 v5.19.1
 	github.com/spf13/afero v1.15.0
-	github.com/yuin/goldmark v1.8.2
-	golang.org/x/mod v0.36.0
+	github.com/yuin/goldmark v1.8.4
+	golang.org/x/mod v0.38.0
 )
 
 require (
@@ -68,7 +68,7 @@ require (
 	golang.org/x/net v0.53.0 // indirect
 	golang.org/x/oauth2 v0.35.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.43.0 // indirect
+	golang.org/x/sys v0.46.0 // indirect
 	golang.org/x/text v0.36.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )

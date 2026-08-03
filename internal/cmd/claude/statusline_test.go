@@ -3,7 +3,10 @@
 package claude
 
 import (
-	"fmt"
+	"bytes"
+	"encoding/json"
+	"io"
+	"log/slog"
 	"os"
 	"strings"
 	"testing"
@@ -12,74 +15,79 @@ import (
 func BenchmarkRenderContextBar(b *testing.B) {
 	pct := 47.3
 	for b.Loop() {
-		_ = renderContextBar(&pct)
+		_ = renderContextBar(&pct, false)
 	}
 }
 
-func BenchmarkRenderContextBar_Nil(b *testing.B) {
-	for b.Loop() {
-		_ = renderContextBar(nil)
+func TestRenderContextBar(t *testing.T) {
+	tests := []struct {
+		name      string
+		pct       *float64
+		short     bool
+		used      int
+		available int
+	}{
+		{name: "nil", available: 20},
+		{name: "half", pct: new(50.0), used: 10, available: 10},
+		{name: "short_half", pct: new(50.0), short: true, used: 5, available: 5},
+		{name: "below_zero", pct: new(-5.0), available: 20},
+		{name: "above_one_hundred", pct: new(105.0), used: 20},
 	}
-}
 
-func BenchmarkRenderContextBar_Thresholds(b *testing.B) {
-	thresholds := []float64{25.0, 75.0, 83.0, 95.0}
-	for _, pct := range thresholds {
-		pct := pct
-		b.Run(fmt.Sprintf("%d", int(pct)), func(b *testing.B) {
-			for b.Loop() {
-				_ = renderContextBar(&pct)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := renderContextBar(tt.pct, tt.short)
+			if count := strings.Count(got, "🟣"); count != tt.used {
+				t.Errorf("used circles = %d, want %d", count, tt.used)
+			}
+			if count := strings.Count(got, "🟢"); count != tt.available {
+				t.Errorf("unused circles = %d, want %d", count, tt.available)
+			}
+			if strings.Contains(got, "%") {
+				t.Errorf("context display must not include a percentage: %q", got)
 			}
 		})
 	}
 }
 
-func TestRenderContextBar_Nil(t *testing.T) {
-	got := renderContextBar(nil)
-	if got != nullBar {
-		t.Errorf("nil bar mismatch:\n  got:  %q\n  want: %q", got, nullBar)
+func TestStatusLineLogsFullInputOnlyAtDebug(t *testing.T) {
+	payload := `{"cwd":"/tmp","workspace":{"current_dir":"/tmp"},"context_window":{"used_percentage":50},"future_field":"preserved"}`
+
+	var debugLog bytes.Buffer
+	debug := slog.New(slog.NewJSONHandler(&debugLog, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	if err := (&statusLineCmd{}).Run(strings.NewReader(payload), io.Discard, debug); err != nil {
+		t.Fatalf("Run() with debug logger: %v", err)
+	}
+	if got := inputPayloadFromLog(t, debugLog.Bytes()); got != payload {
+		t.Fatalf("logged payload = %q, want %q", got, payload)
+	}
+
+	var infoLog bytes.Buffer
+	info := slog.New(slog.NewJSONHandler(&infoLog, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	if err := (&statusLineCmd{}).Run(strings.NewReader(payload), io.Discard, info); err != nil {
+		t.Fatalf("Run() with info logger: %v", err)
+	}
+	if strings.Contains(infoLog.String(), "future_field") {
+		t.Fatalf("info log unexpectedly contains full payload: %s", infoLog.String())
 	}
 }
 
-func TestRenderContextBar_MarkerAlwaysPresent(t *testing.T) {
-	// The compaction marker │ must appear at every percentage and at nil.
-	for p := range 101 {
-		pct := float64(p)
-		result := renderContextBar(&pct)
-		if !strings.Contains(result, "│") {
-			t.Errorf("marker missing at %d%%", p)
+func inputPayloadFromLog(t *testing.T, logs []byte) string {
+	t.Helper()
+	for _, line := range bytes.Split(bytes.TrimSpace(logs), []byte{'\n'}) {
+		var record struct {
+			Message string `json:"msg"`
+			Payload string `json:"payload"`
+		}
+		if err := json.Unmarshal(line, &record); err != nil {
+			t.Fatalf("unmarshal log record: %v", err)
+		}
+		if record.Message == "input" {
+			return record.Payload
 		}
 	}
-	if !strings.Contains(renderContextBar(nil), "│") {
-		t.Error("marker missing in nil bar")
-	}
-}
-
-func TestRenderContextBar_Boundaries(t *testing.T) {
-	// Both filled and unfilled use █ (distinguished by ANSI colour), so we
-	// count total █ (should always equal fillArea minus any ▌) and ▌ separately.
-	for _, tc := range []struct {
-		pct      float64
-		wantHalf int
-	}{
-		{0, 0},
-		{100, 0},
-		{50, 1}, // 50*19*2/100=19 halves, full=9, half=1
-	} {
-		t.Run(fmt.Sprintf("%d%%", int(tc.pct)), func(t *testing.T) {
-			pct := tc.pct
-			result := renderContextBar(&pct)
-			totalBlocks := strings.Count(result, "█")
-			halfCount := strings.Count(result, "▌")
-			wantBlocks := fillArea - halfCount
-			if totalBlocks != wantBlocks {
-				t.Errorf("total █ blocks: got %d, want %d", totalBlocks, wantBlocks)
-			}
-			if halfCount != tc.wantHalf {
-				t.Errorf("half blocks: got %d, want %d", halfCount, tc.wantHalf)
-			}
-		})
-	}
+	t.Fatal("input log record not found")
+	return ""
 }
 
 func TestWriteGitIndicators_Clean(t *testing.T) {
@@ -182,35 +190,6 @@ func TestTruncate(t *testing.T) {
 				t.Errorf("truncate(%q, %d) = %q, want %q", tc.s, tc.max, got, tc.want)
 			}
 		})
-	}
-}
-
-func TestRenderContextBar_AllPercentages(t *testing.T) {
-	// Verify every percentage produces non-empty output and the total block
-	// count (█ + ▌) always equals fillArea (both filled and unfilled use █).
-	for p := range 101 {
-		pct := float64(p)
-		result := renderContextBar(&pct)
-		if result == "" {
-			t.Fatalf("empty result at %d%%", p)
-		}
-		blocks := strings.Count(result, "█") + strings.Count(result, "▌")
-		if blocks != fillArea {
-			t.Errorf("total blocks at %d%%: got %d, want %d", p, blocks, fillArea)
-		}
-	}
-}
-
-func TestRenderContextBar_ThresholdBoundary(t *testing.T) {
-	// The bar must use warning colour at compactionThreshold-1 and error
-	// colour at compactionThreshold. We verify by checking that the two
-	// renders produce different ANSI output (the colour codes differ).
-	below := float64(compactionThreshold - 1)
-	at := float64(compactionThreshold)
-	resultBelow := renderContextBar(&below)
-	resultAt := renderContextBar(&at)
-	if resultBelow == resultAt {
-		t.Errorf("bar at %d%% and %d%% should differ in colour but are identical", compactionThreshold-1, compactionThreshold)
 	}
 }
 

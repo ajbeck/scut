@@ -1,3 +1,5 @@
+//go:build goexperiment.jsonv2
+
 package claude
 
 import (
@@ -22,12 +24,6 @@ import (
 	cc "github.com/ajbeck/scut/hooks/claudecode"
 )
 
-// Context bar thresholds — control colour shifts and marker placement.
-const (
-	compactionThreshold = 83 // percentage at which Claude Code triggers auto-compaction; the red marker sits here
-	warningThreshold    = 70 // percentage at which the bar shifts from mint to warning amber
-)
-
 // largeContextMarker is the substring in a model ID that identifies the 1M
 // context variant (e.g. "claude-opus-4-7[1m]"). Claude Code on Bedrock
 // encodes the variant in the ID itself; the reported context_window_size
@@ -44,9 +40,8 @@ var (
 	colorSlate  = lipgloss.Color("#6C757D")
 	colorMint   = lipgloss.Color("#00D97F")
 
-	// Status palette — 400 stops for threshold colours.
+	// Status palette — 400 stop for git changes.
 	colorWarning = lipgloss.Color("#E9A512")
-	colorError   = lipgloss.Color("#F03E3E")
 )
 
 var (
@@ -62,21 +57,28 @@ var (
 // Command
 // ---------------------------------------------------------------------------
 
-type statusLineCmd struct{}
+type statusLineCmd struct {
+	Short bool `help:"Render a compact 10-circle context indicator."`
+}
 
 func (c *statusLineCmd) Help() string {
 	return `Renders a status line for the Claude Code terminal.
 Reads the session snapshot JSON from stdin and prints styled
 output to stdout. Designed for low-latency execution — uses
 go-git for branch detection (no subprocess) and lipgloss for
-ANSI styling.`
+ANSI styling. Use --short for a 10-circle context indicator.`
 }
 
 func (c *statusLineCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logger) error {
 	start := time.Now()
 
+	payload, err := io.ReadAll(stdin)
+	if err != nil {
+		return fmt.Errorf("reading StatusLine input: %w", err)
+	}
+
 	var in cc.StatusLineInput
-	if err := json.NewDecoder(stdin).Decode(&in); err != nil {
+	if err := json.Unmarshal(payload, &in); err != nil {
 		return fmt.Errorf("decoding StatusLine input: %w", err)
 	}
 
@@ -115,7 +117,7 @@ func (c *statusLineCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logg
 	})
 
 	wg.Go(func() {
-		contextBar = renderContextBar(in.ContextWindow.UsedPercentage)
+		contextBar = renderContextBar(in.ContextWindow.UsedPercentage, c.Short)
 	})
 
 	wg.Wait()
@@ -125,16 +127,9 @@ func (c *statusLineCmd) Run(stdin io.Reader, stdout io.Writer, logger *slog.Logg
 
 	model := shortModelName(in.Model.ID)
 
-	logger.Debug("input",
-		"hook", "status-line",
-		"session_id", in.SessionID,
-		"model_id", in.Model.ID,
-		"model_display_name", in.Model.DisplayName,
-		"context_window_size", in.ContextWindow.ContextWindowSize,
-		"exceeds_200k_tokens", in.Exceeds200K,
-		"cwd", in.CWD,
-		"workspace_current_dir", in.Workspace.CurrentDir,
-	)
+	// Raw payloads can include paths and session metadata, so only emit them
+	// when the caller explicitly requests debug logging.
+	logger.Debug("input", "hook", "status-line", "payload", string(payload))
 
 	var b strings.Builder
 	b.WriteString(contextBar)
@@ -329,124 +324,28 @@ func writeGitIndicators(b *strings.Builder, staged, unstaged, ahead, behind int)
 }
 
 // ---------------------------------------------------------------------------
-// Context bar
+// Context usage
 // ---------------------------------------------------------------------------
 
-// Bar configuration.
 const (
-	barWidth  = 20                                   // total characters in the bar
-	markerPos = compactionThreshold * barWidth / 100 // character index where the compaction marker sits (0-based)
-	preFill   = markerPos                            // fill characters before the marker
-	postFill  = barWidth - markerPos - 1             // fill characters after the marker
-	fillArea  = preFill + postFill                   // total fillable characters (barWidth minus marker)
+	contextCircleCount      = 20
+	shortContextCircleCount = 10
 )
 
-// nullBar is the muted bar shown before the first API call.
-var nullBar = mutedStyle.Render(strings.Repeat("█", preFill)) +
-	markerOnSlate.Render("│") +
-	mutedStyle.Render(strings.Repeat("█", postFill)) +
-	mutedStyle.Render(" –")
-
-// barTheme groups the three accent-dependent styles used by the context bar:
-// the solid fill, the half-block transition (FG=accent, BG=slate), and the
-// compaction marker background (red │ over the accent colour).
-type barTheme struct {
-	accent lipgloss.Style // solid filled block █
-	half   lipgloss.Style // half-block transition ▌ (FG=accent, BG=slate)
-	marker lipgloss.Style // compaction marker │ when in filled territory
-}
-
-var (
-	themeMint = barTheme{
-		accent: lipgloss.NewStyle().Foreground(colorMint),
-		half:   lipgloss.NewStyle().Foreground(colorMint).Background(colorSlate),
-		marker: lipgloss.NewStyle().Foreground(colorError).Background(colorMint),
-	}
-	themeWarning = barTheme{
-		accent: lipgloss.NewStyle().Foreground(colorWarning),
-		half:   lipgloss.NewStyle().Foreground(colorWarning).Background(colorSlate),
-		marker: lipgloss.NewStyle().Foreground(colorError).Background(colorWarning),
-	}
-	themeError = barTheme{
-		accent: lipgloss.NewStyle().Foreground(colorError),
-		half:   lipgloss.NewStyle().Foreground(colorError).Background(colorSlate),
-		marker: lipgloss.NewStyle().Foreground(colorError).Background(colorError),
-	}
-)
-
-// markerOnSlate styles the compaction marker │ when it sits in unfilled territory.
-var markerOnSlate = lipgloss.NewStyle().Foreground(colorError).Background(colorSlate)
-
-// renderContextBar returns a styled 20-character progress bar with percentage.
-// The bar has 19 fillable characters split by a red │ marker at the 83%
-// auto-compaction threshold: 16 chars before the marker, 3 after.
-// Fill uses half-blocks for 2× resolution (38 levels across 19 chars).
-// Colour shifts by threshold: mint <70%, warning 70–82%, error 83%+.
-// When pct is nil (before first API call), returns a muted empty bar.
-func renderContextBar(pct *float64) string {
-	if pct == nil {
-		return nullBar
+// renderContextBar returns purple used-context circles followed by green
+// unused-context circles. It uses 20 circles by default and 10 with --short.
+// Nil usage is treated as zero used context before the first API response.
+func renderContextBar(pct *float64, short bool) string {
+	total := contextCircleCount
+	if short {
+		total = shortContextCircleCount
 	}
 
-	p := min(max(int(math.Round(*pct)), 0), 100)
-
-	// Compute filled/half/empty across the full fill area (19 chars).
-	halves := p * fillArea * 2 / 100
-	full := halves / 2
-	half := halves % 2
-	empty := fillArea - full
-	if half > 0 {
-		empty--
+	used := 0
+	if pct != nil {
+		used = min(max(int(math.Round(*pct*float64(total)/100)), 0), total)
 	}
-
-	// Pick theme by threshold.
-	var theme barTheme
-	switch {
-	case p >= compactionThreshold:
-		theme = themeError
-	case p >= warningThreshold:
-		theme = themeWarning
-	default:
-		theme = themeMint
-	}
-
-	// Precompute styled blocks — avoids re-rendering the same ANSI
-	// escape sequence on every loop iteration.
-	filledBlock := theme.accent.Render("█")
-	halfBlock := theme.half.Render("▌")
-	emptyBlock := mutedStyle.Render("█")
-	filledMarker := theme.marker.Render("│")
-	unfilledMarker := markerOnSlate.Render("│")
-
-	// Build the bar by walking through each character position.
-	// At markerPos, insert the red │ with a background matching
-	// whether the fill has reached that point.
-	var b strings.Builder
-	fillIdx := 0 // how many fill characters we've emitted
-	for pos := range barWidth {
-		if pos == markerPos {
-			if fillIdx < full {
-				b.WriteString(filledMarker)
-			} else {
-				b.WriteString(unfilledMarker)
-			}
-			continue
-		}
-		if fillIdx < full {
-			b.WriteString(filledBlock)
-		} else if fillIdx == full && half > 0 {
-			b.WriteString(halfBlock)
-		} else {
-			b.WriteString(emptyBlock)
-		}
-		fillIdx++
-	}
-
-	// Percentage label in accent colour.
-	b.WriteByte(' ')
-	b.WriteString(theme.accent.Render(strconv.Itoa(p) + "%"))
-
-	return b.String()
+	return strings.Repeat("🟣", used) + strings.Repeat("🟢", total-used)
 }
 
 // ---------------------------------------------------------------------------

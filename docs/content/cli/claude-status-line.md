@@ -10,6 +10,7 @@ weight: 55
 Claude Code runs `scut claude status-line` as a subprocess and sends session JSON on stdin. The command writes styled status text to stdout.
 
 For user-facing setup notes, see [Claude Status Line]({{< relref "/usage/status-line" >}}).
+For the payload contract and Claude Code configuration, see the [official Claude Code status-line documentation](https://code.claude.com/docs/en/statusline).
 
 ## Generated help
 

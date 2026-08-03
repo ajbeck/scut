@@ -27,6 +27,10 @@ Filenames use `YYYYMMDD_<command-name>.jsonl`, where the command name is the lea
 
 Kong parse failures are logged before command execution exits. The parse-error log captures the full argv and the parser error message, which helps diagnose stale hook commands in settings files.
 
+## Debug payload capture
+
+`scut claude --log-level=debug status-line` records the complete JSON payload sent by Claude Code. This is useful when Claude Code changes its status-line schema, but the payload can include local paths and session metadata. Bare `--log` records command events without the full payload.
+
 ## Cleanup
 
 Use the logging command to remove old records:

@@ -38,6 +38,53 @@ func TestModCacheFetcherLoadsDependencyByLongestPrefix(t *testing.T) {
 	if got, want := len(source.Files), 1; got != want {
 		t.Fatalf("len(Files) = %d, want %d", got, want)
 	}
+	if got, want := source.Module, (module.Version{Path: "github.com/foo/bar/sub", Version: "v2.0.0"}); got != want {
+		t.Fatalf("Module = %#v, want %#v", got, want)
+	}
+	if got, want := source.Version, "v2.0.0"; got != want {
+		t.Fatalf("Version = %q, want %q", got, want)
+	}
+}
+
+func TestModCacheFetcherReportsExistingPackageWithoutGoFiles(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	mod := module.Version{Path: "github.com/foo/bar", Version: "v1.0.0"}
+	writeTestFile(t, fs, filepath.Join(moduleCacheDir(t, "/mod", mod.Path, mod.Version), "README.md"), []byte("docs\n"))
+
+	fetcher := ModCacheFetcher{
+		FS:       fs,
+		CacheDir: "/mod",
+		Deps:     map[string]module.Version{mod.Path: mod},
+	}
+
+	_, err := fetcher.Fetch(context.Background(), mod.Path, Options{Version: mod.Version})
+	absent, ok := errors.AsType[*cachedPackageAbsentError](err)
+	if !ok {
+		t.Fatalf("Fetch() error = %v, want cachedPackageAbsentError", err)
+	}
+	if got, want := absent.Module, mod; got != want {
+		t.Fatalf("absent.Module = %#v, want %#v", got, want)
+	}
+	if got, want := absent.Package, mod.Path; got != want {
+		t.Fatalf("absent.Package = %q, want %q", got, want)
+	}
+}
+
+func TestModCacheFetcherTreatsMissingPackageDirectoryAsCacheMiss(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	mod := module.Version{Path: "github.com/foo/bar", Version: "v1.0.0"}
+	writeModuleCacheFile(t, fs, "/mod", mod.Path, mod.Version, "other/other.go", "package other\n")
+
+	fetcher := ModCacheFetcher{
+		FS:       fs,
+		CacheDir: "/mod",
+		Deps:     map[string]module.Version{mod.Path: mod},
+	}
+
+	_, err := fetcher.Fetch(context.Background(), mod.Path+"/missing", Options{Version: mod.Version})
+	if !errors.Is(err, ErrSourceNotApplicable) {
+		t.Fatalf("Fetch() error = %v, want ErrSourceNotApplicable", err)
+	}
 }
 
 func TestModCacheFetcherProbesHighestCachedVersion(t *testing.T) {

@@ -2,9 +2,14 @@ package godoc
 
 import (
 	"context"
+	"errors"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/spf13/afero"
+	"golang.org/x/mod/module"
 )
 
 func TestParseSymbolSpec(t *testing.T) {
@@ -50,7 +55,7 @@ func TestLookupCandidatesOneArgumentFullPath(t *testing.T) {
 			args: []string{"encoding/json.Marshal"},
 			want: []LookupCandidate{
 				{Package: "encoding/json.Marshal", UserPath: "encoding/json.Marshal", Kind: LookupFullPackage},
-				{Package: "encoding/json", UserPath: "encoding/json", Symbol: &SymbolLookup{Name: "Marshal"}, Kind: LookupFullPackage},
+				{Package: "encoding/json", UserPath: "encoding/json", Symbol: &SymbolLookup{Name: "Marshal"}, Kind: LookupFullPackage, ContinueOnSymbolMiss: true},
 			},
 		},
 		{
@@ -58,7 +63,7 @@ func TestLookupCandidatesOneArgumentFullPath(t *testing.T) {
 			args: []string{"encoding/json.Decoder.Decode"},
 			want: []LookupCandidate{
 				{Package: "encoding/json.Decoder.Decode", UserPath: "encoding/json.Decoder.Decode", Kind: LookupFullPackage},
-				{Package: "encoding/json", UserPath: "encoding/json", Symbol: &SymbolLookup{Name: "Decoder", Member: new("Decode")}, Kind: LookupFullPackage},
+				{Package: "encoding/json", UserPath: "encoding/json", Symbol: &SymbolLookup{Name: "Decoder", Member: new("Decode")}, Kind: LookupFullPackage, ContinueOnSymbolMiss: true},
 			},
 		},
 		{
@@ -79,10 +84,11 @@ func TestLookupCandidatesOneArgumentFullPath(t *testing.T) {
 			assertCandidatePrefix(t, got, tt.want)
 			if tt.name == "dotted_package_path" {
 				assertCandidateContains(t, got, LookupCandidate{
-					Package:  "gopkg.in/yaml.v3",
-					UserPath: "gopkg.in/yaml.v3",
-					Symbol:   &SymbolLookup{Name: "Node"},
-					Kind:     LookupFullPackage,
+					Package:              "gopkg.in/yaml.v3",
+					UserPath:             "gopkg.in/yaml.v3",
+					Symbol:               &SymbolLookup{Name: "Node"},
+					Kind:                 LookupFullPackage,
+					ContinueOnSymbolMiss: true,
 				})
 			}
 		})
@@ -194,6 +200,101 @@ func TestLookupResolverTriesWholePackageBeforeDottedSplit(t *testing.T) {
 	if got.Lookup.Symbol != nil {
 		t.Fatalf("Resolve() symbol = %#v, want nil", got.Lookup.Symbol)
 	}
+}
+
+func TestLookupResolverDefersLiteralResolutionErrorForDottedLookup(t *testing.T) {
+	fetcher := &mapSourceFetcher{
+		errs: map[string]error{
+			"example.com/root/pkg.Type": errors.New("cloning literal path: authentication required"),
+		},
+		sources: map[string]PackageSource{
+			"example.com/root/pkg": {
+				ImportPath: "example.com/root/pkg",
+				Files: []SourceFile{{
+					Name: "pkg.go",
+					Data: []byte("package pkg\n\ntype Type struct{}\n"),
+				}},
+			},
+		},
+	}
+	resolver := LookupResolver{Resolver: Resolver{Fetchers: []SourceFetcher{fetcher}}}
+
+	got, err := resolver.Resolve(context.Background(), Options{Args: []string{"example.com/root/pkg.Type"}})
+	if err != nil {
+		t.Fatalf("Resolve() error = %v", err)
+	}
+	if got, want := got.Source.ImportPath, "example.com/root/pkg"; got != want {
+		t.Fatalf("Resolve() package = %q, want %q", got, want)
+	}
+	if got.Lookup.Symbol == nil || got.Lookup.Symbol.Name != "Type" {
+		t.Fatalf("Resolve() symbol = %#v, want Type", got.Lookup.Symbol)
+	}
+}
+
+func TestLookupResolverDoesNotDeferParseErrorForDottedLookup(t *testing.T) {
+	resolver := LookupResolver{Resolver: Resolver{Fetchers: []SourceFetcher{&mapSourceFetcher{
+		sources: map[string]PackageSource{
+			"example.com/root/pkg.Type": {
+				ImportPath: "example.com/root/pkg.Type",
+				Files: []SourceFile{{
+					Name: "broken.go",
+					Data: []byte("package\n"),
+				}},
+			},
+			"example.com/root/pkg": {
+				ImportPath: "example.com/root/pkg",
+				Files: []SourceFile{{
+					Name: "pkg.go",
+					Data: []byte("package pkg\n\ntype Type struct{}\n"),
+				}},
+			},
+		},
+	}}}}
+
+	_, err := resolver.Resolve(context.Background(), Options{Args: []string{"example.com/root/pkg.Type"}})
+	if err == nil {
+		t.Fatal("Resolve() error = nil, want parse error")
+	}
+	assertErrorNotContains(t, err, "no symbol Type")
+}
+
+func TestLookupResolverPrefersNormalizedResolutionErrorAfterDottedLookupMiss(t *testing.T) {
+	resolver := LookupResolver{Resolver: Resolver{Fetchers: []SourceFetcher{&mapSourceFetcher{
+		errs: map[string]error{
+			"example.com/root/pkg.Type": errors.New("cloning literal path: authentication required"),
+			"example.com/root/pkg":      errors.New("cloning normalized package: authentication required"),
+		},
+	}}}}
+
+	_, err := resolver.Resolve(context.Background(), Options{Args: []string{"example.com/root/pkg.Type"}})
+	assertErrorContains(t, err, "cloning normalized package")
+	assertErrorNotContains(t, err, "cloning literal path")
+}
+
+func TestLookupResolverReturnsCachedPackageAbsenceWithoutRemoteFallback(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	modPath := "github.com/private/mod"
+	writeTestFile(t, fs, filepath.Join(moduleCacheDir(t, "/mod", modPath, "v1.0.0"), "README.md"), []byte("docs\n"))
+	fallback := &mapSourceFetcher{errs: map[string]error{
+		modPath: errors.New("remote fallback should not run"),
+	}}
+	resolver := LookupResolver{Resolver: Resolver{Fetchers: []SourceFetcher{
+		ModCacheFetcher{
+			FS:       fs,
+			CacheDir: "/mod",
+			Deps: map[string]module.Version{
+				modPath: {Path: modPath, Version: "v1.0.0"},
+			},
+		},
+		fallback,
+	}}}
+
+	_, err := resolver.Resolve(context.Background(), Options{
+		Args:    []string{modPath},
+		Version: "v1.0.0",
+	})
+	assertErrorContains(t, err, "package "+modPath+" not found")
+	assertErrorNotContains(t, err, "remote fallback")
 }
 
 func TestLookupResolverUsesCurrentPackageDirectory(t *testing.T) {
@@ -330,9 +431,13 @@ func TestLookupResolverReportsPackageMissForPackageOnlyLookup(t *testing.T) {
 
 type mapSourceFetcher struct {
 	sources map[string]PackageSource
+	errs    map[string]error
 }
 
 func (f *mapSourceFetcher) Fetch(_ context.Context, pkg string, _ Options) (PackageSource, error) {
+	if err, ok := f.errs[pkg]; ok {
+		return PackageSource{}, err
+	}
 	source, ok := f.sources[pkg]
 	if !ok {
 		return PackageSource{}, ErrSourceNotApplicable

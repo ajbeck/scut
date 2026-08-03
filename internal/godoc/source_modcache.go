@@ -43,9 +43,18 @@ func (f ModCacheFetcher) Fetch(_ context.Context, pkg string, opts Options) (Pac
 	if err != nil {
 		return PackageSource{}, ErrSourceNotApplicable
 	}
+	if _, err := f.FS.Stat(dir); err != nil {
+		if errors.Is(err, afero.ErrFileNotFound) {
+			return PackageSource{}, ErrSourceNotApplicable
+		}
+		return PackageSource{}, err
+	}
 	files, err := readGoFiles(f.FS, dir)
 	if errors.Is(err, ErrNoGoFiles) {
-		return PackageSource{}, ErrSourceNotApplicable
+		return PackageSource{}, &cachedPackageAbsentError{
+			Module:  mod,
+			Package: pkg,
+		}
 	}
 	if err != nil {
 		return PackageSource{}, err
@@ -54,6 +63,8 @@ func (f ModCacheFetcher) Fetch(_ context.Context, pkg string, opts Options) (Pac
 		ImportPath: pkg,
 		Dir:        dir,
 		Files:      files,
+		Module:     mod,
+		Version:    mod.Version,
 	}, nil
 }
 

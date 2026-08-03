@@ -9,6 +9,25 @@ weight: 90
 
 `scut gotools` provides Go tool-inspired lookups that are formatted for agent consumption.
 
+## Source resolution
+
+`scut gotools doc` first checks the current package and standard library before
+trying its external source routes.
+
+It can resolve an arbitrary external package from a private Git repository or
+public module proxy, so the package does not need to be in the current
+project's `go.mod`.
+
+For one-argument lookups such as `example.com/module/pkg.Type`, the command
+preserves `go doc`'s interpretation order: it first considers the full package
+path, then package-and-symbol interpretations. A fetch failure for one
+ambiguous interpretation does not prevent the others from being considered.
+
+When the selected cached module version contains the requested package
+directory but no Go source files, the lookup reports `package <path> not
+found` without attempting remote fallback. A missing cache directory is not
+conclusive and still permits remote resolution.
+
 ## Generated help
 
 {{< clihelp file="scut-gotools" command="scut gotools --help" >}}

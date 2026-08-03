@@ -69,8 +69,12 @@ func (r LookupResolver) Resolve(ctx context.Context, opts Options) (ResolvedLook
 		return ResolvedLookup{}, err
 	}
 
+	deferCandidateErrors := len(candidates) > 1
 	var attempts []string
 	var missedSymbol *SymbolLookup
+	var cachedAbsent *cachedPackageAbsentError
+	var symbolResolutionErr error
+	var literalResolutionErr error
 	for _, candidate := range candidates {
 		if candidate.Symbol != nil {
 			missedSymbol = candidate.Symbol
@@ -78,6 +82,16 @@ func (r LookupResolver) Resolve(ctx context.Context, opts Options) (ResolvedLook
 		if candidate.Kind == LookupSuffix {
 			resolved, ok, err := r.resolveSuffixCandidate(ctx, candidate, opts, attempts)
 			if err != nil {
+				if cached, ok := errors.AsType[*cachedPackageAbsentError](err); ok {
+					if cachedAbsent == nil {
+						cachedAbsent = cached
+					}
+					continue
+				}
+				if sourceErr, ok := errors.AsType[*sourceResolutionError](err); deferCandidateErrors && ok {
+					symbolResolutionErr = firstError(symbolResolutionErr, sourceErr.err)
+					continue
+				}
 				return ResolvedLookup{}, err
 			}
 			if ok {
@@ -91,12 +105,35 @@ func (r LookupResolver) Resolve(ctx context.Context, opts Options) (ResolvedLook
 		attempts = append(attempts, pkg)
 		resolved, ok, err := r.resolvePackageCandidate(ctx, candidate, pkg, opts, attempts)
 		if err != nil {
+			if cached, ok := errors.AsType[*cachedPackageAbsentError](err); ok {
+				if cachedAbsent == nil {
+					cachedAbsent = cached
+				}
+				continue
+			}
+			if sourceErr, ok := errors.AsType[*sourceResolutionError](err); deferCandidateErrors && ok {
+				if candidate.Symbol != nil {
+					symbolResolutionErr = firstError(symbolResolutionErr, sourceErr.err)
+				} else {
+					literalResolutionErr = firstError(literalResolutionErr, sourceErr.err)
+				}
+				continue
+			}
 			return ResolvedLookup{}, err
 		}
 		if ok {
 			return resolved, nil
 		}
 		attempts = resolved.Attempts
+	}
+	if cachedAbsent != nil {
+		return ResolvedLookup{}, PackageNotFoundError{Package: cachedAbsent.Package}
+	}
+	if symbolResolutionErr != nil {
+		return ResolvedLookup{}, symbolResolutionErr
+	}
+	if literalResolutionErr != nil {
+		return ResolvedLookup{}, literalResolutionErr
 	}
 
 	if missedSymbol == nil {
@@ -107,6 +144,13 @@ func (r LookupResolver) Resolve(ctx context.Context, opts Options) (ResolvedLook
 		Query:    strings.Join(lookupArgs(opts), " "),
 		Attempts: attempts,
 	}
+}
+
+func firstError(current, candidate error) error {
+	if current != nil {
+		return current
+	}
+	return candidate
 }
 
 func (r LookupResolver) resolveSuffixCandidate(ctx context.Context, candidate LookupCandidate, opts Options, attempts []string) (ResolvedLookup, bool, error) {
@@ -138,7 +182,7 @@ func (r LookupResolver) resolvePackageCandidate(ctx context.Context, candidate L
 		if errors.Is(err, ErrPackageNotFound) || errors.Is(err, ErrSourceNotApplicable) {
 			return ResolvedLookup{Attempts: attempts}, false, nil
 		}
-		return ResolvedLookup{}, false, err
+		return ResolvedLookup{}, false, &sourceResolutionError{err: err}
 	}
 
 	lookup := Lookup{
@@ -223,7 +267,7 @@ func oneArgLookupCandidates(arg string) ([]LookupCandidate, error) {
 			UserPath:             pkg,
 			Symbol:               symbol,
 			Kind:                 candidateKindForPackage(pkg),
-			ContinueOnSymbolMiss: !strings.Contains(pkg, "/"),
+			ContinueOnSymbolMiss: true,
 		})
 		start = period + 1
 	}

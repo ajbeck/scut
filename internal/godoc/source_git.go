@@ -2,13 +2,17 @@ package godoc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/go-git/go-billy/v5"
 	"github.com/go-git/go-billy/v5/memfs"
@@ -16,6 +20,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	githttp "github.com/go-git/go-git/v5/plumbing/transport/http"
+	gitssh "github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"github.com/go-git/go-git/v5/storage/memory"
 	"github.com/spf13/afero"
 	"golang.org/x/mod/module"
@@ -34,36 +39,90 @@ type GitCloner interface {
 }
 
 type GitAuthProvider interface {
-	Auth() transport.AuthMethod
+	Auth(context.Context, string) transport.AuthMethod
 }
 
-// EnvGitAuthProvider reads Git HTTPS tokens from the environment.
+type gitHubTokenProvider interface {
+	Token(context.Context, string) (string, error)
+}
+
+type gitHubCLITokenProvider struct{}
+
+func (gitHubCLITokenProvider) Token(ctx context.Context, host string) (string, error) {
+	output, err := exec.CommandContext(ctx, "gh", "auth", "token", "--hostname", host).Output()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(output)), nil
+}
+
+type sshAuthProvider interface {
+	Auth() (transport.AuthMethod, error)
+}
+
+type sshAgentAuthProvider struct{}
+
+func (sshAgentAuthProvider) Auth() (transport.AuthMethod, error) {
+	return gitssh.NewSSHAgentAuth("git")
+}
+
+// EnvGitAuthProvider reads HTTPS Git tokens from the environment or gh.
 type EnvGitAuthProvider struct {
-	Lookup func(string) (string, bool)
+	Lookup              func(string) (string, bool)
+	GitHubTokenProvider gitHubTokenProvider
+	GitHubTokenTimeout  time.Duration
 }
 
-func (p EnvGitAuthProvider) Auth() transport.AuthMethod {
+func (p EnvGitAuthProvider) Auth(ctx context.Context, repoURL string) transport.AuthMethod {
+	host, ok := httpsRepositoryHost(repoURL)
+	if !ok {
+		return nil
+	}
 	lookup := p.Lookup
 	if lookup == nil {
 		lookup = os.LookupEnv
 	}
-	for _, key := range []string{"GITHUB_TOKEN", "GIT_TOKEN"} {
+	for _, key := range []string{"GH_TOKEN", "GITHUB_TOKEN", "GIT_TOKEN"} {
 		if token, ok := lookup(key); ok && token != "" {
 			return &githttp.BasicAuth{Username: "token", Password: token}
 		}
 	}
+
+	timeout := p.GitHubTokenTimeout
+	if timeout <= 0 {
+		timeout = time.Second
+	}
+	tokenCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	provider := p.GitHubTokenProvider
+	if provider == nil {
+		provider = gitHubCLITokenProvider{}
+	}
+	token, err := provider.Token(tokenCtx, host)
+	if err == nil && token != "" {
+		return &githttp.BasicAuth{Username: "token", Password: token}
+	}
 	return nil
+}
+
+func httpsRepositoryHost(repoURL string) (string, bool) {
+	parsed, err := url.Parse(repoURL)
+	if err != nil || (parsed.Scheme != "https" && parsed.Scheme != "http") || parsed.Hostname() == "" {
+		return "", false
+	}
+	return parsed.Hostname(), true
 }
 
 // GitFetcher loads private package source from Git repositories.
 type GitFetcher struct {
-	GOPRIVATE    string
-	HTTPClient   *http.Client
-	DiscoveryURL discoveryFunc
-	AuthProvider GitAuthProvider
-	Cloner       GitCloner
-	CacheFS      afero.Fs
-	CacheDir     string
+	GOPRIVATE       string
+	HTTPClient      *http.Client
+	DiscoveryURL    discoveryFunc
+	AuthProvider    GitAuthProvider
+	SSHAuthProvider sshAuthProvider
+	Cloner          GitCloner
+	CacheFS         afero.Fs
+	CacheDir        string
 }
 
 func (f GitFetcher) Fetch(ctx context.Context, pkg string, opts Options) (PackageSource, error) {
@@ -78,7 +137,7 @@ func (f GitFetcher) Fetch(ctx context.Context, pkg string, opts Options) (Packag
 
 	req := GitCloneRequest{
 		RepoURL: resolved.repoURL,
-		Auth:    f.authProvider().Auth(),
+		Auth:    f.authProvider().Auth(ctx, resolved.repoURL),
 	}
 	concreteVersion := opts.Version != "" && opts.Version != "latest"
 	if concreteVersion {
@@ -86,6 +145,12 @@ func (f GitFetcher) Fetch(ctx context.Context, pkg string, opts Options) (Packag
 	}
 
 	repoFS, err := f.cloner().Clone(ctx, req)
+	if err != nil && isAuthenticationFailure(err) {
+		if retryFS := f.retryWithGitHubSSH(ctx, req); retryFS != nil {
+			repoFS = retryFS
+			err = nil
+		}
+	}
 	if err != nil {
 		return PackageSource{}, fmt.Errorf("cloning %s: %w", pkg, err)
 	}
@@ -109,6 +174,40 @@ func (f GitFetcher) Fetch(ctx context.Context, pkg string, opts Options) (Packag
 		Module:     module.Version{Path: resolved.modulePath, Version: opts.Version},
 		Version:    opts.Version,
 	}, nil
+}
+
+func isAuthenticationFailure(err error) bool {
+	return errors.Is(err, transport.ErrAuthenticationRequired) || errors.Is(err, transport.ErrAuthorizationFailed)
+}
+
+func (f GitFetcher) retryWithGitHubSSH(ctx context.Context, request GitCloneRequest) afero.Fs {
+	sshURL, ok := githubSSHURL(request.RepoURL)
+	if !ok {
+		return nil
+	}
+	auth, err := f.sshAuthProvider().Auth()
+	if err != nil {
+		return nil
+	}
+	request.RepoURL = sshURL
+	request.Auth = auth
+	repoFS, err := f.cloner().Clone(ctx, request)
+	if err != nil {
+		return nil
+	}
+	return repoFS
+}
+
+func githubSSHURL(repoURL string) (string, bool) {
+	parsed, err := url.Parse(repoURL)
+	if err != nil || (parsed.Scheme != "https" && parsed.Scheme != "http") || !strings.EqualFold(parsed.Hostname(), "github.com") || parsed.Port() != "" {
+		return "", false
+	}
+	repositoryPath := strings.TrimPrefix(parsed.EscapedPath(), "/")
+	if repositoryPath == "" {
+		return "", false
+	}
+	return "git@github.com:" + repositoryPath, true
 }
 
 func (f GitFetcher) isPrivate(pkg string) bool {
@@ -151,6 +250,13 @@ func (f GitFetcher) authProvider() GitAuthProvider {
 		return f.AuthProvider
 	}
 	return EnvGitAuthProvider{}
+}
+
+func (f GitFetcher) sshAuthProvider() sshAuthProvider {
+	if f.SSHAuthProvider != nil {
+		return f.SSHAuthProvider
+	}
+	return sshAgentAuthProvider{}
 }
 
 func (f GitFetcher) cloner() GitCloner {

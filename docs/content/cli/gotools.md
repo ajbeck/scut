@@ -34,6 +34,20 @@ directory but no Go source files, the lookup reports `package <path> not
 found` without attempting remote fallback. A missing cache directory is not
 conclusive and still permits remote resolution.
 
+### Private GitHub repositories
+
+For a private GitHub repository, direct Git resolution tries HTTPS first. It
+uses the first available token from `GH_TOKEN`, `GITHUB_TOKEN`, and
+`GIT_TOKEN`; if none is set, it makes a one-second best-effort call to `gh auth
+token --hostname <host>`. A missing, failing, or unauthenticated `gh` command
+is ignored, so the lookup can continue through the usual source routes.
+
+If an authenticated HTTPS clone of a `github.com` repository fails with a Git
+authentication or authorization error, the command retries once through the
+local SSH agent. It does not retry connection, TLS, DNS, or repository lookup
+errors, and it keeps the original HTTPS authentication error if SSH is not
+available or the retry fails.
+
 ## Generated help
 
 {{< clihelp file="scut-gotools" command="scut gotools --help" >}}

@@ -13,7 +13,7 @@ The Claude status line command reads Claude Code's session snapshot from stdin a
 
 The rendered line includes:
 
-- context-window usage bar
+- a 20-circle context indicator: 🟣 represents used context and 🟢 unused context
 - active model name
 - current project path
 - git branch
@@ -26,11 +26,10 @@ The command is designed for low latency. It uses `go-git` directly instead of sp
 
 Claude Code invokes the command through the `statusLine` setting that `scut claude config install` writes.
 
-## Context thresholds
+Use `scut claude status-line --short` to render a compact 10-circle context indicator instead.
 
-| Threshold | Meaning                                         |
-| --------- | ----------------------------------------------- |
-| 70%       | The context bar shifts to warning color.        |
-| 83%       | Claude Code's auto-compaction threshold marker. |
+## Claude Code payload
 
-Large-context model detection uses the model ID marker `"[1m]"`, because Claude Code on Bedrock encodes the one-million-token variant in the model ID itself.
+Scut follows Claude Code's [official status-line payload documentation](https://code.claude.com/docs/en/statusline). The command tolerates newly added input fields, so Claude Code can evolve its payload without breaking existing status lines.
+
+For troubleshooting, `scut claude --log-level=debug status-line` records the full incoming payload in the status-line JSONL log. This may contain local paths and session metadata; bare `--log` does not record it.

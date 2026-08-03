@@ -8,6 +8,8 @@ package claudecode
 type StatusLineInput struct {
 	CWD            string                 `json:"cwd"`
 	SessionID      string                 `json:"session_id"`
+	SessionName    *string                `json:"session_name,omitempty"`
+	PromptID       *string                `json:"prompt_id,omitempty"`
 	TranscriptPath string                 `json:"transcript_path"`
 	Version        string                 `json:"version"`
 	Model          StatusLineModel        `json:"model"`
@@ -15,10 +17,14 @@ type StatusLineInput struct {
 	Cost           StatusLineCost         `json:"cost"`
 	ContextWindow  StatusLineContext      `json:"context_window"`
 	Exceeds200K    bool                   `json:"exceeds_200k_tokens"`
+	FastMode       bool                   `json:"fast_mode"`
+	Effort         *StatusLineEffort      `json:"effort,omitempty"`
+	Thinking       *StatusLineThinking    `json:"thinking,omitempty"`
 	RateLimits     *StatusLineRateLimits  `json:"rate_limits,omitempty"`
 	OutputStyle    *StatusLineOutputStyle `json:"output_style,omitempty"`
 	Vim            *StatusLineVim         `json:"vim,omitempty"`
 	Agent          *StatusLineAgent       `json:"agent,omitempty"`
+	PR             *StatusLinePR          `json:"pr,omitempty"`
 	Worktree       *StatusLineWorktree    `json:"worktree,omitempty"`
 }
 
@@ -30,8 +36,18 @@ type StatusLineModel struct {
 
 // StatusLineWorkspace carries directory context.
 type StatusLineWorkspace struct {
-	CurrentDir string `json:"current_dir"`
-	ProjectDir string `json:"project_dir"`
+	CurrentDir  string              `json:"current_dir"`
+	ProjectDir  string              `json:"project_dir"`
+	AddedDirs   []string            `json:"added_dirs"`
+	GitWorktree *string             `json:"git_worktree,omitempty"`
+	Repo        *StatusLineRepoInfo `json:"repo,omitempty"`
+}
+
+// StatusLineRepoInfo identifies the repository parsed from the origin remote.
+type StatusLineRepoInfo struct {
+	Host  string `json:"host"`
+	Owner string `json:"owner"`
+	Name  string `json:"name"`
 }
 
 // StatusLineCost tracks session cost and duration.
@@ -61,6 +77,16 @@ type StatusLineContext struct {
 	CurrentUsage        *StatusLineContextUsage `json:"current_usage"`
 }
 
+// StatusLineEffort holds the active reasoning effort when the model supports it.
+type StatusLineEffort struct {
+	Level string `json:"level"`
+}
+
+// StatusLineThinking holds the active extended-thinking state.
+type StatusLineThinking struct {
+	Enabled bool `json:"enabled"`
+}
+
 // StatusLineRateWindow holds usage data for a single rate limit window.
 type StatusLineRateWindow struct {
 	UsedPercentage float64 `json:"used_percentage"`
@@ -86,6 +112,13 @@ type StatusLineVim struct {
 // StatusLineAgent holds agent info. Only present with --agent flag.
 type StatusLineAgent struct {
 	Name string `json:"name"`
+}
+
+// StatusLinePR holds the open pull request associated with the current branch.
+type StatusLinePR struct {
+	Number      int     `json:"number"`
+	URL         string  `json:"url"`
+	ReviewState *string `json:"review_state,omitempty"`
 }
 
 // StatusLineWorktree holds worktree info. Only present during --worktree sessions.

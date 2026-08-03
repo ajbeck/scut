@@ -54,19 +54,21 @@ Each leaf command embeds hidden trailing positional args. This keeps the command
 
 ## Event inventory
 
-| Area                     | Commands                                                                             |
-| ------------------------ | ------------------------------------------------------------------------------------ |
-| Setup/session            | `setup`, `session-start`, `session-end`                                              |
+| Area                     | Commands                                                                                |
+| ------------------------ | --------------------------------------------------------------------------------------- |
+| Setup/session            | `setup`, `session-start`, `session-end`                                                 |
 | Instructions and prompts | `instructions-loaded`, `user-prompt-submit`, `user-prompt-expansion`, `message-display` |
-| Tool use                 | `pre-tool-use`, `post-tool-use`, `post-tool-use-failure`, `post-tool-batch`          |
-| Permissions              | `permission-request`, `permission-denied`                                            |
-| Notifications            | `notification`                                                                       |
-| Subagents and stop       | `subagent-start`, `subagent-stop`, `stop`, `stop-failure`                            |
-| Team/task events         | `task-created`, `task-completed`, `teammate-idle`                                    |
-| Config/files/worktrees   | `config-change`, `cwd-changed`, `file-changed`, `worktree-create`, `worktree-remove` |
-| Compaction and MCP       | `pre-compact`, `post-compact`, `elicitation`, `elicitation-result`                   |
+| Tool use                 | `pre-tool-use`, `post-tool-use`, `post-tool-use-failure`, `post-tool-batch`             |
+| Permissions              | `permission-request`, `permission-denied`                                               |
+| Notifications            | `notification`                                                                          |
+| Subagents and stop       | `subagent-start`, `subagent-stop`, `stop`, `stop-failure`                               |
+| Team/task events         | `task-created`, `task-completed`, `teammate-idle`                                       |
+| Config/files/worktrees   | `config-change`, `cwd-changed`, `file-changed`, `worktree-create`, `worktree-remove`    |
+| Compaction and MCP       | `pre-compact`, `post-compact`, `elicitation`, `elicitation-result`                      |
 
 Decision-capable events use event-specific output shapes rather than a single universal response. Keep the public `hooks/claudecode` structs aligned with Claude Code's documented wire shape.
+
+`StatusLineInput` models the status-line session snapshot separately from hook events. It includes the current documented fields and relies on Go's default permissive JSON decoding so newer, unused Claude Code fields do not break the command.
 
 ## Formatter event
 

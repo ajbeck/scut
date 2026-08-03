@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/spf13/afero"
 	"golang.org/x/mod/modfile"
@@ -66,6 +67,12 @@ func NewDefaultClient(fs afero.Fs) (*Client, error) {
 	}
 	fetchers = append(fetchers,
 		StdlibSourceFetcher{FS: fs, GOROOT: runtime.GOROOT()},
+		&BuildListFetcher{
+			FS:      fs,
+			WorkDir: wd,
+			Timeout: 2 * time.Second,
+			Runner:  GoBuildListRunner{},
+		},
 		ReplaceSourceFetcher{FS: fs, Replacements: replacements},
 		ModCacheFetcher{FS: fs, CacheDir: cacheDir, Deps: deps},
 		GitFetcher{

@@ -14,6 +14,12 @@ weight: 90
 `scut gotools doc` first checks the current package and standard library before
 trying its external source routes.
 
+For an external package in an active Go module or workspace, it then consults
+the Go-selected build list and reads the selected source directory, including
+local replacements, before checking the module cache. Build-list discovery is
+best-effort: if it cannot run, the command uses the remaining local and remote
+sources as usual.
+
 It can resolve an arbitrary external package from a private Git repository or
 public module proxy, so the package does not need to be in the current
 project's `go.mod`.

@@ -9,10 +9,10 @@ require (
 	github.com/ajbeck/go-aws-mcp-proxy v0.3.0
 	github.com/ajbeck/goldmark-prettier-markdown v0.2.1
 	github.com/go-git/go-billy/v5 v5.9.1
-	github.com/go-git/go-git/v5 v5.19.1
+	github.com/go-git/go-git/v5 v5.19.2
 	github.com/spf13/afero v1.15.0
-	github.com/yuin/goldmark v1.8.4
-	golang.org/x/mod v0.37.0
+	github.com/yuin/goldmark v1.8.5
+	golang.org/x/mod v0.38.0
 )
 
 require (

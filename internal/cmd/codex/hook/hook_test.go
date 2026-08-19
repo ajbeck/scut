@@ -85,6 +85,8 @@ func TestPostToolUseCmd_Dispatch(t *testing.T) {
 
 	unformattedMd := "#  Hello\n\nworld\n"
 	formattedMd := "# Hello\n\nworld\n"
+	unformattedFrontMatterMd := "{\n  \"title\": \"Thing\"\n}\n#  Hello\n"
+	formattedFrontMatterMd := "{\n  \"title\": \"Thing\"\n}\n# Hello\n"
 
 	tests := []struct {
 		name         string
@@ -115,6 +117,17 @@ func TestPostToolUseCmd_Dispatch(t *testing.T) {
 			},
 			wantContents: map[string]string{
 				"/src/main.go": formattedGo,
+			},
+			wantContext: true,
+		},
+		{
+			name:    "JSON front matter is preserved",
+			payload: codexPostToolUsePayload("", json.RawMessage(`{"file_path":"/docs/page.md"}`)),
+			files: map[string]string{
+				"/docs/page.md": unformattedFrontMatterMd,
+			},
+			wantContents: map[string]string{
+				"/docs/page.md": formattedFrontMatterMd,
 			},
 			wantContext: true,
 		},

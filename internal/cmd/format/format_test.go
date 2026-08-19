@@ -58,3 +58,16 @@ func TestFormatFilesForceBypassesIgnoreFiles(t *testing.T) {
 		t.Errorf("formatFiles() output = %q, want %q", got, want)
 	}
 }
+
+func TestFormatStdinPreservesFrontMatter(t *testing.T) {
+	input := "+++\ntitle = \"Thing\"\n+++\n#  Hello\n"
+	want := "+++\ntitle = \"Thing\"\n+++\n# Hello\n"
+
+	var stdout bytes.Buffer
+	if err := formatStdin(&stdout, bytes.NewBufferString(input), byteformat.FormatMarkdown); err != nil {
+		t.Fatalf("formatStdin() error: %v", err)
+	}
+	if got := stdout.String(); got != want {
+		t.Errorf("formatStdin() output = %q, want %q", got, want)
+	}
+}

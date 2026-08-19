@@ -40,6 +40,8 @@ func TestPostToolUseCmd_Dispatch(t *testing.T) {
 
 	unformattedMd := "#  Hello\n\nworld\n"
 	formattedMd := "# Hello\n\nworld\n"
+	unformattedFrontMatterMd := "---\nname: thing\ntags:\n  - one\n---\n#  Hello\n"
+	formattedFrontMatterMd := "---\nname: thing\ntags:\n  - one\n---\n# Hello\n"
 
 	tests := []struct {
 		name        string
@@ -72,6 +74,14 @@ func TestPostToolUseCmd_Dispatch(t *testing.T) {
 			filePath:    "/docs/page.mdx",
 			fileContent: unformattedMd,
 			wantContent: formattedMd,
+			wantContext: true,
+		},
+		{
+			name:        "Markdown front matter is preserved",
+			payload:     hookPayload(toolInput("/docs/page.md")),
+			filePath:    "/docs/page.md",
+			fileContent: unformattedFrontMatterMd,
+			wantContent: formattedFrontMatterMd,
 			wantContext: true,
 		},
 		{

@@ -46,6 +46,8 @@ For each candidate path:
 
 Ignore files such as `.prettierignore` and `.scutignore` can prevent formatting.
 
+For Markdown and MDX files, the shared formatter preserves leading Hugo YAML, TOML, and JSON front matter verbatim. When it cannot safely identify a complete leading front matter block, the formatter returns no result, so the hook leaves the file unchanged.
+
 `.scutignore` is loaded after `.prettierignore`, so it can add scut-specific exclusions or re-include paths with `!` patterns.
 
 ## Decision control

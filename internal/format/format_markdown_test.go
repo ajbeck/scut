@@ -77,3 +77,84 @@ func TestFormatMarkdown(t *testing.T) {
 		})
 	}
 }
+
+func TestFormatMarkdownFrontMatter(t *testing.T) {
+	tests := []struct {
+		name    string
+		src     string
+		want    string
+		wantNil bool
+	}{
+		{
+			name: "YAML front matter is preserved",
+			src:  "---\n# keep this comment\nname: thing\ntags:\n  - alpha\n  - beta\nmetadata:\n  type: guide\n---\n#  Title\n\nbody\n",
+			want: "---\n# keep this comment\nname: thing\ntags:\n  - alpha\n  - beta\nmetadata:\n  type: guide\n---\n# Title\n\nbody\n",
+		},
+		{
+			name: "TOML front matter is preserved",
+			src:  "+++\ntitle = \"Thing\"\n[params]\n  author = \"Ada\"\n+++\n#  Title\n\nbody\n",
+			want: "+++\ntitle = \"Thing\"\n[params]\n  author = \"Ada\"\n+++\n# Title\n\nbody\n",
+		},
+		{
+			name: "JSON front matter is preserved",
+			src:  "{\n  \"title\": \"Thing\",\n  \"params\": { \"author\": \"Ada\" }\n}\n#  Title\n\nbody\n",
+			want: "{\n  \"title\": \"Thing\",\n  \"params\": { \"author\": \"Ada\" }\n}\n# Title\n\nbody\n",
+		},
+		{
+			name: "leading whitespace and byte order mark are preserved",
+			src:  "\ufeff\n  \n---\ntitle: Thing\n---\n#  Title\n",
+			want: "\ufeff\n  \n---\ntitle: Thing\n---\n# Title\n",
+		},
+		{
+			name: "CRLF front matter is preserved",
+			src:  "---\r\ntitle: Thing\r\n---\r\n#  Title\r\n",
+			want: "---\r\ntitle: Thing\r\n---\r\n# Title\n",
+		},
+		{
+			name:    "unterminated YAML front matter is declined",
+			src:     "---\ntitle: Thing\n#  Title\n",
+			wantNil: true,
+		},
+		{
+			name:    "unterminated TOML front matter is declined",
+			src:     "+++\ntitle = \"Thing\"\n#  Title\n",
+			wantNil: true,
+		},
+		{
+			name:    "invalid JSON front matter is declined",
+			src:     "{\n  \"title\": \n}\n#  Title\n",
+			wantNil: true,
+		},
+		{
+			name:    "JSON front matter without a line boundary is declined",
+			src:     "{\"title\": \"Thing\"}# Title\n",
+			wantNil: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := FormatMarkdown([]byte(tt.src))
+			if err != nil {
+				t.Fatalf("FormatMarkdown() error: %v", err)
+			}
+			if tt.wantNil {
+				if got != nil {
+					t.Errorf("FormatMarkdown() = %q, want nil", got)
+				}
+				return
+			}
+			if want := []byte(tt.want); !bytes.Equal(got, want) {
+				t.Errorf("FormatMarkdown() = %q, want %q", got, want)
+			}
+
+			gotAgain, err := FormatMarkdown(got)
+			if err != nil {
+				t.Fatalf("second FormatMarkdown() error: %v", err)
+			}
+			if !bytes.Equal(gotAgain, got) {
+				t.Errorf("second FormatMarkdown() = %q, want %q", gotAgain, got)
+			}
+		})
+	}
+}

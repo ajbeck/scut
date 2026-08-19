@@ -9,6 +9,8 @@ weight: 80
 
 `scut format` is the formatter surface used by hooks and direct agent commands. It reads files from arguments or stdin depending on the subcommand.
 
+Markdown formatting preserves leading Hugo front matter verbatim in YAML, TOML, and JSON forms. If scut cannot safely identify a complete leading front matter block, it leaves the document unchanged rather than risk modifying metadata.
+
 ## Generated help
 
 {{< clihelp file="scut-format" command="scut format --help" >}}

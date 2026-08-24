@@ -6,7 +6,7 @@ require github.com/alecthomas/kong v1.16.1
 
 require (
 	charm.land/lipgloss/v2 v2.0.6
-	github.com/ajbeck/go-aws-mcp-proxy v0.3.0
+	github.com/ajbeck/go-aws-mcp-proxy v0.4.0
 	github.com/ajbeck/goldmark-prettier-markdown v0.2.1
 	github.com/go-git/go-billy/v5 v5.9.1
 	github.com/go-git/go-git/v5 v5.19.2

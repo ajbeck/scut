@@ -7,8 +7,8 @@ github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERo
 github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA8Ipt1oGCvU=
 github.com/ProtonMail/go-crypto v1.4.1 h1:9RfcZHqEQUvP8RzecWEUafnZVtEvrBVL9BiF67IQOfM=
 github.com/ProtonMail/go-crypto v1.4.1/go.mod h1:e1OaTyu5SYVrO9gKOEhTc+5UcXtTUa+P3uLudwcgPqo=
-github.com/ajbeck/go-aws-mcp-proxy v0.3.0 h1:0VcZkeAQcJer/TjYoRRgoF2YOT20xCYv9Iuc4hJF12o=
-github.com/ajbeck/go-aws-mcp-proxy v0.3.0/go.mod h1:6k5hvf9fXtGcUAaHE2WtbMUguv1/qk9hA7+4YDhJuuE=
+github.com/ajbeck/go-aws-mcp-proxy v0.4.0 h1:ahSbkBaOlynjQrBxVyttYFM17E+IZpyJ1tSfra46boY=
+github.com/ajbeck/go-aws-mcp-proxy v0.4.0/go.mod h1:UNl6tSCaq8iPc9WNB/Yche5c+CTMiRLycym6Q/ZTNJU=
 github.com/ajbeck/goldmark-prettier-markdown v0.2.1 h1:+91io0FrDrLX8XYrn91ZS7s1ZrtxFrdwG5gg+fgPQ60=
 github.com/ajbeck/goldmark-prettier-markdown v0.2.1/go.mod h1:Ae8inofGZfR/EChyrE/K+ChrsY2AP0okyiNDrtS0KXA=
 github.com/alecthomas/assert/v2 v2.11.0 h1:2Q9r3ki8+JYXvGsDyBXwH3LcJ+WK5D0gc5E8vS6K3D0=

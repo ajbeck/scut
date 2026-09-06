@@ -130,7 +130,7 @@ type Widget struct {
 	}
 }
 
-func TestDefaultClientDoesNotCreatePartialModuleCache(t *testing.T) {
+func TestClientDoesNotCreatePartialModuleCache(t *testing.T) {
 	const (
 		modPath = "example.com/acme/tool"
 		version = "v1.2.3"
@@ -167,7 +167,8 @@ const Value = helper.Value
 		})
 		_ = os.RemoveAll(modCacheRoot)
 	})
-	t.Chdir(t.TempDir())
+	lookupDir := t.TempDir()
+	t.Chdir(lookupDir)
 	t.Setenv("GOMODCACHE", modCache)
 	t.Setenv("GOCACHE", filepath.Join(t.TempDir(), "build-cache"))
 	t.Setenv("GOPATH", filepath.Join(t.TempDir(), "gopath"))
@@ -182,10 +183,7 @@ const Value = helper.Value
 	t.Setenv("GOTOOLCHAIN", "local")
 
 	fs := afero.NewOsFs()
-	client, err := NewDefaultClient(fs)
-	if err != nil {
-		t.Fatalf("NewDefaultClient() error = %v", err)
-	}
+	client := newClient(fs, lookupDir, FileArchiveStore{Root: filepath.Join(t.TempDir(), "scut-cache")})
 	out, err := client.Doc(t.Context(), Options{Package: pkg, Version: version})
 	if err != nil {
 		t.Fatalf("Doc() error = %v", err)

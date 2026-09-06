@@ -54,6 +54,14 @@ func NewDefaultClient(fs afero.Fs) (*Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("resolving working directory: %w", err)
 	}
+	var archiveStore ArchiveStore
+	if archiveDir, err := DefaultModuleArchiveCacheDir(); err == nil {
+		archiveStore = FileArchiveStore{Root: archiveDir}
+	}
+	return newClient(fs, wd, archiveStore), nil
+}
+
+func newClient(fs afero.Fs, wd string, archiveStore ArchiveStore) *Client {
 	moduleDir, modulePath, deps, replacements := readCurrentModule(fs, wd)
 	cacheDir := defaultModuleCacheDir()
 
@@ -75,15 +83,18 @@ func NewDefaultClient(fs afero.Fs) (*Client, error) {
 		},
 		ReplaceSourceFetcher{FS: fs, Replacements: replacements},
 		ModCacheFetcher{FS: fs, CacheDir: cacheDir, Deps: deps},
+		ArchiveFetcher{Store: archiveStore},
 		GitFetcher{
 			GOPRIVATE:    os.Getenv("GOPRIVATE"),
 			DiscoveryURL: defaultDiscoveryURL,
+			Store:        archiveStore,
 		},
 	)
 	for _, proxyURL := range proxyURLsFromEnv(os.Getenv("GOPROXY")) {
 		fetchers = append(fetchers, ProxyFetcher{
 			ProxyURL:     proxyURL,
 			DiscoveryURL: defaultDiscoveryURL,
+			Store:        archiveStore,
 		})
 	}
 
@@ -101,7 +112,7 @@ func NewDefaultClient(fs afero.Fs) (*Client, error) {
 			ModuleDir:  moduleDir,
 			ModulePath: modulePath,
 		},
-	}, nil
+	}
 }
 
 func readCurrentModule(fs afero.Fs, start string) (string, string, map[string]module.Version, map[string]string) {

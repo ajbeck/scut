@@ -33,9 +33,16 @@ type GitCloneRequest struct {
 	ReferenceName plumbing.ReferenceName
 }
 
-// GitCloner clones a repository and returns an afero filesystem rooted at it.
+// GitCloneResult is an in-memory repository snapshot and the immutable commit
+// selected by the clone.
+type GitCloneResult struct {
+	FS       afero.Fs
+	Revision string
+}
+
+// GitCloner clones a repository and returns its files and resolved revision.
 type GitCloner interface {
-	Clone(context.Context, GitCloneRequest) (afero.Fs, error)
+	Clone(context.Context, GitCloneRequest) (GitCloneResult, error)
 }
 
 type GitAuthProvider interface {
@@ -121,6 +128,7 @@ type GitFetcher struct {
 	AuthProvider    GitAuthProvider
 	SSHAuthProvider sshAuthProvider
 	Cloner          GitCloner
+	Store           ArchiveStore
 }
 
 func (f GitFetcher) Fetch(ctx context.Context, pkg string, opts Options) (PackageSource, error) {
@@ -142,26 +150,32 @@ func (f GitFetcher) Fetch(ctx context.Context, pkg string, opts Options) (Packag
 		req.ReferenceName = plumbing.NewTagReferenceName(opts.Version)
 	}
 
-	repoFS, err := f.cloner().Clone(ctx, req)
+	clone, err := f.cloner().Clone(ctx, req)
 	if err != nil && isAuthenticationFailure(err) {
-		if retryFS := f.retryWithGitHubSSH(ctx, req); retryFS != nil {
-			repoFS = retryFS
+		if retry, ok := f.retryWithGitHubSSH(ctx, req); ok {
+			clone = retry
 			err = nil
 		}
 	}
 	if err != nil {
 		return PackageSource{}, fmt.Errorf("cloning %s: %w", pkg, err)
 	}
-	files, err := copyPackageFilesToMem(repoFS, packageSubdir(pkg, resolved.modulePath))
+	files, err := copyPackageFilesToMem(clone.FS, packageSubdir(pkg, resolved.modulePath))
 	if err != nil {
 		return PackageSource{}, err
+	}
+	mod := module.Version{Path: resolved.modulePath, Version: opts.Version}
+	if concreteVersion && module.CanonicalVersion(mod.Version) == mod.Version && clone.Revision != "" && f.Store != nil {
+		if archive, archiveErr := moduleArchiveFromFS(mod, clone.FS, clone.Revision); archiveErr == nil {
+			_ = f.Store.Put(ctx, archive)
+		}
 	}
 
 	return PackageSource{
 		ImportPath: pkg,
 		Dir:        path.Join("/", "git", pkg),
 		Files:      files,
-		Module:     module.Version{Path: resolved.modulePath, Version: opts.Version},
+		Module:     mod,
 		Version:    opts.Version,
 	}, nil
 }
@@ -170,22 +184,22 @@ func isAuthenticationFailure(err error) bool {
 	return errors.Is(err, transport.ErrAuthenticationRequired) || errors.Is(err, transport.ErrAuthorizationFailed)
 }
 
-func (f GitFetcher) retryWithGitHubSSH(ctx context.Context, request GitCloneRequest) afero.Fs {
+func (f GitFetcher) retryWithGitHubSSH(ctx context.Context, request GitCloneRequest) (GitCloneResult, bool) {
 	sshURL, ok := githubSSHURL(request.RepoURL)
 	if !ok {
-		return nil
+		return GitCloneResult{}, false
 	}
 	auth, err := f.sshAuthProvider().Auth()
 	if err != nil {
-		return nil
+		return GitCloneResult{}, false
 	}
 	request.RepoURL = sshURL
 	request.Auth = auth
-	repoFS, err := f.cloner().Clone(ctx, request)
+	clone, err := f.cloner().Clone(ctx, request)
 	if err != nil {
-		return nil
+		return GitCloneResult{}, false
 	}
-	return repoFS
+	return clone, true
 }
 
 func githubSSHURL(repoURL string) (string, bool) {
@@ -259,7 +273,7 @@ func (f GitFetcher) cloner() GitCloner {
 // GoGitCloner clones with go-git into memory and exposes the worktree as afero.
 type GoGitCloner struct{}
 
-func (GoGitCloner) Clone(ctx context.Context, req GitCloneRequest) (afero.Fs, error) {
+func (GoGitCloner) Clone(ctx context.Context, req GitCloneRequest) (GitCloneResult, error) {
 	worktree := memfs.New()
 	options := &git.CloneOptions{
 		URL:           req.RepoURL,
@@ -269,14 +283,19 @@ func (GoGitCloner) Clone(ctx context.Context, req GitCloneRequest) (afero.Fs, er
 	if req.ReferenceName != "" {
 		options.SingleBranch = true
 	}
-	if _, err := git.CloneContext(ctx, memory.NewStorage(), worktree, options); err != nil {
-		return nil, err
+	repo, err := git.CloneContext(ctx, memory.NewStorage(), worktree, options)
+	if err != nil {
+		return GitCloneResult{}, err
+	}
+	head, err := repo.Head()
+	if err != nil {
+		return GitCloneResult{}, err
 	}
 	fs := afero.NewMemMapFs()
 	if err := copyBillyToAfero(worktree, fs, "."); err != nil {
-		return nil, err
+		return GitCloneResult{}, err
 	}
-	return fs, nil
+	return GitCloneResult{FS: fs, Revision: head.Hash().String()}, nil
 }
 
 func copyBillyToAfero(src billy.Filesystem, dst afero.Fs, dir string) error {

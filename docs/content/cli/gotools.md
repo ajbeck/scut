@@ -24,10 +24,25 @@ public module proxy, so the package does not need to be in the current
 project's `go.mod`.
 
 Remote documentation lookup does not write fetched package files into
-`GOMODCACHE`. The Go module cache is treated as an existing source only; proxy
-and private Git results are held in memory for the current invocation. This
+`GOMODCACHE`. The Go module cache is treated as an existing source only. This
 prevents a documentation lookup from creating a partial extracted module that
 could break later Go commands.
+
+### Independent module cache
+
+The command persists complete immutable module ZIPs in a scut-owned cache below
+the operating system's user cache directory at `scut/gotools/modules`. Entries
+are structurally validated and published atomically, so concurrent lookups
+cannot observe a partially written module. A failed cache write does not discard
+documentation source that was fetched successfully for the current invocation.
+
+For a proxy `latest` request, scut records the concrete version returned by the
+proxy and reuses that mapping for an offline lookup. Explicit canonical versions
+fetched from private Git repositories are cached only when the clone exposes
+the resolved commit. Floating private Git requests remain in memory.
+
+The cache has no automatic eviction. Explicit inspection and lifecycle commands
+will be added separately.
 
 For one-argument lookups such as `example.com/module/pkg.Type`, the command
 preserves `go doc`'s interpretation order: it first considers the full package

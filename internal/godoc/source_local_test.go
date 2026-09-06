@@ -28,7 +28,7 @@ func TestReadGoFilesExcludesTestsAndDirectories(t *testing.T) {
 	}
 }
 
-func TestReadGoFilesExcludesIgnoredBuildFiles(t *testing.T) {
+func TestReadGoFilesDefersBuildConstraintFiltering(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	writeTestFile(t, fs, "/repo/pkg/doc.go", []byte("package pkg\n"))
 	writeTestFile(t, fs, "/repo/pkg/tool.go", []byte("//go:build ignore\n\npackage main\n"))
@@ -38,11 +38,19 @@ func TestReadGoFilesExcludesIgnoredBuildFiles(t *testing.T) {
 		t.Fatalf("readGoFiles() error = %v", err)
 	}
 
-	if got, want := len(files), 1; got != want {
+	if got, want := len(files), 2; got != want {
 		t.Fatalf("len(files) = %d, want %d", got, want)
 	}
-	if got, want := files[0].Name, filepath.Join("/repo/pkg", "doc.go"); got != want {
-		t.Fatalf("files[0].Name = %q, want %q", got, want)
+
+	selected, err := (SourceBuildContext{}).Filter(files)
+	if err != nil {
+		t.Fatalf("Filter() error = %v", err)
+	}
+	if got, want := len(selected), 1; got != want {
+		t.Fatalf("len(selected) = %d, want %d", got, want)
+	}
+	if got, want := selected[0].Name, filepath.Join("/repo/pkg", "doc.go"); got != want {
+		t.Fatalf("selected[0].Name = %q, want %q", got, want)
 	}
 }
 

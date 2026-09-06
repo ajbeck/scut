@@ -39,6 +39,28 @@ Build-list discovery currently invokes `go list -mod=readonly -m -json all`.
 That command does not edit the active `go.mod`, but the Go command may perform
 its own normal module-cache work while loading the build list.
 
+### Active build context
+
+After a source backend resolves the complete package source, scut applies one
+shared Go build context before parsing documentation. This keeps cached module
+archives complete and target-independent while making local, standard-library,
+Go-cache, scut-cache, proxy, and direct-Git results select the same files.
+
+The target uses `GOOS`, `GOARCH`, and `CGO_ENABLED` from the process environment,
+the user `go/env` file, or `GOROOT/go.env` with Go's normal precedence.
+Configured `-tags` or `--tags` values in `GOFLAGS` are added to the context;
+the running scut process supplies compiler, tool, and release tags from its Go
+toolchain. Scut does not copy the Go command's private machinery for
+recomputing experimental or microarchitecture tool tags from a different target
+stored only in a Go environment file. Scut honors both `//go:build` expressions
+and GOOS/GOARCH filename suffixes. Files that import `C` are excluded when cgo
+is disabled, and `_test.go`, dot-prefixed, and underscore-prefixed files are not
+included in package documentation.
+
+If a resolved package has source but the active context excludes every file,
+the command reports that build constraints exclude all Go files instead of
+misreporting the package as absent.
+
 ### Go network policy
 
 Scut reads module download settings without invoking the Go command. Values use

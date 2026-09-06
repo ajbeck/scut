@@ -78,3 +78,10 @@ active module or workspace sums first, and otherwise applies `GOSUMDB` and
 and verification provenance as one immutable version entry. Checksum-database
 latest-tree checkpoints live in separate scut-owned configuration state so
 cache cleanup cannot erase anti-rollback history.
+
+Source retrieval deliberately retains complete target-independent package
+contents. Immediately before parsing, the lookup resolver applies a shared
+`go/build.Context` derived from Go's environment precedence, including
+`GOOS`, `GOARCH`, `CGO_ENABLED`, and `GOFLAGS=-tags`. Keeping build selection
+above every backend prevents local, cached, proxy, and direct-Git sources from
+drifting into different documentation surfaces.

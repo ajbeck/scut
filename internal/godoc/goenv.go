@@ -48,15 +48,7 @@ func newGoEnvLoader() goEnvLoader {
 
 func (l goEnvLoader) loadPolicy() ModuleDownloadPolicy {
 	values := l.loadFiles()
-	get := func(name, fallback string) string {
-		if value, ok := l.lookup()(name); ok && value != "" {
-			return value
-		}
-		if value := values[name]; value != "" {
-			return value
-		}
-		return fallback
-	}
+	get := func(name, fallback string) string { return l.value(values, name, fallback) }
 
 	private := get("GOPRIVATE", "")
 	return ModuleDownloadPolicy{
@@ -69,6 +61,16 @@ func (l goEnvLoader) loadPolicy() ModuleDownloadPolicy {
 		GOAUTH:     get("GOAUTH", defaultGOAUTH),
 		GOVCS:      get("GOVCS", ""),
 	}
+}
+
+func (l goEnvLoader) value(values map[string]string, name, fallback string) string {
+	if value, ok := l.lookup()(name); ok && value != "" {
+		return value
+	}
+	if value := values[name]; value != "" {
+		return value
+	}
+	return fallback
 }
 
 func (l goEnvLoader) loadFiles() map[string]string {

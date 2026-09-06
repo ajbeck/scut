@@ -42,6 +42,14 @@ func (e *sourceResolutionError) Unwrap() error {
 	return e.err
 }
 
+type buildConstraintsError struct {
+	Package string
+}
+
+func (e *buildConstraintsError) Error() string {
+	return "build constraints exclude all Go files in " + e.Package
+}
+
 // PackageNotFoundError names the package that no source fetcher could load.
 type PackageNotFoundError struct {
 	Package string

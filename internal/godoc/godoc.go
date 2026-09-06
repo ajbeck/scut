@@ -23,6 +23,7 @@ type Client struct {
 	Resolver     Resolver
 	PackageIndex PackageIndex
 	Current      CurrentPackage
+	BuildContext SourceBuildContext
 }
 
 func (c Client) Doc(ctx context.Context, opts Options) (string, error) {
@@ -30,6 +31,7 @@ func (c Client) Doc(ctx context.Context, opts Options) (string, error) {
 		Resolver:     c.Resolver,
 		PackageIndex: c.PackageIndex,
 		Current:      c.Current,
+		BuildContext: c.BuildContext,
 	}.Resolve(ctx, opts)
 	if err != nil {
 		return "", err
@@ -86,6 +88,7 @@ func newClient(fs afero.Fs, wd string, archiveStore ArchiveStore) *Client {
 			StateDir:      checksumStateDir,
 		},
 	}
+	sourceBuildContext := loadSourceBuildContext()
 
 	fetchers := []SourceFetcher{}
 	if moduleDir != "" && modulePath != "" {
@@ -131,6 +134,7 @@ func newClient(fs afero.Fs, wd string, archiveStore ArchiveStore) *Client {
 			ModuleDir:  moduleDir,
 			ModulePath: modulePath,
 		},
+		BuildContext: sourceBuildContext,
 	}
 }
 

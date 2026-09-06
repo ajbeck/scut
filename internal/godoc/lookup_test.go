@@ -3,6 +3,7 @@ package godoc
 import (
 	"context"
 	"errors"
+	"go/build"
 	"reflect"
 	"strings"
 	"testing"
@@ -364,6 +365,44 @@ func Float64() float64 { return 0 }
 	wantAttempts := []string{"rand.Float64", "crypto/rand", "math/rand"}
 	if !reflect.DeepEqual(got.Attempts, wantAttempts) {
 		t.Fatalf("Resolve() attempts = %#v, want %#v", got.Attempts, wantAttempts)
+	}
+}
+
+func TestLookupResolverContinuesPastBuildExcludedSuffixMatch(t *testing.T) {
+	context := build.Default
+	context.GOOS = "linux"
+	resolver := LookupResolver{
+		Resolver: Resolver{Fetchers: []SourceFetcher{&mapSourceFetcher{sources: map[string]PackageSource{
+			"example.com/first/widget": {
+				ImportPath: "example.com/first/widget",
+				Files: []SourceFile{{
+					Name: "widget_windows.go",
+					Data: []byte("package widget\n\nfunc Active() {}\n"),
+				}},
+			},
+			"example.com/second/widget": {
+				ImportPath: "example.com/second/widget",
+				Files: []SourceFile{{
+					Name: "widget_linux.go",
+					Data: []byte("package widget\n\nfunc Active() {}\n"),
+				}},
+			},
+		}}}},
+		PackageIndex: staticPackageIndex{matches: map[string][]IndexedPackage{
+			"widget": {
+				{ImportPath: "example.com/first/widget"},
+				{ImportPath: "example.com/second/widget"},
+			},
+		}},
+		BuildContext: SourceBuildContext{Context: context},
+	}
+
+	got, err := resolver.Resolve(t.Context(), Options{Args: []string{"widget", "Active"}})
+	if err != nil {
+		t.Fatalf("Resolve() error = %v", err)
+	}
+	if got.Source.ImportPath != "example.com/second/widget" {
+		t.Fatalf("Resolve() package = %q, want active suffix match", got.Source.ImportPath)
 	}
 }
 

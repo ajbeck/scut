@@ -71,6 +71,8 @@ func newClient(fs afero.Fs, wd string, archiveStore ArchiveStore) *Client {
 		Runner:  GoBuildListRunner{},
 	}
 	selector := ModuleSelectorChain{buildList, DependencySelector(deps)}
+	policy := loadModuleDownloadPolicy()
+	authenticator := &GoAuthenticator{Config: policy.GOAUTH}
 
 	fetchers := []SourceFetcher{}
 	if moduleDir != "" && modulePath != "" {
@@ -86,20 +88,21 @@ func newClient(fs afero.Fs, wd string, archiveStore ArchiveStore) *Client {
 		ReplaceSourceFetcher{FS: fs, Replacements: replacements},
 		GoCacheFetcher{Reader: GoCacheArchiveReader{Root: cacheDir}, Selector: selector},
 		ArchiveFetcher{Store: archiveStore, Selector: selector},
-		GitFetcher{
-			GOPRIVATE:    os.Getenv("GOPRIVATE"),
-			DiscoveryURL: defaultDiscoveryURL,
-			Store:        archiveStore,
+		RemoteFetcher{
+			Policy: policy,
+			Proxy: ProxyFetcher{
+				Store:         archiveStore,
+				Selector:      selector,
+				Authenticator: authenticator,
+			},
+			Direct: GitFetcher{
+				GOPRIVATE:     policy.GOPRIVATE,
+				Store:         archiveStore,
+				Selector:      selector,
+				Authenticator: authenticator,
+			},
 		},
 	)
-	for _, proxyURL := range proxyURLsFromEnv(os.Getenv("GOPROXY")) {
-		fetchers = append(fetchers, ProxyFetcher{
-			ProxyURL:     proxyURL,
-			DiscoveryURL: defaultDiscoveryURL,
-			Store:        archiveStore,
-			Selector:     selector,
-		})
-	}
 
 	return &Client{
 		Resolver: Resolver{Fetchers: fetchers},
@@ -169,8 +172,4 @@ func defaultModuleCacheDir() string {
 		return filepath.Join(home, "go", "pkg", "mod")
 	}
 	return ""
-}
-
-func defaultDiscoveryURL(importPath string) string {
-	return "https://" + importPath + "?go-get=1"
 }

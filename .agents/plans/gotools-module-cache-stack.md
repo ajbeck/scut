@@ -45,7 +45,7 @@ The stack is linear and listed bottom-to-top.
 | 2     | `gotools-cache/archive-store`      | [#51](https://github.com/ajbeck/scut/issues/51) | Implemented; awaiting review | Add the scut-owned complete immutable archive store with atomic publication and concurrency safety. |
 | 3     | `gotools-cache/go-cache-reader`    | [#52](https://github.com/ajbeck/scut/issues/52) | Implemented; awaiting review | Reuse verified Go download-cache archives read-only and establish final source ordering.            |
 | 4     | `gotools-cache/commands`           | [#53](https://github.com/ajbeck/scut/issues/53) | Implemented; awaiting review | Add path, list, verify, remove, clean, and prune cache-management commands.                         |
-| 5     | `gotools-resolution/proxy-policy`  | [#54](https://github.com/ajbeck/scut/issues/54) | Planned                      | Match Go proxy fallback, private-module, authentication, and transport policy.                      |
+| 5     | `gotools-resolution/proxy-policy`  | [#54](https://github.com/ajbeck/scut/issues/54) | Implemented; awaiting review | Match Go proxy fallback, private-module, authentication, and transport policy.                      |
 | 6     | `gotools-resolution/integrity`     | [#55](https://github.com/ajbeck/scut/issues/55) | Planned                      | Verify archive structure and checksums before consumption or publication.                           |
 | 7     | `gotools-resolution/build-context` | [#56](https://github.com/ajbeck/scut/issues/56) | Planned                      | Honor build constraints and add full-pipeline integration coverage and final documentation.         |
 
@@ -126,6 +126,34 @@ The stack is linear and listed bottom-to-top.
    JSON, and command-tree regressions.
 9. Update gotools and architecture documentation and run all Walle verification
    tasks with Go 1.26.3.
+
+## Layer 5 implementation plan
+
+1. Load module-resolution settings with Go's precedence: non-empty process
+   environment, the user `go/env` file unless `GOENV=off`, then
+   `GOROOT/go.env`, without invoking the Go command.
+2. Parse `GOPROXY` into an ordered state machine that preserves comma versus
+   pipe fallback, terminal `direct` and `off` entries, implicit HTTPS proxy
+   URLs, and the implicit `noproxy` route used by `GONOPROXY`.
+3. Replace the independent Git and per-proxy fetcher chain with one remote
+   fetcher that ranks errors and decides fallback once for the whole lookup.
+4. Apply `GONOPROXY` to resolved module identities, default it from
+   `GOPRIVATE`, and keep `GONOSUMDB` in the shared policy for layer 6.
+5. Make direct Git resolution selector-aware, including versioned
+   replacements, repository submodules, semantic-import-version suffixes,
+   nested-module tag prefixes, canonical tags, and pseudo-version revisions.
+6. Implement `GOAUTH` for HTTPS discovery and module-proxy requests, including
+   `off`, `netrc`, `git <absolute-dir>`, custom commands, prefix-scoped headers,
+   and the one retry after a 4xx response.
+7. Apply `GOINSECURE` only to matching direct module discovery and Git
+   transport, and enforce `GOVCS` before any direct Git clone.
+8. Preserve the existing environment/GitHub CLI token preference and GitHub
+   SSH retry where direct policy permits the clone.
+9. Add parser, environment precedence, fallback, private override,
+   authentication, insecure transport, VCS policy, selected-version, and
+   nested-module tests.
+10. Update gotools and architecture documentation and run all Walle
+    verification tasks with Go 1.26.3.
 
 ## Decisions
 
@@ -272,18 +300,62 @@ mismatched sidecar. This protects cache storage integrity but does not prove
 module authenticity; `go.sum`, checksum-database, and private-module trust
 policy remain layer 6.
 
+### D-021: Read Go environment policy without invoking Go
+
+Scut resolves supported Go settings from the same three precedence layers as
+the Go command: a non-empty process environment value, the user `go/env` file,
+then `GOROOT/go.env`. `GOENV=off` disables only the user file. This preserves
+`go env -w` configuration and toolchain defaults such as
+`https://proxy.golang.org,direct` without adding another Go subprocess to the
+documentation path.
+
+### D-022: Remote fallback is one state machine
+
+Proxy URLs, the implicit `noproxy` route, `direct`, and `off` are entries in one
+ordered remote fetcher. A comma advances only after a not-found result; a pipe
+advances after any result. Keeping this decision above HTTP proxy and Git
+mechanisms prevents the generic source resolver from accidentally changing Go
+fallback semantics.
+
+### D-023: Private matching is source policy, not cache policy
+
+`GONOPROXY` defaults to `GOPRIVATE` only when it is otherwise unset and is
+matched against the resolved module identity before remote access. Existing
+verified Go-cache and scut-cache archives remain reusable regardless of proxy
+policy. `GONOSUMDB` is loaded into the same policy now but its trust decision is
+enforced by layer 6.
+
+### D-024: GOAUTH and Git authentication remain distinct boundaries
+
+`GOAUTH` supplies prefix-scoped headers only to HTTPS go-import discovery and
+module-proxy protocol requests, including its documented one-time 4xx retry.
+Direct Git transport retains the existing environment token, GitHub CLI token,
+and GitHub SSH fallback behavior; compatible Basic or Bearer credentials from
+GOAUTH may be bridged to HTTPS Git, but `GOAUTH=off` does not disable Git's
+separate authentication mechanisms.
+
+### D-025: Insecure transport is direct-only
+
+`GOINSECURE` can enable HTTP discovery fallback and relaxed TLS verification
+only for matching modules on the `direct` route. It does not rewrite or weaken
+explicit proxy URLs and does not alter checksum policy.
+
+### D-026: Direct Git must also honor GOVCS
+
+Although issue #54 initially named proxy and private-module variables,
+implementing a real `direct` route makes `GOVCS` part of the same safety
+boundary. Scut supports Git only and rejects a direct clone when the first
+matching `GOVCS` rule disallows Git, using `GOPRIVATE` to classify the module as
+public or private for the default rules.
+
 ## Open questions
 
 No blocking questions are open for layer 1. Later layers must resolve these
 before implementation reaches them:
 
-1. Whether cache `list` and `verify` JSON should use the repository-wide output
-   envelope or a gotools-specific schema.
-2. Whether explicit destructive cache commands need confirmation in interactive
-   terminals, or whether the command invocation itself is sufficient intent.
-3. Which configured build tags, beyond `GOOS` and `GOARCH`, should feed the
+1. Which configured build tags, beyond `GOOS` and `GOARCH`, should feed the
    documentation build context.
-4. Whether checksum-database lookup should use the public default only when
+2. Whether checksum-database lookup should use the public default only when
    `GOSUMDB` is unset, matching the Go command, or require explicit opt-in for a
    documentation lookup tool.
 
@@ -316,6 +388,20 @@ before implementation reaches them:
 - 2026-09-06: Layer 4 passes `./walle fmt`, `./walle test`, `./walle vet`,
   `./walle build`, and `./walle docs` with `GOTOOLCHAIN=go1.26.3`; generated
   help covers every cache subcommand.
+- 2026-09-06: Committed layer 4 locally as `0a8e08a`, rebased the remaining
+  stack, and began layer 5 without pushing any branch.
+- 2026-09-06: Layer 5 design review selected a single Go-compatible remote
+  fallback state machine, direct reading of process/user/GOROOT Go environment
+  policy, module-identity private matching, GOAUTH at HTTPS boundaries,
+  direct-only GOINSECURE, and GOVCS enforcement for direct Git.
+- 2026-09-06: Implemented layer 5 with Go environment-file precedence,
+  comma/pipe/direct/off and file-proxy routing, private proxy bypass and
+  overrides, GOAUTH helpers and 4xx retry, direct-only insecure transport,
+  GOVCS enforcement, and selector-aware nested, semantic-version, pseudo-
+  version, and replacement Git resolution.
+- 2026-09-06: Layer 5 passes `./walle fmt`, `./walle test`, `./walle vet`,
+  `./walle build`, and `./walle docs` with `GOTOOLCHAIN=go1.26.3`; a
+  binary smoke check confirms `GOPROXY=off` returns the explicit policy error.
 - 2026-09-06: Removed direct proxy and private-Git writes to `GOMODCACHE`, added
   the isolated downstream-Go regression, and updated the gotools CLI docs.
 - 2026-09-06: Confirmed the repository test suite passes with its declared Go

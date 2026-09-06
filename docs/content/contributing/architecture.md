@@ -54,3 +54,19 @@ Use Walle for all Go operations. The task runner sets `GOEXPERIMENT=jsonv2` and 
 ```
 
 Do not call `go test`, `go build`, `go vet`, or `gofmt` directly in this repo.
+
+## Go documentation resolution
+
+`internal/godoc` separates source precedence from remote transport policy.
+The generic resolver checks local/workspace source, the standard library,
+build-list directories, verified Go-cache archives, and scut-owned archives in
+order. Its final remote fetcher owns the complete `GOPROXY` sequence so comma
+and pipe fallback cannot be changed accidentally by the generic resolver.
+
+Remote mechanisms sit below that state machine: proxy protocol access handles
+HTTP, HTTPS, and file URLs; direct access performs go-import discovery and
+in-memory Git cloning. `GONOPROXY`, `GOAUTH`, `GOINSECURE`, and `GOVCS`
+are applied at those source, request, transport, and VCS boundaries
+respectively. Go environment policy is read directly from process, user
+`go/env`, and `GOROOT/go.env` configuration rather than through another Go
+subprocess.

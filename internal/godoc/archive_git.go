@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/spf13/afero"
 	"golang.org/x/mod/module"
@@ -13,7 +12,11 @@ import (
 )
 
 func moduleArchiveFromFS(mod module.Version, fs afero.Fs, revision string) (ModuleArchive, error) {
-	files, err := moduleFilesFromFS(fs)
+	return moduleArchiveFromFSRoot(mod, fs, "", revision)
+}
+
+func moduleArchiveFromFSRoot(mod module.Version, fs afero.Fs, root, revision string) (ModuleArchive, error) {
+	files, err := moduleFilesFromFSRoot(fs, root)
 	if err != nil {
 		return ModuleArchive{}, err
 	}
@@ -25,12 +28,17 @@ func moduleArchiveFromFS(mod module.Version, fs afero.Fs, revision string) (Modu
 }
 
 func moduleFilesFromFS(fs afero.Fs) ([]modzip.File, error) {
+	return moduleFilesFromFSRoot(fs, "")
+}
+
+func moduleFilesFromFSRoot(fs afero.Fs, root string) ([]modzip.File, error) {
 	var files []modzip.File
-	err := afero.Walk(fs, "/", func(name string, info os.FileInfo, err error) error {
+	walkRoot := filepath.Join("/", filepath.FromSlash(root))
+	err := afero.Walk(fs, walkRoot, func(name string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		if name == "/" {
+		if name == walkRoot {
 			return nil
 		}
 		if info.IsDir() {
@@ -39,7 +47,11 @@ func moduleFilesFromFS(fs afero.Fs) ([]modzip.File, error) {
 			}
 			return nil
 		}
-		rel := strings.TrimPrefix(filepath.ToSlash(name), "/")
+		rel, err := filepath.Rel(walkRoot, name)
+		if err != nil {
+			return err
+		}
+		rel = filepath.ToSlash(rel)
 		files = append(files, aferoModuleFile{fs: fs, name: name, path: rel, info: info})
 		return nil
 	})

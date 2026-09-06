@@ -18,6 +18,7 @@ var ErrArchiveNotFound = errors.New("module archive not found")
 const (
 	archiveFileName  = "module.zip"
 	archiveHashName  = "module.ziphash"
+	verificationName = "verification"
 	revisionFileName = "revision"
 	latestFileName   = "latest"
 )
@@ -25,9 +26,10 @@ const (
 // ModuleArchive is a complete canonical module ZIP and its immutable source
 // identity, when the source backend exposes one.
 type ModuleArchive struct {
-	Module   module.Version
-	Data     []byte
-	Revision string
+	Module       module.Version
+	Data         []byte
+	Revision     string
+	Verification ArchiveVerification
 }
 
 // ArchiveStore persists complete immutable module archives.
@@ -59,7 +61,7 @@ func (s FileArchiveStore) Get(ctx context.Context, mod module.Version) (ModuleAr
 		}
 		return ModuleArchive{}, fmt.Errorf("validating cached module archive %s@%s: %w", mod.Path, mod.Version, err)
 	}
-	if err := verifyOptionalArchiveHash(zipPath, filepath.Join(entryDir, archiveHashName)); err != nil {
+	if err := verifyArchiveHash(zipPath, filepath.Join(entryDir, archiveHashName)); err != nil {
 		return ModuleArchive{}, fmt.Errorf("validating cached module archive hash %s@%s: %w", mod.Path, mod.Version, err)
 	}
 	data, err := os.ReadFile(zipPath)
@@ -76,7 +78,18 @@ func (s FileArchiveStore) Get(ctx context.Context, mod module.Version) (ModuleAr
 	if err := ctx.Err(); err != nil {
 		return ModuleArchive{}, err
 	}
-	return ModuleArchive{Module: mod, Data: data, Revision: revision}, nil
+	verification, err := readArchiveVerification(filepath.Join(entryDir, verificationName))
+	if err != nil {
+		return ModuleArchive{}, fmt.Errorf("reading cached module verification %s@%s: %w", mod.Path, mod.Version, err)
+	}
+	gotHash, hashErr := dirhash.HashZip(zipPath, dirhash.DefaultHash)
+	if hashErr != nil {
+		return ModuleArchive{}, fmt.Errorf("hashing cached module archive %s@%s: %w", mod.Path, mod.Version, hashErr)
+	}
+	if gotHash != verification.Hash {
+		return ModuleArchive{}, fmt.Errorf("cached module verification hash mismatch for %s@%s: got %s, want %s", mod.Path, mod.Version, gotHash, verification.Hash)
+	}
+	return ModuleArchive{Module: mod, Data: data, Revision: revision, Verification: verification}, nil
 }
 
 func (s FileArchiveStore) Put(ctx context.Context, archive ModuleArchive) error {
@@ -91,6 +104,9 @@ func (s FileArchiveStore) Put(ctx context.Context, archive ModuleArchive) error 
 		return errors.New("module archive is empty")
 	}
 	if err := checkRevision(archive.Revision); err != nil {
+		return err
+	}
+	if err := checkArchiveVerification(archive.Verification); err != nil {
 		return err
 	}
 	if _, err := s.Get(ctx, archive.Module); err == nil {
@@ -122,6 +138,12 @@ func (s FileArchiveStore) Put(ctx context.Context, archive ModuleArchive) error 
 	}
 	if err := writeFileSync(filepath.Join(tempDir, archiveHashName), []byte(hash+"\n"), 0o644); err != nil {
 		return fmt.Errorf("staging module archive hash: %w", err)
+	}
+	if archive.Verification.Hash != hash {
+		return fmt.Errorf("module archive verification hash mismatch for %s@%s: got %s, want %s", archive.Module.Path, archive.Module.Version, hash, archive.Verification.Hash)
+	}
+	if err := writeFileSync(filepath.Join(tempDir, verificationName), formatArchiveVerification(archive.Verification), 0o644); err != nil {
+		return fmt.Errorf("staging module archive verification: %w", err)
 	}
 	if archive.Revision != "" {
 		if err := writeFileSync(filepath.Join(tempDir, revisionFileName), []byte(archive.Revision), 0o644); err != nil {
@@ -284,10 +306,43 @@ func readOptionalRevision(name string) (string, error) {
 	return revision, nil
 }
 
-func verifyOptionalArchiveHash(zipPath, hashPath string) error {
+func checkArchiveVerification(verification ArchiveVerification) error {
+	if !strings.HasPrefix(verification.Hash, "h1:") || strings.TrimSpace(verification.Hash) != verification.Hash || strings.ContainsAny(verification.Hash, "\r\n") {
+		return errors.New("module archive verification requires a valid h1 hash")
+	}
+	if verification.Source == "" || strings.TrimSpace(verification.Source) != verification.Source || strings.ContainsAny(verification.Source, "\r\n \t") {
+		return errors.New("module archive verification requires a single-token source")
+	}
+	return nil
+}
+
+func formatArchiveVerification(verification ArchiveVerification) []byte {
+	return []byte("v1\n" + verification.Hash + "\n" + verification.Source + "\n")
+}
+
+func readArchiveVerification(name string) (ArchiveVerification, error) {
+	data, err := os.ReadFile(name)
+	if errors.Is(err, os.ErrNotExist) {
+		return ArchiveVerification{}, errors.New("module archive verification is missing")
+	}
+	if err != nil {
+		return ArchiveVerification{}, err
+	}
+	lines := strings.Split(strings.TrimSuffix(string(data), "\n"), "\n")
+	if len(lines) != 3 || lines[0] != "v1" {
+		return ArchiveVerification{}, errors.New("malformed module archive verification")
+	}
+	verification := ArchiveVerification{Hash: lines[1], Source: lines[2]}
+	if err := checkArchiveVerification(verification); err != nil {
+		return ArchiveVerification{}, err
+	}
+	return verification, nil
+}
+
+func verifyArchiveHash(zipPath, hashPath string) error {
 	want, err := os.ReadFile(hashPath)
 	if errors.Is(err, os.ErrNotExist) {
-		return nil
+		return errors.New("module archive hash is missing")
 	}
 	if err != nil {
 		return err

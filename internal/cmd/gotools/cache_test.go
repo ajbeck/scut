@@ -55,7 +55,7 @@ func TestCacheListCmdEmitsFilteredJSON(t *testing.T) {
 		t.Fatalf("len(Entries) = %d, want %d", got, want)
 	}
 	entry := out.Entries[0]
-	if entry.Module != selected.Path || entry.Version != selected.Version || !entry.Latest || entry.Status != "valid" {
+	if entry.Module != selected.Path || entry.Version != selected.Version || !entry.Latest || entry.Status != "valid" || entry.Verification != "policy:gosumdb-off" {
 		t.Fatalf("entry = %#v, want selected valid latest entry", entry)
 	}
 	if out.Problems == nil {
@@ -175,7 +175,13 @@ func putCommandTestArchive(t *testing.T, store godoc.FileArchiveStore, mod modul
 	if err := zw.Close(); err != nil {
 		t.Fatalf("Close() error = %v", err)
 	}
-	if err := store.Put(t.Context(), godoc.ModuleArchive{Module: mod, Data: archive.Bytes()}); err != nil {
+	moduleArchive := godoc.ModuleArchive{Module: mod, Data: archive.Bytes()}
+	verification, err := (godoc.ModuleArchiveVerifier{Policy: godoc.ModuleDownloadPolicy{GOSUMDB: "off"}}).Verify(t.Context(), moduleArchive)
+	if err != nil {
+		t.Fatalf("Verify() error = %v", err)
+	}
+	moduleArchive.Verification = verification
+	if err := store.Put(t.Context(), moduleArchive); err != nil {
 		t.Fatalf("Put() error = %v", err)
 	}
 }

@@ -15,6 +15,7 @@ import (
 type ArchiveFetcher struct {
 	Store    ArchiveStore
 	Selector ModuleSelector
+	Verifier ArchiveVerifier
 }
 
 func (f ArchiveFetcher) Fetch(ctx context.Context, pkg string, opts Options) (PackageSource, error) {
@@ -27,6 +28,10 @@ func (f ArchiveFetcher) Fetch(ctx context.Context, pkg string, opts Options) (Pa
 			if errors.Is(err, ErrArchiveNotFound) {
 				return PackageSource{}, ErrSourceNotApplicable
 			}
+			if err != nil {
+				return PackageSource{}, err
+			}
+			archive, err = f.verifyArchive(ctx, archive)
 			if err != nil {
 				return PackageSource{}, err
 			}
@@ -52,6 +57,10 @@ func (f ArchiveFetcher) Fetch(ctx context.Context, pkg string, opts Options) (Pa
 		if err != nil {
 			return PackageSource{}, err
 		}
+		archive, err = f.verifyArchive(ctx, archive)
+		if err != nil {
+			return PackageSource{}, err
+		}
 		source, err := packageSourceFromArchive(archive, pkg, "scut-cache")
 		if errors.Is(err, ErrNoGoFiles) {
 			continue
@@ -62,6 +71,18 @@ func (f ArchiveFetcher) Fetch(ctx context.Context, pkg string, opts Options) (Pa
 		return source, nil
 	}
 	return PackageSource{}, ErrSourceNotApplicable
+}
+
+func (f ArchiveFetcher) verifyArchive(ctx context.Context, archive ModuleArchive) (ModuleArchive, error) {
+	if f.Verifier == nil {
+		return archive, nil
+	}
+	verification, err := f.Verifier.Verify(ctx, archive)
+	if err != nil {
+		return ModuleArchive{}, err
+	}
+	archive.Verification = verification
+	return archive, nil
 }
 
 func (f ArchiveFetcher) cachedVersion(ctx context.Context, modulePath, version string) (module.Version, error) {

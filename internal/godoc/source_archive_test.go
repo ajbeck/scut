@@ -18,6 +18,7 @@ func TestArchiveFetcherUsesBuildListSelectionBeforeLatestAlias(t *testing.T) {
 				"tool.go": "package tool\n\nconst Version = \"" + mod.Version + "\"\n",
 			}),
 		}
+		archive = verifiedTestArchive(t, archive)
 		if err := store.Put(t.Context(), archive); err != nil {
 			t.Fatalf("Put(%s) error = %v", mod.Version, err)
 		}

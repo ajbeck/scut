@@ -63,7 +63,11 @@ func (r GoCacheArchiveReader) Get(ctx context.Context, mod module.Version) (Modu
 	if err := ctx.Err(); err != nil {
 		return ModuleArchive{}, err
 	}
-	return ModuleArchive{Module: mod, Data: data}, nil
+	return ModuleArchive{
+		Module:       mod,
+		Data:         data,
+		Verification: ArchiveVerification{Hash: gotHash, Source: verificationGoCache},
+	}, nil
 }
 
 func (r GoCacheArchiveReader) Versions(ctx context.Context, modulePath string) ([]module.Version, error) {
@@ -142,6 +146,7 @@ func (r GoCacheArchiveReader) versionDir(modulePath string) (string, error) {
 type GoCacheFetcher struct {
 	Reader   GoCacheArchiveReader
 	Selector ModuleSelector
+	Verifier ArchiveVerifier
 }
 
 func (f GoCacheFetcher) Fetch(ctx context.Context, pkg string, opts Options) (PackageSource, error) {
@@ -165,6 +170,10 @@ func (f GoCacheFetcher) Fetch(ctx context.Context, pkg string, opts Options) (Pa
 			if errors.Is(err, ErrArchiveNotFound) {
 				continue
 			}
+			if err != nil {
+				return PackageSource{}, err
+			}
+			archive, err = f.verifyArchive(ctx, archive)
 			if err != nil {
 				return PackageSource{}, err
 			}
@@ -193,11 +202,27 @@ func (f GoCacheFetcher) fetchSelected(ctx context.Context, pkg string, selected 
 	if err != nil {
 		return PackageSource{}, err
 	}
+	archive, err = f.verifyArchive(ctx, archive)
+	if err != nil {
+		return PackageSource{}, err
+	}
 	source, err := packageSourceFromSelectedArchive(archive, pkg, selected.Module, "go-cache")
 	if errors.Is(err, ErrNoGoFiles) {
 		return PackageSource{}, &cachedPackageAbsentError{Module: selected.Module, Package: pkg}
 	}
 	return source, err
+}
+
+func (f GoCacheFetcher) verifyArchive(ctx context.Context, archive ModuleArchive) (ModuleArchive, error) {
+	if f.Verifier == nil {
+		return archive, nil
+	}
+	verification, err := f.Verifier.Verify(ctx, archive)
+	if err != nil {
+		return ModuleArchive{}, err
+	}
+	archive.Verification = verification
+	return archive, nil
 }
 
 func (f GoCacheFetcher) candidates(ctx context.Context, modulePath, version string) ([]module.Version, error) {

@@ -46,7 +46,7 @@ The stack is linear and listed bottom-to-top.
 | 3     | `gotools-cache/go-cache-reader`    | [#52](https://github.com/ajbeck/scut/issues/52) | Implemented; awaiting review | Reuse verified Go download-cache archives read-only and establish final source ordering.            |
 | 4     | `gotools-cache/commands`           | [#53](https://github.com/ajbeck/scut/issues/53) | Implemented; awaiting review | Add path, list, verify, remove, clean, and prune cache-management commands.                         |
 | 5     | `gotools-resolution/proxy-policy`  | [#54](https://github.com/ajbeck/scut/issues/54) | Implemented; awaiting review | Match Go proxy fallback, private-module, authentication, and transport policy.                      |
-| 6     | `gotools-resolution/integrity`     | [#55](https://github.com/ajbeck/scut/issues/55) | Planned                      | Verify archive structure and checksums before consumption or publication.                           |
+| 6     | `gotools-resolution/integrity`     | [#55](https://github.com/ajbeck/scut/issues/55) | Implemented; awaiting review | Verify archive structure and checksums before consumption or publication.                           |
 | 7     | `gotools-resolution/build-context` | [#56](https://github.com/ajbeck/scut/issues/56) | Planned                      | Honor build constraints and add full-pipeline integration coverage and final documentation.         |
 
 ## Layer 1 implementation plan
@@ -154,6 +154,35 @@ The stack is linear and listed bottom-to-top.
    nested-module tests.
 10. Update gotools and architecture documentation and run all Walle
     verification tasks with Go 1.26.3.
+
+## Layer 6 implementation plan
+
+1. Introduce one archive-integrity boundary that validates the complete ZIP,
+   computes its canonical `h1:` content hash, and records how authenticity was
+   established before source extraction or cache publication.
+2. Load applicable `go.sum` and workspace sum files without invoking Go. An
+   exact matching `h1:` entry accepts the archive; any conflicting `h1:` entry
+   is a terminal checksum mismatch.
+3. For public modules without a recorded sum, use `golang.org/x/mod/sumdb`
+   with Go-compatible `GOSUMDB`, `GONOSUMDB`, and checksum-database proxy
+   routing. Persist only the signed latest-tree checkpoint in scut-owned trust
+   state so consistency checks survive process restarts.
+4. Exempt `GONOSUMDB` matches and `GOSUMDB=off` from public checksum-database
+   lookup while retaining structural and content-hash validation.
+5. Require scut cache entries to include verification provenance bound to the
+   stored archive hash. Reads and `cache verify` reject or report missing,
+   malformed, or mismatched provenance.
+6. Preserve the Go download cache as a read-only trusted source: Go writes
+   `.ziphash` only after its own checksum policy succeeds, and scut recomputes
+   the archive hash before consuming it.
+7. Verify proxy and exact-version direct Git archives before extracting package
+   source or attempting the atomic cache write. A verification failure is never
+   downgraded to a best-effort cache failure.
+8. Add malformed/truncated/root-mismatch, go.sum match/mismatch, checksum DB,
+   private/exempt policy, provenance, anti-rollback-state, and no-publication
+   regressions.
+9. Update gotools and architecture documentation and run all Walle
+   verification tasks with Go 1.26.3.
 
 ## Decisions
 
@@ -348,16 +377,57 @@ boundary. Scut supports Git only and rejects a direct clone when the first
 matching `GOVCS` rule disallows Git, using `GOPRIVATE` to classify the module as
 public or private for the default rules.
 
+### D-027: Verification provenance is part of an archive entry
+
+The self-hash introduced in layer 4 detects changed bytes but does not record
+why those bytes were trusted. Layer 6 adds immutable provenance for `go.sum`,
+checksum-database, Go-cache, or checksum-policy-exempt validation and binds it
+to the same canonical `h1:` hash. A scut cache entry is consumable only when
+the archive, self-hash, and provenance agree.
+
+### D-028: Go-cache ziphash carries Go's completed verification boundary
+
+The Go command computes the archive hash, applies `go.sum` and checksum-
+database policy, writes `.ziphash`, and only then renames the downloaded ZIP
+into its final cache path. Scut therefore treats a structurally valid Go-cache
+ZIP whose recomputed hash matches `.ziphash` as Go-verified, without mutating or
+second-guessing Go-owned checksum files.
+
+### D-029: Checksum checkpoints are trust state, not disposable cache data
+
+The checksum database client needs its latest signed tree checkpoint across
+processes to detect rollback or inconsistent histories. Scut persists that
+small compare-and-swap state beneath its own user configuration directory,
+never beneath `GOMODCACHE`. Module lookup records and tiles remain in memory
+because a successfully verified archive is retained in the independent module
+cache. Cache remove, prune, and clean do not erase the anti-rollback checkpoint,
+mirroring Go's separation of checksum configuration from module-cache cleanup.
+
+### D-030: Existing sums win and mismatches are terminal
+
+An exact `h1:` entry in an applicable `go.sum`, `go.work.sum`, or workspace
+module sum file is checked before the checksum database. A conflicting recorded
+`h1:` is an integrity error and never falls through to a database lookup.
+Absent sums use the configured checksum database unless `GOSUMDB=off` or the
+module matches `GONOSUMDB`.
+
+### D-031: Unversioned public direct source is rejected, not guessed
+
+A floating Git checkout has no canonical module version to address in a
+checksum database. When public checksum verification is required, scut rejects
+an unversioned direct lookup before cloning and directs the caller to an exact
+`@version`. Floating direct source remains available for `GONOSUMDB` matches or
+when `GOSUMDB=off`. Resolving Go-compatible direct `latest` versions requires
+repository version enumeration and pseudo-version construction and is kept as
+a distinct follow-up instead of silently authenticating branch HEAD as a
+module version.
+
 ## Open questions
 
-No blocking questions are open for layer 1. Later layers must resolve these
-before implementation reaches them:
+No blocking questions are open. Layer 7 still needs to resolve:
 
 1. Which configured build tags, beyond `GOOS` and `GOARCH`, should feed the
    documentation build context.
-2. Whether checksum-database lookup should use the public default only when
-   `GOSUMDB` is unset, matching the Go command, or require explicit opt-in for a
-   documentation lookup tool.
 
 ## Progress log
 
@@ -417,3 +487,18 @@ before implementation reaches them:
   best-effort cache writes, and immutable private Git revision capture.
 - 2026-09-06: Layer 2 passes `./walle fmt`, `./walle test`, `./walle vet`,
   `./walle build`, and `./walle docs` with `GOTOOLCHAIN=go1.26.3`.
+- 2026-09-06: Began layer 6 and confirmed from Go 1.26.3 source that the Go
+  command validates archive structure and `go.sum`/sumdb before writing
+  `.ziphash` and publishing the ZIP. Selected immutable per-entry verification
+  provenance plus a separate scut-owned signed sumdb checkpoint as the trust
+  model; module-cache lifecycle commands will not erase anti-rollback state.
+- 2026-09-06: Layer 6 now validates remote archives before extraction, checks
+  active module/workspace sums before sumdb policy, persists authenticated
+  provenance atomically with cache entries, re-applies current sums on cache
+  reads, and rejects unverifiable floating public direct source before cloning.
+- 2026-09-06: Layer 6 passes `./walle fmt`, `./walle test`, `./walle vet`,
+  `./walle build`, and `./walle docs` with `GOTOOLCHAIN=go1.26.3`. An isolated
+  live lookup of `rsc.io/quote@v1.5.2` succeeded through the public proxy and
+  checksum database, left its empty `GOMODCACHE` untouched, published
+  `sumdb:sum.golang.org` provenance, and then succeeded offline with
+  `GOPROXY=off` from the scut cache.

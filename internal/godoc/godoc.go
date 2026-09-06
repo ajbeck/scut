@@ -73,6 +73,19 @@ func newClient(fs afero.Fs, wd string, archiveStore ArchiveStore) *Client {
 	selector := ModuleSelectorChain{buildList, DependencySelector(deps)}
 	policy := loadModuleDownloadPolicy()
 	authenticator := &GoAuthenticator{Config: policy.GOAUTH}
+	checksumStateDir, _ := DefaultChecksumStateDir()
+	archiveVerifier := ModuleArchiveVerifier{
+		Policy: policy,
+		GoSums: GoSumFiles{
+			FS:    fs,
+			Paths: applicableGoSumFiles(fs, wd, moduleDir),
+		},
+		SumDB: GoChecksumDatabase{
+			Policy:        policy,
+			Authenticator: authenticator,
+			StateDir:      checksumStateDir,
+		},
+	}
 
 	fetchers := []SourceFetcher{}
 	if moduleDir != "" && modulePath != "" {
@@ -86,10 +99,11 @@ func newClient(fs afero.Fs, wd string, archiveStore ArchiveStore) *Client {
 		StdlibSourceFetcher{FS: fs, GOROOT: runtime.GOROOT()},
 		buildList,
 		ReplaceSourceFetcher{FS: fs, Replacements: replacements},
-		GoCacheFetcher{Reader: GoCacheArchiveReader{Root: cacheDir}, Selector: selector},
-		ArchiveFetcher{Store: archiveStore, Selector: selector},
+		GoCacheFetcher{Reader: GoCacheArchiveReader{Root: cacheDir}, Selector: selector, Verifier: archiveVerifier},
+		ArchiveFetcher{Store: archiveStore, Selector: selector, Verifier: archiveVerifier},
 		RemoteFetcher{
-			Policy: policy,
+			Policy:   policy,
+			Verifier: archiveVerifier,
 			Proxy: ProxyFetcher{
 				Store:         archiveStore,
 				Selector:      selector,

@@ -28,7 +28,10 @@ project's `go.mod`.
 Scut's documentation source fetchers never write fetched package files into
 `GOMODCACHE`. An existing Go download-cache entry is reused only when its
 canonical module ZIP and `.ziphash` are both present, the ZIP is structurally
-valid, and its computed content hash matches `.ziphash`. Extracted module
+valid, and its computed content hash matches `.ziphash`. The Go command writes
+that sidecar only after applying its checksum policy. Scut also rejects the
+entry if it conflicts with an applicable checksum in the active module or
+workspace. Extracted module
 directories are not read as source or indexed for shorthand package discovery.
 Missing or invalid cache artifacts are not repaired or extracted in place.
 
@@ -65,9 +68,33 @@ the initial GOAUTH pass may also authenticate an HTTPS Git clone.
 `GOINSECURE` applies only to matching modules fetched directly: it may permit
 HTTP discovery or repository transport and relaxed HTTPS certificate
 verification. It does not weaken an explicitly configured proxy or change
-`GONOSUMDB`; the next integrity layer consumes that independently resolved
-checksum policy. Direct Git is also subject to `GOVCS`; scut returns an error
+`GONOSUMDB`; archive verification consumes that independently resolved checksum
+policy. Direct Git is also subject to `GOVCS`; scut returns an error
 before cloning when the first matching rule disallows Git.
+
+### Archive integrity
+
+Every remotely fetched canonical module archive is structurally validated and
+hashed before package files are extracted. Scut first checks applicable
+`go.sum`, `go.work.sum`, and workspace-module sum files. A recorded `h1:`
+mismatch is terminal and is never replaced by a checksum-database result.
+
+When no sum is recorded, public modules are authenticated with the checksum
+database selected by `GOSUMDB`. The default is `sum.golang.org`; an explicit
+database URL and checksum-database proxying through `GOPROXY` are supported.
+`GOSUMDB=off` and matching `GONOSUMDB` patterns skip the public database but do
+not skip structural validation or content hashing.
+
+The checksum client keeps its latest signed tree checkpoint beneath scut's user
+configuration directory, separate from both `GOMODCACHE` and the disposable
+module archive cache. This preserves cross-process consistency and rollback
+checks. Authenticated lookup records and tiles stay in memory because the
+verified module archive itself becomes the reusable cache entry.
+
+An unversioned public direct-Git checkout cannot be addressed in a checksum
+database. Scut rejects that case with guidance to specify an exact `@version`;
+floating direct lookups remain available when checksum policy explicitly
+exempts the module.
 
 ### Independent module cache
 
@@ -88,23 +115,26 @@ proxy and reuses that mapping for an offline lookup. Explicit canonical versions
 fetched from private Git repositories are cached only when the clone exposes
 the resolved commit. Floating private Git requests remain in memory.
 
-Newly published entries include a self-generated `h1:` sidecar. This detects
-storage corruption but is not a source-authenticity decision; verification
-against `go.sum` or a checksum database is a separate integrity layer. Entries
-created before the sidecar was introduced remain readable but `cache verify`
-reports them as incomplete so users can remove and refetch them explicitly.
+Newly published entries include a self-generated `h1:` sidecar and immutable
+verification provenance bound to that hash. The provenance records whether the
+archive was accepted by an applicable sum, a checksum database, the Go cache,
+or an explicit checksum-policy exemption. An entry is readable only when its
+ZIP, self-hash, and provenance agree. Missing legacy metadata is reported as
+incomplete so users can remove and refetch the entry explicitly.
 
 ### Cache management
 
 `scut gotools cache` operates only on the scut-owned module archive cache. It
-never removes or repairs anything in `GOMODCACHE`.
+never removes or repairs anything in `GOMODCACHE`, and it does not erase the
+separate signed checksum-database checkpoint.
 
 - `cache path` prints the absolute owned-cache path.
 - `cache list [MODULE[@VERSION]]` reports canonical entries, byte sizes,
-  publication times, `latest` aliases, and validation state.
-- `cache verify [MODULE[@VERSION]]` validates archive structure and the stored
-  self-hash without repairing anything. It returns a non-zero status when it
-  finds an incomplete, malformed, or corrupted entry.
+  publication times, verification provenance, `latest` aliases, and validation
+  state.
+- `cache verify [MODULE[@VERSION]]` validates archive structure, the stored
+  self-hash, and verification provenance without repairing anything. It returns
+  a non-zero status when it finds an incomplete, malformed, or corrupted entry.
 - `cache remove MODULE[@VERSION]` removes one exact version. Omitting the
   version removes every cached version of that module while preserving nested
   module paths.

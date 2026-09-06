@@ -64,6 +64,13 @@ func NewDefaultClient(fs afero.Fs) (*Client, error) {
 func newClient(fs afero.Fs, wd string, archiveStore ArchiveStore) *Client {
 	moduleDir, modulePath, deps, replacements := readCurrentModule(fs, wd)
 	cacheDir := defaultModuleCacheDir()
+	buildList := &BuildListFetcher{
+		FS:      fs,
+		WorkDir: wd,
+		Timeout: 2 * time.Second,
+		Runner:  GoBuildListRunner{},
+	}
+	selector := ModuleSelectorChain{buildList, DependencySelector(deps)}
 
 	fetchers := []SourceFetcher{}
 	if moduleDir != "" && modulePath != "" {
@@ -75,15 +82,10 @@ func newClient(fs afero.Fs, wd string, archiveStore ArchiveStore) *Client {
 	}
 	fetchers = append(fetchers,
 		StdlibSourceFetcher{FS: fs, GOROOT: runtime.GOROOT()},
-		&BuildListFetcher{
-			FS:      fs,
-			WorkDir: wd,
-			Timeout: 2 * time.Second,
-			Runner:  GoBuildListRunner{},
-		},
+		buildList,
 		ReplaceSourceFetcher{FS: fs, Replacements: replacements},
-		ModCacheFetcher{FS: fs, CacheDir: cacheDir, Deps: deps},
-		ArchiveFetcher{Store: archiveStore},
+		GoCacheFetcher{Reader: GoCacheArchiveReader{Root: cacheDir}, Selector: selector},
+		ArchiveFetcher{Store: archiveStore, Selector: selector},
 		GitFetcher{
 			GOPRIVATE:    os.Getenv("GOPRIVATE"),
 			DiscoveryURL: defaultDiscoveryURL,
@@ -95,6 +97,7 @@ func newClient(fs afero.Fs, wd string, archiveStore ArchiveStore) *Client {
 			ProxyURL:     proxyURL,
 			DiscoveryURL: defaultDiscoveryURL,
 			Store:        archiveStore,
+			Selector:     selector,
 		})
 	}
 
@@ -105,7 +108,6 @@ func newClient(fs afero.Fs, wd string, archiveStore ArchiveStore) *Client {
 			ModuleDir:  moduleDir,
 			ModulePath: modulePath,
 			GOROOT:     runtime.GOROOT(),
-			ModCache:   cacheDir,
 		},
 		Current: CurrentPackage{
 			WorkDir:    wd,

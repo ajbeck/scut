@@ -14,19 +14,27 @@ weight: 90
 trying its external source routes.
 
 For an external package in an active Go module or workspace, it then consults
-the Go-selected build list and reads the selected source directory, including
-local replacements, before checking the module cache. Build-list discovery is
-best-effort: if it cannot run, the command uses the remaining local and remote
-sources as usual.
+the Go-selected build list. Workspace modules and local replacements are read
+from their source directories. External build-list directories beneath the Go
+module cache are used for version selection only; they are never treated as
+package source. Build-list discovery is best-effort: if it cannot run, the
+command uses direct requirements from the active `go.mod` and the remaining
+local and remote sources.
 
 It can resolve an arbitrary external package from a private Git repository or
 public module proxy, so the package does not need to be in the current
 project's `go.mod`.
 
-Remote documentation lookup does not write fetched package files into
-`GOMODCACHE`. The Go module cache is treated as an existing source only. This
-prevents a documentation lookup from creating a partial extracted module that
-could break later Go commands.
+Scut's documentation source fetchers never write fetched package files into
+`GOMODCACHE`. An existing Go download-cache entry is reused only when its
+canonical module ZIP and `.ziphash` are both present, the ZIP is structurally
+valid, and its computed content hash matches `.ziphash`. Extracted module
+directories are not read as source or indexed for shorthand package discovery.
+Missing or invalid cache artifacts are not repaired or extracted in place.
+
+Build-list discovery currently invokes `go list -mod=readonly -m -json all`.
+That command does not edit the active `go.mod`, but the Go command may perform
+its own normal module-cache work while loading the build list.
 
 ### Independent module cache
 
@@ -35,6 +43,12 @@ the operating system's user cache directory at `scut/gotools/modules`. Entries
 are structurally validated and published atomically, so concurrent lookups
 cannot observe a partially written module. A failed cache write does not discard
 documentation source that was fetched successfully for the current invocation.
+
+For a project-selected dependency, the selected exact version is checked first
+in the verified Go download cache and then in the scut cache. A proxy miss then
+requests that same version rather than resolving `latest`. Versioned module
+replacements retain the original import identity while reading the replacement
+module's archive.
 
 For a proxy `latest` request, scut records the concrete version returned by the
 proxy and reuses that mapping for an offline lookup. Explicit canonical versions

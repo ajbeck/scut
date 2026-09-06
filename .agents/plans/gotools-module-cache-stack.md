@@ -18,7 +18,9 @@ or the stack shape changes.
 
 ## Invariants
 
-- Never write, extract, repair, chmod, or otherwise mutate `GOMODCACHE`.
+- Scut's in-process source fetchers and stores never write, extract, repair,
+  chmod, or otherwise mutate `GOMODCACHE`; the retained Go build-list probe may
+  perform normal Go-managed cache work.
 - Never persist package fragments as though they were complete modules.
 - Scut-owned persistent entries are complete immutable module archives keyed by
   a concrete module identity.
@@ -41,7 +43,7 @@ The stack is linear and listed bottom-to-top.
 | ----- | ---------------------------------- | ----------------------------------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------- |
 | 1     | `gotools-cache/safety`             | [#50](https://github.com/ajbeck/scut/issues/50) | Implemented; awaiting review | Stop all writes of partial modules into `GOMODCACHE`; add an isolated regression.                   |
 | 2     | `gotools-cache/archive-store`      | [#51](https://github.com/ajbeck/scut/issues/51) | Implemented; awaiting review | Add the scut-owned complete immutable archive store with atomic publication and concurrency safety. |
-| 3     | `gotools-cache/go-cache-reader`    | [#52](https://github.com/ajbeck/scut/issues/52) | Planned                      | Reuse verified Go download-cache archives read-only and establish final source ordering.            |
+| 3     | `gotools-cache/go-cache-reader`    | [#52](https://github.com/ajbeck/scut/issues/52) | Implemented; awaiting review | Reuse verified Go download-cache archives read-only and establish final source ordering.            |
 | 4     | `gotools-cache/commands`           | [#53](https://github.com/ajbeck/scut/issues/53) | Planned                      | Add path, list, verify, remove, clean, and prune cache-management commands.                         |
 | 5     | `gotools-resolution/proxy-policy`  | [#54](https://github.com/ajbeck/scut/issues/54) | Planned                      | Match Go proxy fallback, private-module, authentication, and transport policy.                      |
 | 6     | `gotools-resolution/integrity`     | [#55](https://github.com/ajbeck/scut/issues/55) | Planned                      | Verify archive structure and checksums before consumption or publication.                           |
@@ -80,6 +82,25 @@ The stack is linear and listed bottom-to-top.
    regression tests.
 9. Update gotools documentation and run all Walle verification tasks with Go
    1.26.3.
+
+## Layer 3 implementation plan
+
+1. Separate active build-list module selection from package source loading.
+2. Let build-list loading serve only workspace modules and local replacements;
+   never read an external module `Dir` rooted in extracted `GOMODCACHE`.
+3. Represent the logical selected module separately from a versioned replacement
+   module that physically supplies its archive.
+4. Read canonical `.zip` and `.ziphash` files beneath
+   `GOMODCACHE/cache/download` without creating, repairing, or extracting files.
+5. Structurally validate the ZIP and compare its computed `h1:` content hash to
+   the Go-owned `.ziphash` before exposing package source.
+6. Share build-list selection with the Go-cache, scut-cache, and proxy sources so
+   an absent local ZIP still fetches the project-selected version rather than
+   proxy `latest`.
+7. Remove `ModCacheFetcher` and its extracted-directory source tests.
+8. Add read-only snapshots, incomplete-cache, hash-mismatch, build-list version,
+   replacement, and source-order regression tests.
+9. Update documentation and run all Walle verification tasks with Go 1.26.3.
 
 ## Decisions
 
@@ -154,6 +175,47 @@ paths, versions, collisions, and size limits before publication and on reads.
 Cryptographic verification against `go.sum` or the checksum database remains
 owned by layer 6; structural validation is not presented as checksum proof.
 
+### D-012: Build-list selection and source bytes are separate
+
+The build list remains the authoritative selector for active modules and
+replacements, but its external `Dir` values are not source roots. Only workspace
+modules and local replacements may be read by directory. External bytes come
+from verified Go-cache archives, scut-owned archives, or remote sources.
+
+### D-013: Go-cache ziphash is required and read-only
+
+A Go-cache archive is reusable only when both its canonical `.zip` and
+`.ziphash` exist, the ZIP is structurally valid, and `dirhash.HashZip` matches
+the recorded hash. Missing or corrupt artifacts are never repaired in place.
+Cryptographic trust against `go.sum` or `GOSUMDB` remains layer 6.
+
+### D-014: Extracted modules are not a package index
+
+Shorthand package discovery no longer scans extracted `GOMODCACHE` directories.
+Those directories can be incomplete and must not influence resolution even as
+an index. Archive-backed shorthand discovery requires a validated archive
+enumeration API; that API will be designed with layer 4 cache listing rather
+than preserving the unsafe directory scan.
+
+### D-015: Selector-aware private Git belongs to proxy-policy parity
+
+Layer 3 carries the active build-list selection through the Go cache, scut
+cache, and proxy paths. Applying that selection to direct private Git is
+deferred to layer 5 because correct refs depend on repository roots, nested
+module tag prefixes, semantic-import-version suffixes, replacements, and
+GOPRIVATE/GONOPROXY policy. A simple `refs/tags/<version>` substitution would be
+incorrect for several valid module layouts.
+
+### D-016: Retain the authoritative Go build-list probe
+
+The stack retains `go list -mod=readonly -m -json all` for authoritative MVS,
+workspace, and replacement selection. It does not edit the active `go.mod`, but
+the Go process may perform its own legitimate module-cache work. The strict
+read-only guarantee applies to scut's in-process source fetchers and stores,
+which never write, extract, repair, or chmod `GOMODCACHE`. Replacing the probe
+with a complete in-process module loader is a distinct future project, not an
+approximation added to this cache-safety stack.
+
 ## Open questions
 
 No blocking questions are open for layer 1. Later layers must resolve these
@@ -168,12 +230,6 @@ before implementation reaches them:
 4. Whether checksum-database lookup should use the public default only when
    `GOSUMDB` is unset, matching the Go command, or require explicit opt-in for a
    documentation lookup tool.
-5. Whether active build-list discovery may continue invoking `go list
-   -mod=readonly -m -json all` against the user environment. The command cannot
-   edit `go.mod`, but the Go tool may legitimately populate `GOMODCACHE`. PR 1
-   prevents direct malformed writes by scut fetchers; a stronger process-level
-   no-write guarantee would require isolating this probe or replacing it with an
-   in-process build-list implementation.
 
 ## Progress log
 
@@ -185,6 +241,18 @@ before implementation reaches them:
   `gotools-cache/safety`. No branches were pushed.
 - 2026-09-06: Identified the existing build-list `go list` subprocess as a
   separate cache-mutation boundary and recorded it as a later design decision.
+- 2026-09-06: Layer 3 now reads only Go download-cache ZIPs with matching
+  `.ziphash`, separates build-list selection from bytes, preserves exact
+  selected versions across Go/scut/proxy archives, supports versioned archive
+  replacements, and removes extracted-directory package indexing.
+- 2026-09-06: Deferred selector-aware direct Git retrieval to layer 5 after
+  tracing nested-module and semantic-import-version tag rules; documented the
+  boundary instead of applying an incomplete tag-only fix.
+- 2026-09-06: Layer 3 passes `./walle fmt`, `./walle test`, `./walle vet`,
+  `./walle build`, and `./walle docs` with `GOTOOLCHAIN=go1.26.3`.
+- 2026-09-06: User accepted retaining the authoritative read-only `go list`
+  build-list probe and scoping the strict no-`GOMODCACHE`-mutation invariant to
+  scut's in-process fetchers and stores.
 - 2026-09-06: Removed direct proxy and private-Git writes to `GOMODCACHE`, added
   the isolated downstream-Go regression, and updated the gotools CLI docs.
 - 2026-09-06: Confirmed the repository test suite passes with its declared Go

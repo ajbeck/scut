@@ -12,6 +12,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"golang.org/x/mod/module"
 )
 
 func TestProxyURLsFromEnv(t *testing.T) {
@@ -145,6 +147,42 @@ func TestProxyFetcherResolvesExplicitVersion(t *testing.T) {
 
 	if got, want := source.Version, "v1.2.3"; got != want {
 		t.Fatalf("Version = %q, want %q", got, want)
+	}
+}
+
+func TestProxyFetcherUsesBuildListSelectionWithoutResolvingLatest(t *testing.T) {
+	const (
+		modPath = "github.com/acme/tool"
+		version = "v1.2.3"
+	)
+	zipBytes := moduleZip(t, modPath, version, map[string]string{
+		"tool.go": "package tool\n",
+	})
+	var requested []string
+	proxy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requested = append(requested, r.URL.Path)
+		if strings.HasSuffix(r.URL.Path, "/@v/"+version+".zip") {
+			_, _ = w.Write(zipBytes)
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	t.Cleanup(proxy.Close)
+	selected := module.Version{Path: modPath, Version: version}
+
+	source, err := (ProxyFetcher{
+		Client:   proxy.Client(),
+		ProxyURL: proxy.URL,
+		Selector: fixedModuleSelector{selection: ModuleSelection{Module: selected, Source: selected}},
+	}).Fetch(t.Context(), modPath, Options{})
+	if err != nil {
+		t.Fatalf("Fetch() error = %v", err)
+	}
+	if got, want := source.Module.Version, version; got != want {
+		t.Fatalf("Module.Version = %q, want %q", got, want)
+	}
+	if got, want := requested, []string{"/github.com/acme/tool/@v/v1.2.3.zip"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("proxy requests = %#v, want %#v", got, want)
 	}
 }
 

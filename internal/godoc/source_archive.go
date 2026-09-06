@@ -13,12 +13,29 @@ import (
 // ArchiveFetcher loads package source from the scut-owned module archive
 // cache without consulting the network.
 type ArchiveFetcher struct {
-	Store ArchiveStore
+	Store    ArchiveStore
+	Selector ModuleSelector
 }
 
 func (f ArchiveFetcher) Fetch(ctx context.Context, pkg string, opts Options) (PackageSource, error) {
 	if f.Store == nil {
 		return PackageSource{}, ErrSourceNotApplicable
+	}
+	if f.Selector != nil {
+		if selected, ok := f.Selector.Select(ctx, pkg, opts); ok && selected.Dir == "" && selected.Source.Version != "" {
+			archive, err := f.Store.Get(ctx, selected.Source)
+			if errors.Is(err, ErrArchiveNotFound) {
+				return PackageSource{}, ErrSourceNotApplicable
+			}
+			if err != nil {
+				return PackageSource{}, err
+			}
+			source, err := packageSourceFromSelectedArchive(archive, pkg, selected.Module, "scut-cache")
+			if errors.Is(err, ErrNoGoFiles) {
+				return PackageSource{}, &cachedPackageAbsentError{Module: selected.Module, Package: pkg}
+			}
+			return source, err
+		}
 	}
 	for _, modulePath := range modulePathCandidates(pkg) {
 		mod, err := f.cachedVersion(ctx, modulePath, opts.Version)
@@ -59,7 +76,11 @@ func (f ArchiveFetcher) cachedVersion(ctx context.Context, modulePath, version s
 }
 
 func packageSourceFromArchive(archive ModuleArchive, pkg, source string) (PackageSource, error) {
-	files, err := extractPackageZip(archive.Module.Path, archive.Module.Version, pkg, archive.Data)
+	return packageSourceFromSelectedArchive(archive, pkg, archive.Module, source)
+}
+
+func packageSourceFromSelectedArchive(archive ModuleArchive, pkg string, logical module.Version, source string) (PackageSource, error) {
+	files, err := extractPackageZipForModule(archive.Module.Path, archive.Module.Version, logical.Path, pkg, archive.Data)
 	if err != nil {
 		return PackageSource{}, err
 	}
@@ -67,8 +88,8 @@ func packageSourceFromArchive(archive ModuleArchive, pkg, source string) (Packag
 		ImportPath: pkg,
 		Dir:        filepath.Join("/", source, filepath.FromSlash(pkg)),
 		Files:      files,
-		Module:     archive.Module,
-		Version:    archive.Module.Version,
+		Module:     logical,
+		Version:    logical.Version,
 	}, nil
 }
 
@@ -83,6 +104,10 @@ func modulePathCandidates(pkg string) []string {
 		candidates = append(candidates, strings.Join(parts[:i], "/"))
 	}
 	return candidates
+}
+
+func isCommonGitHost(host string) bool {
+	return host == "github.com" || host == "gitlab.com" || host == "bitbucket.org"
 }
 
 func fmtArchiveNotFound(modulePath, version string) error {

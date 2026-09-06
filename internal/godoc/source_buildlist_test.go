@@ -5,44 +5,43 @@ package godoc
 import (
 	"context"
 	"errors"
-	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/spf13/afero"
 )
 
-func TestBuildListFetcherLoadsSelectedModule(t *testing.T) {
+func TestBuildListFetcherSelectsExternalModuleWithoutReadingItsDirectory(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	writeTestFile(t, fs, "/workspace/cache/lib@v1.2.3/pkg/pkg.go", []byte("package pkg\n"))
 	runner := &fakeBuildListRunner{output: []byte(`
 {"Path":"example.com/lib","Version":"v1.2.3","Dir":"/workspace/cache/lib@v1.2.3"}
-`)}
+	`)}
 	fetcher := &BuildListFetcher{FS: fs, WorkDir: "/workspace/project", Runner: runner}
 
-	source, err := fetcher.Fetch(context.Background(), "example.com/lib/pkg", Options{})
-	if err != nil {
-		t.Fatalf("Fetch() error = %v", err)
+	selected, ok := fetcher.Select(context.Background(), "example.com/lib/pkg", Options{})
+	if !ok {
+		t.Fatal("Select() ok = false, want true")
 	}
-	if got, want := source.Dir, filepath.Join("/workspace/cache/lib@v1.2.3", "pkg"); got != want {
-		t.Fatalf("Dir = %q, want %q", got, want)
-	}
-	if got, want := source.Module.Path, "example.com/lib"; got != want {
+	if got, want := selected.Module.Path, "example.com/lib"; got != want {
 		t.Fatalf("Module.Path = %q, want %q", got, want)
 	}
-	if got, want := source.Version, "v1.2.3"; got != want {
-		t.Fatalf("Version = %q, want %q", got, want)
+	if got, want := selected.Module.Version, "v1.2.3"; got != want {
+		t.Fatalf("Module.Version = %q, want %q", got, want)
+	}
+	if selected.Dir != "" {
+		t.Fatalf("Dir = %q, want empty external source directory", selected.Dir)
+	}
+	if _, err := fetcher.Fetch(context.Background(), "example.com/lib/pkg", Options{}); !errors.Is(err, ErrSourceNotApplicable) {
+		t.Fatalf("Fetch() error = %v, want ErrSourceNotApplicable", err)
 	}
 	if got, want := runner.calls, 1; got != want {
 		t.Fatalf("Run() calls = %d, want %d", got, want)
 	}
 
-	_, err = fetcher.Fetch(context.Background(), "example.com/lib/pkg", Options{})
-	if err != nil {
-		t.Fatalf("second Fetch() error = %v", err)
-	}
+	_, _ = fetcher.Select(context.Background(), "example.com/lib/pkg", Options{})
 	if got, want := runner.calls, 1; got != want {
-		t.Fatalf("Run() calls = %d after second fetch, want %d", got, want)
+		t.Fatalf("Run() calls = %d after second selection, want %d", got, want)
 	}
 }
 
@@ -62,6 +61,29 @@ func TestBuildListFetcherUsesReplacementDirectory(t *testing.T) {
 	}
 	if got, want := source.Dir, "/workspace/replacement/pkg"; got != want {
 		t.Fatalf("Dir = %q, want %q", got, want)
+	}
+}
+
+func TestBuildListFetcherSelectsVersionedReplacementArchive(t *testing.T) {
+	fetcher := &BuildListFetcher{
+		FS: afero.NewMemMapFs(),
+		Runner: &fakeBuildListRunner{output: []byte(`
+{"Path":"example.com/lib","Version":"v1.2.3","Replace":{"Path":"example.com/fork","Version":"v1.4.0","Dir":"/workspace/cache/fork@v1.4.0"}}
+`)},
+	}
+
+	selected, ok := fetcher.Select(context.Background(), "example.com/lib/pkg", Options{})
+	if !ok {
+		t.Fatal("Select() ok = false, want true")
+	}
+	if got, want := selected.Source.Path, "example.com/fork"; got != want {
+		t.Fatalf("Source.Path = %q, want %q", got, want)
+	}
+	if got, want := selected.Source.Version, "v1.4.0"; got != want {
+		t.Fatalf("Source.Version = %q, want %q", got, want)
+	}
+	if selected.Dir != "" {
+		t.Fatalf("Dir = %q, want empty versioned replacement directory", selected.Dir)
 	}
 }
 

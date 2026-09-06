@@ -56,17 +56,11 @@ type buildListModule struct {
 }
 
 func (f *BuildListFetcher) Fetch(ctx context.Context, pkg string, opts Options) (PackageSource, error) {
-	modules, err := f.buildList(ctx)
-	if err != nil {
+	selected, ok := f.Select(ctx, pkg, opts)
+	if !ok || selected.Dir == "" {
 		return PackageSource{}, ErrSourceNotApplicable
 	}
-
-	selected, ok := selectBuildListModule(modules, pkg)
-	if !ok || (opts.Version != "" && opts.Version != "latest" && opts.Version != selected.Version) {
-		return PackageSource{}, ErrSourceNotApplicable
-	}
-
-	dir, ok := buildListPackageDir(selected, pkg)
+	dir, ok := selectedPackageDir(selected, pkg)
 	if !ok {
 		return PackageSource{}, ErrSourceNotApplicable
 	}
@@ -78,14 +72,40 @@ func (f *BuildListFetcher) Fetch(ctx context.Context, pkg string, opts Options) 
 		return PackageSource{}, err
 	}
 
-	resolved := module.Version{Path: selected.Path, Version: selected.Version}
 	return PackageSource{
 		ImportPath: pkg,
 		Dir:        dir,
 		Files:      files,
-		Module:     resolved,
-		Version:    resolved.Version,
+		Module:     selected.Module,
+		Version:    selected.Module.Version,
 	}, nil
+}
+
+// Select returns the active build-list module without treating an external
+// module cache directory as package source.
+func (f *BuildListFetcher) Select(ctx context.Context, pkg string, opts Options) (ModuleSelection, bool) {
+	modules, err := f.buildList(ctx)
+	if err != nil {
+		return ModuleSelection{}, false
+	}
+	selected, ok := selectBuildListModule(modules, pkg)
+	if !ok {
+		return ModuleSelection{}, false
+	}
+	logical := module.Version{Path: selected.Path, Version: selected.Version}
+	if !selectionMatchesVersion(logical, opts.Version) {
+		return ModuleSelection{}, false
+	}
+	selection := ModuleSelection{Module: logical, Source: logical}
+	if selected.Replace != nil {
+		selection.Source = module.Version{Path: selected.Replace.Path, Version: selected.Replace.Version}
+		if selected.Replace.Version == "" {
+			selection.Dir = selected.Replace.Dir
+		}
+	} else if selected.Version == "" {
+		selection.Dir = selected.Dir
+	}
+	return selection, true
 }
 
 func (f *BuildListFetcher) buildList(ctx context.Context) ([]buildListModule, error) {
@@ -123,7 +143,7 @@ func parseBuildList(output []byte) ([]buildListModule, error) {
 		if err != nil {
 			return nil, err
 		}
-		if entry.Path == "" || buildListModuleDir(entry) == "" {
+		if entry.Path == "" {
 			continue
 		}
 		modules = append(modules, entry)
@@ -144,12 +164,12 @@ func selectBuildListModule(modules []buildListModule, pkg string) (buildListModu
 	return best, best.Path != ""
 }
 
-func buildListPackageDir(selected buildListModule, pkg string) (string, bool) {
-	root := buildListModuleDir(selected)
+func selectedPackageDir(selected ModuleSelection, pkg string) (string, bool) {
+	root := selected.Dir
 	if root == "" {
 		return "", false
 	}
-	subdir := strings.TrimPrefix(pkg, selected.Path)
+	subdir := strings.TrimPrefix(pkg, selected.Module.Path)
 	subdir = strings.TrimPrefix(subdir, "/")
 	dir := filepath.Clean(filepath.Join(root, filepath.FromSlash(subdir)))
 	rel, err := filepath.Rel(root, dir)
@@ -159,11 +179,5 @@ func buildListPackageDir(selected buildListModule, pkg string) (string, bool) {
 	return dir, true
 }
 
-func buildListModuleDir(entry buildListModule) string {
-	if entry.Replace != nil && entry.Replace.Dir != "" {
-		return entry.Replace.Dir
-	}
-	return entry.Dir
-}
-
 var _ SourceFetcher = (*BuildListFetcher)(nil)
+var _ ModuleSelector = (*BuildListFetcher)(nil)

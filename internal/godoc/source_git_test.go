@@ -184,17 +184,14 @@ func TestGitFetcherFallsBackToHostConvention(t *testing.T) {
 	}
 }
 
-func TestGitFetcherUsesTagForConcreteVersionAndWritesCache(t *testing.T) {
+func TestGitFetcherUsesTagForConcreteVersion(t *testing.T) {
 	repo := afero.NewMemMapFs()
 	writeTestFile(t, repo, "/pkg/pkg.go", []byte("package pkg\n"))
-	cacheFS := afero.NewMemMapFs()
 	cloner := &fakeGitCloner{fs: repo}
 	fetcher := GitFetcher{
 		GOPRIVATE:    "github.com/private/*",
 		AuthProvider: nilGitAuthProvider{},
 		Cloner:       cloner,
-		CacheFS:      cacheFS,
-		CacheDir:     "/mod",
 	}
 
 	_, err := fetcher.Fetch(context.Background(), "github.com/private/mod/pkg", Options{Version: "v1.0.0"})
@@ -203,15 +200,6 @@ func TestGitFetcherUsesTagForConcreteVersionAndWritesCache(t *testing.T) {
 	}
 	if got, want := cloner.last.ReferenceName, plumbing.NewTagReferenceName("v1.0.0"); got != want {
 		t.Fatalf("ReferenceName = %q, want %q", got, want)
-	}
-
-	cacheFetcher := ModCacheFetcher{FS: cacheFS, CacheDir: "/mod"}
-	source, err := cacheFetcher.Fetch(context.Background(), "github.com/private/mod/pkg", Options{})
-	if err != nil {
-		t.Fatalf("cache Fetch() error = %v", err)
-	}
-	if got, want := len(source.Files), 1; got != want {
-		t.Fatalf("len(Files) = %d, want %d", got, want)
 	}
 }
 

@@ -78,16 +78,12 @@ func NewDefaultClient(fs afero.Fs) (*Client, error) {
 		GitFetcher{
 			GOPRIVATE:    os.Getenv("GOPRIVATE"),
 			DiscoveryURL: defaultDiscoveryURL,
-			CacheFS:      fs,
-			CacheDir:     cacheDir,
 		},
 	)
 	for _, proxyURL := range proxyURLsFromEnv(os.Getenv("GOPROXY")) {
 		fetchers = append(fetchers, ProxyFetcher{
 			ProxyURL:     proxyURL,
 			DiscoveryURL: defaultDiscoveryURL,
-			CacheFS:      fs,
-			CacheDir:     cacheDir,
 		})
 	}
 

@@ -4,7 +4,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/spf13/afero"
 	"golang.org/x/mod/module"
 )
 
@@ -13,27 +12,6 @@ type ResolvedModule struct {
 	Path        string
 	Version     string
 	PackagePath string
-}
-
-// WriteCache writes package source files into a Go module cache layout.
-func WriteCache(fs afero.Fs, cacheDir string, resolved ResolvedModule, files []SourceFile) error {
-	if cacheDir == "" {
-		return nil
-	}
-	dir, err := resolvedModulePackageDir(cacheDir, resolved)
-	if err != nil {
-		return err
-	}
-	if err := fs.MkdirAll(dir, 0755); err != nil {
-		return err
-	}
-	for _, file := range files {
-		name := filepath.Base(file.Name)
-		if err := afero.WriteFile(fs, filepath.Join(dir, name), file.Data, 0644); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func resolvedModulePackageDir(cacheDir string, resolved ResolvedModule) (string, error) {

@@ -22,8 +22,6 @@ type ProxyFetcher struct {
 	Client       *http.Client
 	ProxyURL     string
 	DiscoveryURL discoveryFunc
-	CacheFS      afero.Fs
-	CacheDir     string
 }
 
 var versionPattern = regexp.MustCompile(`"Version"\s*:\s*"([^"]+)"`)
@@ -68,13 +66,6 @@ func (f ProxyFetcher) Fetch(ctx context.Context, pkg string, opts Options) (Pack
 				continue
 			}
 			return PackageSource{}, err
-		}
-		if f.CacheFS != nil && f.CacheDir != "" {
-			_ = WriteCache(f.CacheFS, f.CacheDir, ResolvedModule{
-				Path:        modPath,
-				Version:     version,
-				PackagePath: pkg,
-			}, source.Files)
 		}
 		return source, nil
 	}

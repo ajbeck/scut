@@ -121,8 +121,6 @@ type GitFetcher struct {
 	AuthProvider    GitAuthProvider
 	SSHAuthProvider sshAuthProvider
 	Cloner          GitCloner
-	CacheFS         afero.Fs
-	CacheDir        string
 }
 
 func (f GitFetcher) Fetch(ctx context.Context, pkg string, opts Options) (PackageSource, error) {
@@ -157,14 +155,6 @@ func (f GitFetcher) Fetch(ctx context.Context, pkg string, opts Options) (Packag
 	files, err := copyPackageFilesToMem(repoFS, packageSubdir(pkg, resolved.modulePath))
 	if err != nil {
 		return PackageSource{}, err
-	}
-
-	if concreteVersion && f.CacheFS != nil && f.CacheDir != "" {
-		_ = WriteCache(f.CacheFS, f.CacheDir, ResolvedModule{
-			Path:        resolved.modulePath,
-			Version:     opts.Version,
-			PackagePath: pkg,
-		}, files)
 	}
 
 	return PackageSource{

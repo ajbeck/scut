@@ -6,7 +6,6 @@ kicker: "CLI Reference"
 tags: ["Go", "docs"]
 weight: 90
 ---
-
 `scut gotools` provides Go tool-inspired lookups that are formatted for agent consumption.
 
 ## Source resolution
@@ -23,6 +22,12 @@ sources as usual.
 It can resolve an arbitrary external package from a private Git repository or
 public module proxy, so the package does not need to be in the current
 project's `go.mod`.
+
+Remote documentation lookup does not write fetched package files into
+`GOMODCACHE`. The Go module cache is treated as an existing source only; proxy
+and private Git results are held in memory for the current invocation. This
+prevents a documentation lookup from creating a partial extracted module that
+could break later Go commands.
 
 For one-argument lookups such as `example.com/module/pkg.Type`, the command
 preserves `go doc`'s interpretation order: it first considers the full package

@@ -3,6 +3,8 @@ package godoc
 import (
 	"context"
 	"errors"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -125,6 +127,103 @@ type Widget struct {
 	}
 	if strings.Contains(out, "hidden string") {
 		t.Fatalf("output leaked unexported field:\n%s", out)
+	}
+}
+
+func TestDefaultClientDoesNotCreatePartialModuleCache(t *testing.T) {
+	const (
+		modPath = "example.com/acme/tool"
+		version = "v1.2.3"
+		pkg     = modPath + "/sub"
+	)
+	proxy := newModuleProxyServer(t, modPath, version, map[string]string{
+		"go.mod": "module " + modPath + "\n\ngo 1.26\n",
+		"internal/helper/helper.go": `package helper
+
+const Value = "complete"
+`,
+		"sub/sub.go": `// Package sub exercises module-cache safety.
+package sub
+
+import "example.com/acme/tool/internal/helper"
+
+// Value comes from another package in this module.
+const Value = helper.Value
+`,
+	})
+	t.Cleanup(proxy.Close)
+
+	modCacheRoot := t.TempDir()
+	modCache := filepath.Join(modCacheRoot, "modcache")
+	t.Cleanup(func() {
+		_ = filepath.Walk(modCacheRoot, func(name string, info os.FileInfo, err error) error {
+			if err != nil {
+				return nil
+			}
+			if info.IsDir() {
+				return os.Chmod(name, 0o700)
+			}
+			return os.Chmod(name, 0o600)
+		})
+		_ = os.RemoveAll(modCacheRoot)
+	})
+	t.Chdir(t.TempDir())
+	t.Setenv("GOMODCACHE", modCache)
+	t.Setenv("GOCACHE", filepath.Join(t.TempDir(), "build-cache"))
+	t.Setenv("GOPATH", filepath.Join(t.TempDir(), "gopath"))
+	t.Setenv("GOPROXY", proxy.URL)
+	t.Setenv("GOPRIVATE", "")
+	t.Setenv("GONOPROXY", "")
+	t.Setenv("GONOSUMDB", "")
+	t.Setenv("GOSUMDB", "off")
+	t.Setenv("GOWORK", "off")
+	t.Setenv("GOENV", "off")
+	t.Setenv("GOFLAGS", "")
+	t.Setenv("GOTOOLCHAIN", "local")
+
+	fs := afero.NewOsFs()
+	client, err := NewDefaultClient(fs)
+	if err != nil {
+		t.Fatalf("NewDefaultClient() error = %v", err)
+	}
+	out, err := client.Doc(t.Context(), Options{Package: pkg, Version: version})
+	if err != nil {
+		t.Fatalf("Doc() error = %v", err)
+	}
+	if !strings.Contains(out, "Package sub exercises module-cache safety") {
+		t.Fatalf("Doc() output missing package documentation:\n%s", out)
+	}
+
+	moduleDir, err := moduleCachePath(modCache, modPath, version)
+	if err != nil {
+		t.Fatalf("moduleCachePath() error = %v", err)
+	}
+	if _, err := os.Stat(moduleDir); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("documentation lookup created module-cache directory %q: %v", moduleDir, err)
+	}
+
+	consumerDir := t.TempDir()
+	writeTestFile(t, fs, filepath.Join(consumerDir, "go.mod"), []byte(`module example.com/consumer
+
+go 1.26
+
+require example.com/acme/tool v1.2.3
+`))
+	cmd := exec.CommandContext(t.Context(), "go", "list", "-mod=mod", pkg)
+	cmd.Dir = consumerDir
+	output, err := cmd.Output()
+	if err != nil {
+		stderr := ""
+		if exitErr, ok := errors.AsType[*exec.ExitError](err); ok {
+			stderr = string(exitErr.Stderr)
+		}
+		t.Fatalf("go list after documentation lookup failed: %v\n%s", err, stderr)
+	}
+	if got, want := strings.TrimSpace(string(output)), pkg; got != want {
+		t.Fatalf("go list output = %q, want %q", got, want)
+	}
+	if _, err := os.Stat(filepath.Join(moduleDir, "internal", "helper", "helper.go")); err != nil {
+		t.Fatalf("Go did not extract the complete module after documentation lookup: %v", err)
 	}
 }
 

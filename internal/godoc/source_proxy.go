@@ -8,7 +8,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -16,37 +19,20 @@ import (
 	"golang.org/x/mod/module"
 )
 
-// ProxyFetcher loads public module source from a single Go module proxy.
+// ProxyFetcher loads module source from a single Go module proxy.
 type ProxyFetcher struct {
-	Client       *http.Client
-	ProxyURL     string
-	DiscoveryURL discoveryFunc
-	Store        ArchiveStore
-	Selector     ModuleSelector
+	Client        *http.Client
+	ProxyURL      string
+	DiscoveryURL  discoveryFunc
+	Store         ArchiveStore
+	Selector      ModuleSelector
+	Exclude       func(string) bool
+	Authenticator *GoAuthenticator
 }
 
 var versionPattern = regexp.MustCompile(`"Version"\s*:\s*"([^"]+)"`)
 
 var errProxyMiss = errors.New("module proxy miss")
-
-func proxyURLsFromEnv(value string) []string {
-	if value == "" {
-		return []string{"https://proxy.golang.org"}
-	}
-	var urls []string
-	for _, entry := range strings.FieldsFunc(value, func(r rune) bool { return r == ',' || r == '|' }) {
-		entry = strings.TrimSpace(entry)
-		switch entry {
-		case "", "direct":
-			continue
-		case "off":
-			return urls
-		default:
-			urls = append(urls, entry)
-		}
-	}
-	return urls
-}
 
 func (f ProxyFetcher) Fetch(ctx context.Context, pkg string, opts Options) (PackageSource, error) {
 	if f.ProxyURL == "" {
@@ -55,6 +41,9 @@ func (f ProxyFetcher) Fetch(ctx context.Context, pkg string, opts Options) (Pack
 	client := f.client()
 	if f.Selector != nil {
 		if selected, ok := f.Selector.Select(ctx, pkg, opts); ok && selected.Dir == "" && selected.Source.Version != "" {
+			if f.excluded(selected.Source.Path) {
+				return PackageSource{}, errNoProxy
+			}
 			return f.fetchSelected(ctx, client, pkg, selected)
 		}
 	}
@@ -86,7 +75,7 @@ func (f ProxyFetcher) Fetch(ctx context.Context, pkg string, opts Options) (Pack
 	return PackageSource{}, ErrSourceNotApplicable
 }
 
-func (f ProxyFetcher) fetchSelected(ctx context.Context, client *http.Client, pkg string, selected ModuleSelection) (PackageSource, error) {
+func (f ProxyFetcher) fetchSelected(ctx context.Context, client httpDoer, pkg string, selected ModuleSelection) (PackageSource, error) {
 	archive, err := f.fetchArchive(ctx, client, selected.Source.Path, selected.Source.Version)
 	if errors.Is(err, errProxyMiss) {
 		return PackageSource{}, ErrSourceNotApplicable
@@ -102,18 +91,18 @@ func (f ProxyFetcher) fetchSelected(ctx context.Context, client *http.Client, pk
 	return source, err
 }
 
-func (f ProxyFetcher) client() *http.Client {
+func (f ProxyFetcher) client() httpDoer {
 	if f.Client != nil {
-		return f.Client
+		return f.Authenticator.Client(f.Client)
 	}
-	return http.DefaultClient
+	return f.Authenticator.Client(http.DefaultClient)
 }
 
-func (f ProxyFetcher) moduleCandidates(ctx context.Context, client *http.Client, pkg string) []string {
+func (f ProxyFetcher) moduleCandidates(ctx context.Context, client httpDoer, pkg string) []string {
 	var candidates []string
 	seen := map[string]bool{}
 	add := func(modPath string) {
-		if modPath == "" || seen[modPath] {
+		if modPath == "" || seen[modPath] || f.excluded(modPath) {
 			return
 		}
 		if pkg != modPath && !strings.HasPrefix(pkg, modPath+"/") {
@@ -133,7 +122,11 @@ func (f ProxyFetcher) moduleCandidates(ctx context.Context, client *http.Client,
 	return candidates
 }
 
-func (f ProxyFetcher) resolveVersion(ctx context.Context, client *http.Client, modPath, version string) (string, error) {
+func (f ProxyFetcher) excluded(modulePath string) bool {
+	return f.Exclude != nil && f.Exclude(modulePath)
+}
+
+func (f ProxyFetcher) resolveVersion(ctx context.Context, client httpDoer, modPath, version string) (string, error) {
 	if version == "" || version == "latest" {
 		body, err := f.proxyGet(ctx, client, modPath, "@latest")
 		if err != nil {
@@ -141,7 +134,11 @@ func (f ProxyFetcher) resolveVersion(ctx context.Context, client *http.Client, m
 		}
 		return parseProxyVersion(body)
 	}
-	body, err := f.proxyGet(ctx, client, modPath, "@v/"+version+".info")
+	escapedVersion, err := module.EscapeVersion(version)
+	if err != nil {
+		return "", err
+	}
+	body, err := f.proxyGet(ctx, client, modPath, "@v/"+escapedVersion+".info")
 	if err != nil {
 		return "", err
 	}
@@ -152,7 +149,7 @@ func (f ProxyFetcher) resolveVersion(ctx context.Context, client *http.Client, m
 	return resolved, nil
 }
 
-func (f ProxyFetcher) fetchArchive(ctx context.Context, client *http.Client, modPath, version string) (ModuleArchive, error) {
+func (f ProxyFetcher) fetchArchive(ctx context.Context, client httpDoer, modPath, version string) (ModuleArchive, error) {
 	escapedVersion, err := module.EscapeVersion(version)
 	if err != nil {
 		return ModuleArchive{}, err
@@ -174,12 +171,25 @@ func (f ProxyFetcher) cacheArchive(ctx context.Context, archive ModuleArchive, l
 	_ = f.Store.SetLatest(ctx, archive.Module)
 }
 
-func (f ProxyFetcher) proxyGet(ctx context.Context, client *http.Client, modPath, suffix string) ([]byte, error) {
+func (f ProxyFetcher) proxyGet(ctx context.Context, client httpDoer, modPath, suffix string) ([]byte, error) {
 	escaped, err := module.EscapePath(modPath)
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, strings.TrimRight(f.ProxyURL, "/")+"/"+escaped+"/"+suffix, nil)
+	base, err := url.Parse(f.ProxyURL)
+	if err != nil {
+		return nil, err
+	}
+	target := *base
+	target.Path = strings.TrimRight(base.Path, "/") + "/" + escaped + "/" + suffix
+	if target.Scheme == "file" {
+		body, err := os.ReadFile(filepath.FromSlash(target.Path))
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, errProxyMiss
+		}
+		return body, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target.String(), nil)
 	if err != nil {
 		return nil, err
 	}

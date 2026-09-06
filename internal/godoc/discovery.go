@@ -15,12 +15,13 @@ type goImportMeta struct {
 	Prefix string
 	VCS    string
 	Repo   string
+	SubDir string
 }
 
 var metaTagPattern = regexp.MustCompile(`(?is)<meta\s+[^>]*name=["']go-import["'][^>]*>`)
 var contentAttrPattern = regexp.MustCompile(`(?is)\scontent=["']([^"']+)["']`)
 
-func discoverGoImport(ctx context.Context, client *http.Client, importPath string, discoveryURL discoveryFunc) (goImportMeta, error) {
+func discoverGoImport(ctx context.Context, client httpDoer, importPath string, discoveryURL discoveryFunc) (goImportMeta, error) {
 	if discoveryURL == nil {
 		discoveryURL = func(path string) string {
 			return "https://" + path + "?go-get=1"
@@ -52,11 +53,15 @@ func parseGoImportMeta(html, importPath string) (goImportMeta, error) {
 			continue
 		}
 		fields := strings.Fields(match[1])
-		if len(fields) != 3 {
+		if len(fields) != 3 && len(fields) != 4 {
 			continue
 		}
 		if importPath == fields[0] || strings.HasPrefix(importPath, fields[0]+"/") {
-			return goImportMeta{Prefix: fields[0], VCS: fields[1], Repo: fields[2]}, nil
+			meta := goImportMeta{Prefix: fields[0], VCS: fields[1], Repo: fields[2]}
+			if len(fields) == 4 {
+				meta.SubDir = fields[3]
+			}
+			return meta, nil
 		}
 	}
 	return goImportMeta{}, ErrSourceNotApplicable

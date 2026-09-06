@@ -8,37 +8,16 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"os"
 	"path"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 
 	"golang.org/x/mod/module"
 )
-
-func TestProxyURLsFromEnv(t *testing.T) {
-	tests := []struct {
-		name string
-		env  string
-		want []string
-	}{
-		{name: "default", want: []string{"https://proxy.golang.org"}},
-		{name: "single", env: "https://proxy.example.com", want: []string{"https://proxy.example.com"}},
-		{name: "fallbacks", env: "https://one.example.com,https://two.example.com", want: []string{"https://one.example.com", "https://two.example.com"}},
-		{name: "skips_empty_and_direct", env: "https://one.example.com,,direct|https://two.example.com", want: []string{"https://one.example.com", "https://two.example.com"}},
-		{name: "off_stops", env: "https://one.example.com,off,https://two.example.com", want: []string{"https://one.example.com"}},
-		{name: "off_only", env: "off"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := proxyURLsFromEnv(tt.env)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Fatalf("proxyURLsFromEnv(%q) = %#v, want %#v", tt.env, got, tt.want)
-			}
-		})
-	}
-}
 
 func TestProxyFetcherFallsBackAcrossConfiguredProxies(t *testing.T) {
 	miss := httptest.NewServer(http.NotFoundHandler())
@@ -47,10 +26,10 @@ func TestProxyFetcherFallsBackAcrossConfiguredProxies(t *testing.T) {
 		"tool.go": "package tool\n",
 	})
 	t.Cleanup(hit.Close)
-	resolver := Resolver{Fetchers: []SourceFetcher{
-		ProxyFetcher{Client: hit.Client(), ProxyURL: miss.URL},
-		ProxyFetcher{Client: hit.Client(), ProxyURL: hit.URL},
-	}}
+	resolver := Resolver{Fetchers: []SourceFetcher{RemoteFetcher{
+		Policy: ModuleDownloadPolicy{GOPROXY: miss.URL + "," + hit.URL},
+		Proxy:  ProxyFetcher{Client: hit.Client()},
+	}}}
 
 	source, err := resolver.Fetch(context.Background(), "github.com/acme/tool", Options{})
 	if err != nil {
@@ -93,10 +72,10 @@ func TestProxyFetcherDoesNotFallBackAfterServerError(t *testing.T) {
 		"tool.go": "package tool\n",
 	})
 	t.Cleanup(hit.Close)
-	resolver := Resolver{Fetchers: []SourceFetcher{
-		ProxyFetcher{Client: hit.Client(), ProxyURL: serverError.URL},
-		ProxyFetcher{Client: hit.Client(), ProxyURL: hit.URL},
-	}}
+	resolver := Resolver{Fetchers: []SourceFetcher{RemoteFetcher{
+		Policy: ModuleDownloadPolicy{GOPROXY: serverError.URL + "," + hit.URL},
+		Proxy:  ProxyFetcher{Client: hit.Client()},
+	}}}
 
 	_, err := resolver.Fetch(context.Background(), "github.com/acme/tool", Options{})
 	if err == nil {
@@ -147,6 +126,39 @@ func TestProxyFetcherResolvesExplicitVersion(t *testing.T) {
 
 	if got, want := source.Version, "v1.2.3"; got != want {
 		t.Fatalf("Version = %q, want %q", got, want)
+	}
+}
+
+func TestProxyFetcherReadsFileProxy(t *testing.T) {
+	const (
+		modPath = "github.com/acme/tool"
+		version = "v1.2.3"
+	)
+	root := t.TempDir()
+	escapedPath, err := module.EscapePath(modPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	versionDir := filepath.Join(root, filepath.FromSlash(escapedPath), "@v")
+	if err := os.MkdirAll(versionDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, filepath.FromSlash(escapedPath), "@latest"), []byte(`{"Version":"`+version+`"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(versionDir, version+".zip"), moduleZip(t, modPath, version, map[string]string{
+		"tool.go": "package tool\n",
+	}), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	proxyURL := (&url.URL{Scheme: "file", Path: root}).String()
+	source, err := (ProxyFetcher{ProxyURL: proxyURL}).Fetch(t.Context(), modPath, Options{})
+	if err != nil {
+		t.Fatalf("Fetch() error = %v", err)
+	}
+	if got, want := source.Module.Version, version; got != want {
+		t.Fatalf("Module.Version = %q, want %q", got, want)
 	}
 }
 

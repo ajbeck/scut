@@ -21,8 +21,8 @@ package source. Build-list discovery is best-effort: if it cannot run, the
 command uses direct requirements from the active `go.mod` and the remaining
 local and remote sources.
 
-It can resolve an arbitrary external package from a private Git repository or
-public module proxy, so the package does not need to be in the current
+It can resolve an arbitrary external package through the configured Go module
+proxy or direct Git policy, so the package does not need to be in the current
 project's `go.mod`.
 
 Scut's documentation source fetchers never write fetched package files into
@@ -35,6 +35,39 @@ Missing or invalid cache artifacts are not repaired or extracted in place.
 Build-list discovery currently invokes `go list -mod=readonly -m -json all`.
 That command does not edit the active `go.mod`, but the Go command may perform
 its own normal module-cache work while loading the build list.
+
+### Go network policy
+
+Scut reads module download settings without invoking the Go command. Values use
+the same precedence as Go: a non-empty process environment value, the user
+`go/env` file unless `GOENV=off`, and then `GOROOT/go.env`. This includes
+settings written by `go env -w` and the toolchain default
+`GOPROXY=https://proxy.golang.org,direct`.
+
+Remote lookup is one ordered `GOPROXY` state machine:
+
+- A comma advances only after a module-not-found result, including HTTP 404 or
+  410. A pipe advances after any proxy error.
+- `direct` performs repository discovery and an in-memory Git clone. `off`
+  returns an actionable disabled error without attempting a remote source.
+- HTTP, HTTPS, and `file://` module proxies are supported. Proxy host names
+  without a scheme receive Go's implicit `https://` prefix.
+- `GONOPROXY` defaults to `GOPRIVATE` when unset. A matching module takes
+  the implicit direct route and is not sent to a configured proxy.
+
+`GOAUTH` command execution and 4xx retry apply to HTTPS go-import discovery
+and module proxy requests. Scut supports the Go `off`, `netrc`,
+`git <absolute-dir>`, and custom-command forms plus prefix-scoped response
+headers. A failing individual helper does not prevent later helpers or an
+anonymous request from succeeding. Basic or Bearer credentials available from
+the initial GOAUTH pass may also authenticate an HTTPS Git clone.
+
+`GOINSECURE` applies only to matching modules fetched directly: it may permit
+HTTP discovery or repository transport and relaxed HTTPS certificate
+verification. It does not weaken an explicitly configured proxy or change
+`GONOSUMDB`; the next integrity layer consumes that independently resolved
+checksum policy. Direct Git is also subject to `GOVCS`; scut returns an error
+before cloning when the first matching rule disallows Git.
 
 ### Independent module cache
 
@@ -102,11 +135,19 @@ conclusive and still permits remote resolution.
 
 ### Private GitHub repositories
 
-For a private GitHub repository, direct Git resolution tries HTTPS first. It
-uses the first available token from `GH_TOKEN`, `GITHUB_TOKEN`, and
-`GIT_TOKEN`; if none is set, it makes a one-second best-effort call to `gh auth
-token --hostname <host>`. A missing, failing, or unauthenticated `gh` command
-is ignored, so the lookup can continue through the usual source routes.
+For a private GitHub repository on a direct route, Git resolution tries HTTPS
+first. It uses the first available token from `GH_TOKEN`, `GITHUB_TOKEN`, and
+`GIT_TOKEN`. Compatible Basic or Bearer credentials already supplied by
+`GOAUTH` are considered next. If none is available, scut makes a one-second
+best-effort call to `gh auth token --hostname <host>`. A missing, failing, or
+unauthenticated `gh` command is ignored.
+
+When the active build list selects an exact direct module version, scut maps it
+to Go's repository layout instead of assuming a root tag. Nested modules use
+tags such as `subdir/v1.2.3`, semantic-import-version modules locate their
+`v2/` source directory, and pseudo-versions select their encoded revision.
+Versioned replacements preserve the logical import path while cloning and
+caching the replacement module identity.
 
 If an authenticated HTTPS clone of a `github.com` repository fails with a Git
 authentication or authorization error, the command retries once through the

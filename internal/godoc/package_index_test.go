@@ -52,11 +52,12 @@ func TestLocalPackageIndexMatchOrder(t *testing.T) {
 func TestLocalPackageIndexStopsAtFirstMatchingTier(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	writePackage(t, fs, "/goroot/src/encoding/json", "json")
-	writePackage(t, fs, "/gomod/cache/github.com/acme/json@v1.0.0", "json")
+	writePackage(t, fs, "/repo/json", "json")
 	index := LocalPackageIndex{
-		FS:       fs,
-		GOROOT:   "/goroot",
-		ModCache: "/gomod/cache",
+		FS:         fs,
+		GOROOT:     "/goroot",
+		ModuleDir:  "/repo",
+		ModulePath: "example.com/root",
 	}
 
 	got, err := index.MatchSuffix("json")
@@ -108,21 +109,6 @@ func TestLocalPackageIndexSkipsNonPackages(t *testing.T) {
 	wantPaths := []string{"encoding/json"}
 	if !reflect.DeepEqual(gotPaths, wantPaths) {
 		t.Fatalf("MatchSuffix(json) paths = %#v, want %#v", gotPaths, wantPaths)
-	}
-}
-
-func TestLocalPackageIndexIncludesModuleCacheWithoutNetwork(t *testing.T) {
-	fs := afero.NewMemMapFs()
-	writePackage(t, fs, "/gomod/cache/github.com/acme/lib@v1.2.3/sub", "sub")
-	index := LocalPackageIndex{FS: fs, ModCache: "/gomod/cache"}
-
-	got, err := index.MatchSuffix("lib/sub")
-	if err != nil {
-		t.Fatalf("MatchSuffix() error = %v", err)
-	}
-	want := []IndexedPackage{{ImportPath: "github.com/acme/lib/sub", Dir: filepath.Clean("/gomod/cache/github.com/acme/lib@v1.2.3/sub")}}
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("MatchSuffix(lib/sub) = %#v, want %#v", got, want)
 	}
 }
 

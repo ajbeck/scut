@@ -22,6 +22,7 @@ type ProxyFetcher struct {
 	ProxyURL     string
 	DiscoveryURL discoveryFunc
 	Store        ArchiveStore
+	Selector     ModuleSelector
 }
 
 var versionPattern = regexp.MustCompile(`"Version"\s*:\s*"([^"]+)"`)
@@ -52,6 +53,11 @@ func (f ProxyFetcher) Fetch(ctx context.Context, pkg string, opts Options) (Pack
 		return PackageSource{}, ErrSourceNotApplicable
 	}
 	client := f.client()
+	if f.Selector != nil {
+		if selected, ok := f.Selector.Select(ctx, pkg, opts); ok && selected.Dir == "" && selected.Source.Version != "" {
+			return f.fetchSelected(ctx, client, pkg, selected)
+		}
+	}
 	for _, modPath := range f.moduleCandidates(ctx, client, pkg) {
 		version, err := f.resolveVersion(ctx, client, modPath, opts.Version)
 		if err != nil {
@@ -78,6 +84,22 @@ func (f ProxyFetcher) Fetch(ctx context.Context, pkg string, opts Options) (Pack
 		return source, nil
 	}
 	return PackageSource{}, ErrSourceNotApplicable
+}
+
+func (f ProxyFetcher) fetchSelected(ctx context.Context, client *http.Client, pkg string, selected ModuleSelection) (PackageSource, error) {
+	archive, err := f.fetchArchive(ctx, client, selected.Source.Path, selected.Source.Version)
+	if errors.Is(err, errProxyMiss) {
+		return PackageSource{}, ErrSourceNotApplicable
+	}
+	if err != nil {
+		return PackageSource{}, err
+	}
+	f.cacheArchive(ctx, archive, false)
+	source, err := packageSourceFromSelectedArchive(archive, pkg, selected.Module, "proxy")
+	if errors.Is(err, ErrNoGoFiles) {
+		return PackageSource{}, &cachedPackageAbsentError{Module: selected.Module, Package: pkg}
+	}
+	return source, err
 }
 
 func (f ProxyFetcher) client() *http.Client {
@@ -184,6 +206,10 @@ func parseProxyVersion(body []byte) (string, error) {
 }
 
 func extractPackageZip(modPath, version, pkg string, body []byte) ([]SourceFile, error) {
+	return extractPackageZipForModule(modPath, version, modPath, pkg, body)
+}
+
+func extractPackageZipForModule(modPath, version, logicalModulePath, pkg string, body []byte) ([]SourceFile, error) {
 	reader := bytes.NewReader(body)
 	zr, err := zip.NewReader(reader, int64(len(body)))
 	if err != nil {
@@ -193,7 +219,7 @@ func extractPackageZip(modPath, version, pkg string, body []byte) ([]SourceFile,
 	mem := afero.NewMemMapFs()
 	targetDir := "/pkg"
 	root := modPath + "@" + version + "/"
-	subdir := packageSubdir(pkg, modPath)
+	subdir := packageSubdir(pkg, logicalModulePath)
 	if subdir != "" {
 		subdir += "/"
 	}

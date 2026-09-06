@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/spf13/afero"
-	"golang.org/x/mod/module"
 )
 
 // PackageIndex finds locally known packages by import path suffix.
@@ -28,14 +27,12 @@ type LocalPackageIndex struct {
 	ModuleDir  string
 	ModulePath string
 	GOROOT     string
-	ModCache   string
 }
 
 func (i LocalPackageIndex) MatchSuffix(suffix string) ([]IndexedPackage, error) {
 	for _, index := range []func() ([]IndexedPackage, error){
 		func() ([]IndexedPackage, error) { return indexStdlibPackages(i.fs(), i.GOROOT) },
 		func() ([]IndexedPackage, error) { return indexCurrentModulePackages(i.fs(), i.ModuleDir, i.ModulePath) },
-		func() ([]IndexedPackage, error) { return indexModuleCachePackages(i.fs(), i.ModCache) },
 	} {
 		pkgs, err := index()
 		if err != nil {
@@ -89,43 +86,6 @@ func indexCurrentModulePackages(fs afero.Fs, moduleDir, modulePath string) ([]In
 	})
 }
 
-func indexModuleCachePackages(fs afero.Fs, cacheDir string) ([]IndexedPackage, error) {
-	if cacheDir == "" {
-		return nil, nil
-	}
-	var pkgs []IndexedPackage
-	cacheDir = filepath.Clean(cacheDir)
-	err := walkDirs(fs, cacheDir, func(dir string) (bool, error) {
-		if shouldSkipPackageIndexDir(filepath.Base(dir)) {
-			return false, nil
-		}
-		modPath, ok := modulePathFromCacheDir(cacheDir, dir)
-		if !ok {
-			return true, nil
-		}
-		moduleRoot := dir
-		modulePkgs, err := indexPackagesUnder(fs, moduleRoot, func(packageDir string) (string, bool) {
-			rel, err := filepath.Rel(moduleRoot, packageDir)
-			if err != nil || !filepath.IsLocal(rel) {
-				return "", false
-			}
-			if rel == "." {
-				return modPath, true
-			}
-			return modPath + "/" + filepath.ToSlash(rel), true
-		})
-		if err != nil {
-			return false, err
-		}
-		pkgs = append(pkgs, modulePkgs...)
-		return false, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return dedupeIndexedPackages(pkgs), nil
-}
-
 func indexPackagesUnder(fs afero.Fs, root string, importPath func(string) (string, bool)) ([]IndexedPackage, error) {
 	var pkgs []IndexedPackage
 	err := walkDirs(fs, filepath.Clean(root), func(dir string) (bool, error) {
@@ -173,27 +133,6 @@ func walkDirs(fs afero.Fs, root string, visit func(string) (descend bool, err er
 		}
 	}
 	return nil
-}
-
-func modulePathFromCacheDir(cacheDir, dir string) (string, bool) {
-	rel, err := filepath.Rel(cacheDir, dir)
-	if err != nil || !filepath.IsLocal(rel) {
-		return "", false
-	}
-	slashRel := filepath.ToSlash(rel)
-	at := strings.LastIndex(slashRel, "@")
-	if at < 0 {
-		return "", false
-	}
-	escapedPath := slashRel[:at]
-	if escapedPath == "" || strings.Contains(slashRel[at+1:], "/") {
-		return "", false
-	}
-	modPath, err := module.UnescapePath(escapedPath)
-	if err != nil {
-		return "", false
-	}
-	return modPath, true
 }
 
 func filterIndexedPackages(pkgs []IndexedPackage, suffix string) []IndexedPackage {

@@ -3,12 +3,10 @@ package godoc
 import (
 	"context"
 	"errors"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/spf13/afero"
 	"golang.org/x/mod/module"
 )
 
@@ -272,20 +270,17 @@ func TestLookupResolverPrefersNormalizedResolutionErrorAfterDottedLookupMiss(t *
 }
 
 func TestLookupResolverReturnsCachedPackageAbsenceWithoutRemoteFallback(t *testing.T) {
-	fs := afero.NewMemMapFs()
 	modPath := "github.com/private/mod"
-	writeTestFile(t, fs, filepath.Join(moduleCacheDir(t, "/mod", modPath, "v1.0.0"), "README.md"), []byte("docs\n"))
 	fallback := &mapSourceFetcher{errs: map[string]error{
 		modPath: errors.New("remote fallback should not run"),
 	}}
 	resolver := LookupResolver{Resolver: Resolver{Fetchers: []SourceFetcher{
-		ModCacheFetcher{
-			FS:       fs,
-			CacheDir: "/mod",
-			Deps: map[string]module.Version{
-				modPath: {Path: modPath, Version: "v1.0.0"},
+		&mapSourceFetcher{errs: map[string]error{
+			modPath: &cachedPackageAbsentError{
+				Module:  module.Version{Path: modPath, Version: "v1.0.0"},
+				Package: modPath,
 			},
-		},
+		}},
 		fallback,
 	}}}
 

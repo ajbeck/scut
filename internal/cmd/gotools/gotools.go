@@ -13,7 +13,8 @@ import (
 
 // Cmd is the Kong command group for "scut gotools".
 type Cmd struct {
-	Doc docCmd `cmd:"doc" help:"Show Go documentation for a package or symbol."`
+	Doc   docCmd   `cmd:"doc" help:"Show Go documentation for a package or symbol."`
+	Cache cacheCmd `cmd:"cache" help:"Inspect and manage the scut-owned Go module cache."`
 }
 
 type docCmd struct {

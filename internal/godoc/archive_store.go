@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"golang.org/x/mod/module"
+	"golang.org/x/mod/sumdb/dirhash"
 	modzip "golang.org/x/mod/zip"
 )
 
@@ -16,6 +17,7 @@ var ErrArchiveNotFound = errors.New("module archive not found")
 
 const (
 	archiveFileName  = "module.zip"
+	archiveHashName  = "module.ziphash"
 	revisionFileName = "revision"
 	latestFileName   = "latest"
 )
@@ -56,6 +58,9 @@ func (s FileArchiveStore) Get(ctx context.Context, mod module.Version) (ModuleAr
 			return ModuleArchive{}, archiveNotFound(mod)
 		}
 		return ModuleArchive{}, fmt.Errorf("validating cached module archive %s@%s: %w", mod.Path, mod.Version, err)
+	}
+	if err := verifyOptionalArchiveHash(zipPath, filepath.Join(entryDir, archiveHashName)); err != nil {
+		return ModuleArchive{}, fmt.Errorf("validating cached module archive hash %s@%s: %w", mod.Path, mod.Version, err)
 	}
 	data, err := os.ReadFile(zipPath)
 	if err != nil {
@@ -110,6 +115,13 @@ func (s FileArchiveStore) Put(ctx context.Context, archive ModuleArchive) error 
 	}
 	if _, err := modzip.CheckZip(archive.Module, zipPath); err != nil {
 		return fmt.Errorf("validating module archive %s@%s: %w", archive.Module.Path, archive.Module.Version, err)
+	}
+	hash, err := dirhash.HashZip(zipPath, dirhash.DefaultHash)
+	if err != nil {
+		return fmt.Errorf("hashing module archive %s@%s: %w", archive.Module.Path, archive.Module.Version, err)
+	}
+	if err := writeFileSync(filepath.Join(tempDir, archiveHashName), []byte(hash+"\n"), 0o644); err != nil {
+		return fmt.Errorf("staging module archive hash: %w", err)
 	}
 	if archive.Revision != "" {
 		if err := writeFileSync(filepath.Join(tempDir, revisionFileName), []byte(archive.Revision), 0o644); err != nil {
@@ -270,6 +282,28 @@ func readOptionalRevision(name string) (string, error) {
 		return "", err
 	}
 	return revision, nil
+}
+
+func verifyOptionalArchiveHash(zipPath, hashPath string) error {
+	want, err := os.ReadFile(hashPath)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	wantHash := strings.TrimSpace(string(want))
+	if wantHash == "" {
+		return errors.New("empty archive hash")
+	}
+	gotHash, err := dirhash.HashZip(zipPath, dirhash.DefaultHash)
+	if err != nil {
+		return err
+	}
+	if gotHash != wantHash {
+		return fmt.Errorf("archive hash mismatch: got %s, want %s", gotHash, wantHash)
+	}
+	return nil
 }
 
 func writeFileSync(name string, data []byte, perm os.FileMode) error {

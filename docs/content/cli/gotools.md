@@ -55,8 +55,40 @@ proxy and reuses that mapping for an offline lookup. Explicit canonical versions
 fetched from private Git repositories are cached only when the clone exposes
 the resolved commit. Floating private Git requests remain in memory.
 
-The cache has no automatic eviction. Explicit inspection and lifecycle commands
-will be added separately.
+Newly published entries include a self-generated `h1:` sidecar. This detects
+storage corruption but is not a source-authenticity decision; verification
+against `go.sum` or a checksum database is a separate integrity layer. Entries
+created before the sidecar was introduced remain readable but `cache verify`
+reports them as incomplete so users can remove and refetch them explicitly.
+
+### Cache management
+
+`scut gotools cache` operates only on the scut-owned module archive cache. It
+never removes or repairs anything in `GOMODCACHE`.
+
+- `cache path` prints the absolute owned-cache path.
+- `cache list [MODULE[@VERSION]]` reports canonical entries, byte sizes,
+  publication times, `latest` aliases, and validation state.
+- `cache verify [MODULE[@VERSION]]` validates archive structure and the stored
+  self-hash without repairing anything. It returns a non-zero status when it
+  finds an incomplete, malformed, or corrupted entry.
+- `cache remove MODULE[@VERSION]` removes one exact version. Omitting the
+  version removes every cached version of that module while preserving nested
+  module paths.
+- `cache clean` idempotently removes the complete scut-owned module cache.
+- `cache prune --older-than=DURATION` removes entries at or older than the
+  publication cutoff. `cache prune --max-size=SIZE` removes oldest entries until
+  the cache fits. When both are supplied, age pruning runs first. Durations use
+  Go duration syntax such as `720h`; sizes accept bytes and SI or IEC units such
+  as `500MB` and `1.5GiB`. Pruning removes only canonical version entries. If
+  unassociated malformed artifacts prevent the requested maximum size, it
+  reports an error and directs the user to `cache verify` or `cache clean`.
+
+`remove`, `clean`, and `prune` are intentionally non-interactive for agent and
+automation use. Removing the version named by a module's `latest` alias removes
+the alias rather than guessing another version. `list`, `verify`, and mutation
+commands support `--json`; JSON verification output is written before the
+command returns a failing status.
 
 For one-argument lookups such as `example.com/module/pkg.Type`, the command
 preserves `go doc`'s interpretation order: it first considers the full package
@@ -87,3 +119,17 @@ available or the retry fails.
 {{< clihelp file="scut-gotools" command="scut gotools --help" >}}
 
 {{< clihelp file="scut-gotools-doc" command="scut gotools doc --help" >}}
+
+{{< clihelp file="scut-gotools-cache" command="scut gotools cache --help" >}}
+
+{{< clihelp file="scut-gotools-cache-path" command="scut gotools cache path --help" >}}
+
+{{< clihelp file="scut-gotools-cache-list" command="scut gotools cache list --help" >}}
+
+{{< clihelp file="scut-gotools-cache-verify" command="scut gotools cache verify --help" >}}
+
+{{< clihelp file="scut-gotools-cache-remove" command="scut gotools cache remove --help" >}}
+
+{{< clihelp file="scut-gotools-cache-clean" command="scut gotools cache clean --help" >}}
+
+{{< clihelp file="scut-gotools-cache-prune" command="scut gotools cache prune --help" >}}

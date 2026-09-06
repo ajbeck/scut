@@ -1,0 +1,7 @@
+Usage: scut gotools cache path
+
+Print the scut module cache path.
+
+Flags:
+  -h, --help       Show context-sensitive help.
+  -v, --version    Print version and exit.

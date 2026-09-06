@@ -1,0 +1,13 @@
+Usage: scut gotools cache prune [flags]
+
+Prune scut module cache entries by age or size.
+
+Flags:
+  -h, --help                   Show context-sensitive help.
+  -v, --version                Print version and exit.
+
+      --older-than=DURATION    Remove entries older than this duration (for
+                               example 720h).
+      --max-size=SIZE          Reduce the cache to at most this size (for
+                               example 1GiB).
+      --json                   Emit a structured JSON object.

@@ -1,0 +1,12 @@
+Usage: scut gotools cache list [<module>] [flags]
+
+List scut module cache entries.
+
+Arguments:
+  [<module>]    Optional module or module@version filter.
+
+Flags:
+  -h, --help       Show context-sensitive help.
+  -v, --version    Print version and exit.
+
+      --json       Emit a structured JSON object.

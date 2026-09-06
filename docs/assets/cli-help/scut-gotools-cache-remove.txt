@@ -1,0 +1,12 @@
+Usage: scut gotools cache remove <module> [flags]
+
+Remove one module or exact module version.
+
+Arguments:
+  <module>    Module or exact module version to remove.
+
+Flags:
+  -h, --help       Show context-sensitive help.
+  -v, --version    Print version and exit.
+
+      --json       Emit a structured JSON object.

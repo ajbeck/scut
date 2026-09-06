@@ -194,6 +194,61 @@ func TestProxyFetcherUsesMetaDiscoveryBeforePrefixProbing(t *testing.T) {
 	}
 }
 
+func TestProxyFetcherCachesCompleteArchiveAndLatestVersion(t *testing.T) {
+	const (
+		modPath = "github.com/acme/tool"
+		version = "v1.2.3"
+	)
+	proxy := newModuleProxyServer(t, modPath, version, map[string]string{
+		"sub/sub.go":                     "package sub\n",
+		"internal/helper/helper.go":      "package helper\n",
+		"internal/helper/helper_test.go": "package helper\n",
+	})
+	t.Cleanup(proxy.Close)
+	store := FileArchiveStore{Root: t.TempDir()}
+	fetcher := ProxyFetcher{Client: proxy.Client(), ProxyURL: proxy.URL, Store: store}
+
+	if _, err := fetcher.Fetch(context.Background(), modPath+"/sub", Options{}); err != nil {
+		t.Fatalf("Fetch() error = %v", err)
+	}
+
+	proxy.Close()
+	resolver := Resolver{Fetchers: []SourceFetcher{
+		ArchiveFetcher{Store: store},
+		ProxyFetcher{Client: proxy.Client(), ProxyURL: proxy.URL, Store: store},
+	}}
+	cached, err := resolver.Fetch(context.Background(), modPath+"/internal/helper", Options{})
+	if err != nil {
+		t.Fatalf("cached Fetch() error = %v", err)
+	}
+	if got, want := cached.Module.Version, version; got != want {
+		t.Fatalf("cached Module.Version = %q, want %q", got, want)
+	}
+	if got, want := len(cached.Files), 1; got != want {
+		t.Fatalf("len(cached.Files) = %d, want %d", got, want)
+	}
+}
+
+func TestProxyFetcherReturnsSourceWhenCacheWriteFails(t *testing.T) {
+	proxy := newModuleProxyServer(t, "github.com/acme/tool", "v1.2.3", map[string]string{
+		"tool.go": "package tool\n",
+	})
+	t.Cleanup(proxy.Close)
+	fetcher := ProxyFetcher{
+		Client:   proxy.Client(),
+		ProxyURL: proxy.URL,
+		Store:    failingArchiveStore{err: errors.New("cache unavailable")},
+	}
+
+	source, err := fetcher.Fetch(context.Background(), "github.com/acme/tool", Options{})
+	if err != nil {
+		t.Fatalf("Fetch() error = %v", err)
+	}
+	if got, want := len(source.Files), 1; got != want {
+		t.Fatalf("len(Files) = %d, want %d", got, want)
+	}
+}
+
 func newModuleProxyServer(t *testing.T, modPath, version string, files map[string]string) *httptest.Server {
 	t.Helper()
 	zipBytes := moduleZip(t, modPath, version, files)

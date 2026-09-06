@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	githttp "github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/spf13/afero"
+	"golang.org/x/mod/module"
 )
 
 func TestEnvGitAuthProviderPrefersGHToken(t *testing.T) {
@@ -187,11 +189,17 @@ func TestGitFetcherFallsBackToHostConvention(t *testing.T) {
 func TestGitFetcherUsesTagForConcreteVersion(t *testing.T) {
 	repo := afero.NewMemMapFs()
 	writeTestFile(t, repo, "/pkg/pkg.go", []byte("package pkg\n"))
-	cloner := &fakeGitCloner{fs: repo}
+	writeTestFile(t, repo, "/internal/helper/helper.go", []byte("package helper\n"))
+	store := FileArchiveStore{Root: t.TempDir()}
+	cloner := &fakeGitCloner{
+		fs:       repo,
+		revision: "0123456789012345678901234567890123456789",
+	}
 	fetcher := GitFetcher{
 		GOPRIVATE:    "github.com/private/*",
 		AuthProvider: nilGitAuthProvider{},
 		Cloner:       cloner,
+		Store:        store,
 	}
 
 	_, err := fetcher.Fetch(context.Background(), "github.com/private/mod/pkg", Options{Version: "v1.0.0"})
@@ -200,6 +208,51 @@ func TestGitFetcherUsesTagForConcreteVersion(t *testing.T) {
 	}
 	if got, want := cloner.last.ReferenceName, plumbing.NewTagReferenceName("v1.0.0"); got != want {
 		t.Fatalf("ReferenceName = %q, want %q", got, want)
+	}
+
+	cached, err := (ArchiveFetcher{Store: store}).Fetch(
+		context.Background(),
+		"github.com/private/mod/internal/helper",
+		Options{Version: "v1.0.0"},
+	)
+	if err != nil {
+		t.Fatalf("cached Fetch() error = %v", err)
+	}
+	if got, want := len(cached.Files), 1; got != want {
+		t.Fatalf("len(cached.Files) = %d, want %d", got, want)
+	}
+	archive, err := store.Get(context.Background(), module.Version{Path: "github.com/private/mod", Version: "v1.0.0"})
+	if err != nil {
+		t.Fatalf("Get() error = %v", err)
+	}
+	if got, want := archive.Revision, cloner.revision; got != want {
+		t.Fatalf("Revision = %q, want %q", got, want)
+	}
+}
+
+func TestGitFetcherDoesNotCacheFloatingVersion(t *testing.T) {
+	repo := afero.NewMemMapFs()
+	writeTestFile(t, repo, "/pkg/pkg.go", []byte("package pkg\n"))
+	cacheRoot := t.TempDir()
+	fetcher := GitFetcher{
+		GOPRIVATE:    "github.com/private/*",
+		AuthProvider: nilGitAuthProvider{},
+		Cloner: &fakeGitCloner{
+			fs:       repo,
+			revision: "0123456789012345678901234567890123456789",
+		},
+		Store: FileArchiveStore{Root: cacheRoot},
+	}
+
+	if _, err := fetcher.Fetch(context.Background(), "github.com/private/mod/pkg", Options{}); err != nil {
+		t.Fatalf("Fetch() error = %v", err)
+	}
+	entries, err := os.ReadDir(cacheRoot)
+	if err != nil {
+		t.Fatalf("ReadDir() error = %v", err)
+	}
+	if len(entries) != 0 {
+		t.Fatalf("floating Git lookup created %d cache entries, want none", len(entries))
 	}
 }
 
@@ -329,23 +382,24 @@ func (p *fakeSSHAuthProvider) Auth() (transport.AuthMethod, error) {
 
 type fakeGitCloner struct {
 	fs       afero.Fs
+	revision string
 	last     GitCloneRequest
 	requests []GitCloneRequest
 	errors   []error
 }
 
-func (c *fakeGitCloner) Clone(_ context.Context, req GitCloneRequest) (afero.Fs, error) {
+func (c *fakeGitCloner) Clone(_ context.Context, req GitCloneRequest) (GitCloneResult, error) {
 	c.last = req
 	c.requests = append(c.requests, req)
 	if len(c.errors) > 0 {
 		err := c.errors[0]
 		c.errors = c.errors[1:]
 		if err != nil {
-			return nil, err
+			return GitCloneResult{}, err
 		}
 	}
 	if c.fs == nil {
 		c.fs = afero.NewMemMapFs()
 	}
-	return c.fs, nil
+	return GitCloneResult{FS: c.fs, Revision: c.revision}, nil
 }

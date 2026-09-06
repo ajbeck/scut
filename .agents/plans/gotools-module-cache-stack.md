@@ -40,7 +40,7 @@ The stack is linear and listed bottom-to-top.
 | Layer | Branch                             | Issue                                           | Status                       | Scope                                                                                               |
 | ----- | ---------------------------------- | ----------------------------------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------- |
 | 1     | `gotools-cache/safety`             | [#50](https://github.com/ajbeck/scut/issues/50) | Implemented; awaiting review | Stop all writes of partial modules into `GOMODCACHE`; add an isolated regression.                   |
-| 2     | `gotools-cache/archive-store`      | [#51](https://github.com/ajbeck/scut/issues/51) | Planned                      | Add the scut-owned complete immutable archive store with atomic publication and concurrency safety. |
+| 2     | `gotools-cache/archive-store`      | [#51](https://github.com/ajbeck/scut/issues/51) | Implemented; awaiting review | Add the scut-owned complete immutable archive store with atomic publication and concurrency safety. |
 | 3     | `gotools-cache/go-cache-reader`    | [#52](https://github.com/ajbeck/scut/issues/52) | Planned                      | Reuse verified Go download-cache archives read-only and establish final source ordering.            |
 | 4     | `gotools-cache/commands`           | [#53](https://github.com/ajbeck/scut/issues/53) | Planned                      | Add path, list, verify, remove, clean, and prune cache-management commands.                         |
 | 5     | `gotools-resolution/proxy-policy`  | [#54](https://github.com/ajbeck/scut/issues/54) | Planned                      | Match Go proxy fallback, private-module, authentication, and transport policy.                      |
@@ -60,6 +60,26 @@ The stack is linear and listed bottom-to-top.
 5. Run `./walle fmt`, `./walle test`, `./walle vet`, and `./walle build`.
 6. Review the branch diff against issue #50 and commit with conventional syntax.
 7. Rebase all higher stack layers after any bottom-layer commit.
+
+## Layer 2 implementation plan
+
+1. Define a complete `ModuleArchive` and an `ArchiveStore` boundary for exact
+   canonical module versions.
+2. Implement a filesystem store beneath `os.UserCacheDir()` using an atomic
+   directory-per-version publication protocol.
+3. Validate module ZIP structure with the existing `golang.org/x/mod/zip`
+   package before an entry becomes visible.
+4. Persist and resolve an atomic `latest` alias only when a proxy `@latest`
+   request returns a concrete version.
+5. Add an archive source before remote sources so cached public and explicitly
+   versioned private modules work without network access.
+6. Teach proxy fetching to retain and cache the complete downloaded ZIP.
+7. Teach private Git cloning to return its resolved commit and create a complete
+   canonical module ZIP for explicit semantic versions.
+8. Add store, concurrency, offline reuse, complete-content, and private Git
+   regression tests.
+9. Update gotools documentation and run all Walle verification tasks with Go
+   1.26.3.
 
 ## Decisions
 
@@ -100,6 +120,40 @@ surface and rejects existing repository code declared at Go 1.26.3. Walle tasks
 for this stack are therefore invoked with `GOTOOLCHAIN=go1.26.3`, matching
 `go.mod`, rather than changing unrelated JSON code or dependencies.
 
+### D-007: Cached latest is an explicit alias
+
+When a proxy `@latest` request resolves to a concrete version, the store records
+that version as a small atomic alias only after the archive has been published.
+Offline default lookups use this alias. They do not guess that the highest
+cached semantic version is equivalent to Go proxy `@latest` behavior.
+
+### D-008: Cache persistence is best-effort for document availability
+
+A failed validation or filesystem operation never publishes a partial cache
+entry, but it does not discard package source already fetched successfully for
+the current documentation request. Cache-management commands will provide the
+explicit diagnostics and repair surface in layer 4.
+
+### D-009: One directory is one atomic cache entry
+
+Each module version is staged as a sibling temporary directory containing the
+complete canonical ZIP and optional immutable source revision. Renaming that
+directory makes the whole entry visible at once. Concurrent writers either
+publish a complete entry or accept an already-valid winner.
+
+### D-010: Cache dependencies are injected below environment discovery
+
+`NewDefaultClient` resolves the operating-system cache path, then delegates to
+an internal client assembler that accepts an `ArchiveStore`. Tests use isolated
+stores and cannot read or write the developer's real scut cache.
+
+### D-011: Structural validation precedes checksum verification
+
+Layer 2 uses `golang.org/x/mod/zip.CheckZip` to enforce canonical module ZIP
+paths, versions, collisions, and size limits before publication and on reads.
+Cryptographic verification against `go.sum` or the checksum database remains
+owned by layer 6; structural validation is not presented as checksum proof.
+
 ## Open questions
 
 No blocking questions are open for layer 1. Later layers must resolve these
@@ -137,4 +191,12 @@ before implementation reaches them:
   1.26.3 toolchain. The host-default Go 1.27.1 toolchain is incompatible with
   existing JSON-v2 calls and is not used for stack verification.
 - 2026-09-06: Layer 1 passes `./walle fmt`, `./walle test`, `./walle vet`,
+  `./walle build`, and `./walle docs` with `GOTOOLCHAIN=go1.26.3`.
+- 2026-09-06: Amended layer 1 to capture `go list` stderr separately and restore
+  Go-owned read-only permissions before temporary-cache cleanup; the full test
+  suite exposed and verified both corrections.
+- 2026-09-06: Implemented layer 2 with complete archive persistence, structural
+  validation, atomic version directories, `latest` aliases, offline reads,
+  best-effort cache writes, and immutable private Git revision capture.
+- 2026-09-06: Layer 2 passes `./walle fmt`, `./walle test`, `./walle vet`,
   `./walle build`, and `./walle docs` with `GOTOOLCHAIN=go1.26.3`.

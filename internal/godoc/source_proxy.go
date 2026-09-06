@@ -9,7 +9,6 @@ import (
 	"io"
 	"net/http"
 	"path"
-	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -22,6 +21,7 @@ type ProxyFetcher struct {
 	Client       *http.Client
 	ProxyURL     string
 	DiscoveryURL discoveryFunc
+	Store        ArchiveStore
 }
 
 var versionPattern = regexp.MustCompile(`"Version"\s*:\s*"([^"]+)"`)
@@ -60,9 +60,17 @@ func (f ProxyFetcher) Fetch(ctx context.Context, pkg string, opts Options) (Pack
 			}
 			return PackageSource{}, err
 		}
-		source, err := f.fetchZip(ctx, client, modPath, version, pkg)
+		archive, err := f.fetchArchive(ctx, client, modPath, version)
 		if err != nil {
-			if errors.Is(err, errProxyMiss) || errors.Is(err, ErrNoGoFiles) {
+			if errors.Is(err, errProxyMiss) {
+				continue
+			}
+			return PackageSource{}, err
+		}
+		f.cacheArchive(ctx, archive, opts.Version == "" || opts.Version == "latest")
+		source, err := packageSourceFromArchive(archive, pkg, "proxy")
+		if err != nil {
+			if errors.Is(err, ErrNoGoFiles) {
 				continue
 			}
 			return PackageSource{}, err
@@ -97,13 +105,8 @@ func (f ProxyFetcher) moduleCandidates(ctx context.Context, client *http.Client,
 		add(meta.Prefix)
 	}
 
-	parts := strings.Split(pkg, "/")
-	minParts := 2
-	if len(parts) >= 3 && isCommonGitHost(parts[0]) {
-		minParts = 3
-	}
-	for i := len(parts); i >= minParts; i-- {
-		add(strings.Join(parts[:i], "/"))
+	for _, candidate := range modulePathCandidates(pkg) {
+		add(candidate)
 	}
 	return candidates
 }
@@ -127,27 +130,26 @@ func (f ProxyFetcher) resolveVersion(ctx context.Context, client *http.Client, m
 	return resolved, nil
 }
 
-func (f ProxyFetcher) fetchZip(ctx context.Context, client *http.Client, modPath, version, pkg string) (PackageSource, error) {
+func (f ProxyFetcher) fetchArchive(ctx context.Context, client *http.Client, modPath, version string) (ModuleArchive, error) {
 	escapedVersion, err := module.EscapeVersion(version)
 	if err != nil {
-		return PackageSource{}, err
+		return ModuleArchive{}, err
 	}
 	body, err := f.proxyGet(ctx, client, modPath, "@v/"+escapedVersion+".zip")
 	if err != nil {
-		return PackageSource{}, err
+		return ModuleArchive{}, err
 	}
-
-	files, err := extractPackageZip(modPath, version, pkg, body)
-	if err != nil {
-		return PackageSource{}, err
-	}
-	return PackageSource{
-		ImportPath: pkg,
-		Dir:        filepath.Join("/", "proxy", filepath.FromSlash(pkg)),
-		Files:      files,
-		Module:     module.Version{Path: modPath, Version: version},
-		Version:    version,
+	return ModuleArchive{
+		Module: module.Version{Path: modPath, Version: version},
+		Data:   body,
 	}, nil
+}
+
+func (f ProxyFetcher) cacheArchive(ctx context.Context, archive ModuleArchive, latest bool) {
+	if f.Store == nil || f.Store.Put(ctx, archive) != nil || !latest {
+		return
+	}
+	_ = f.Store.SetLatest(ctx, archive.Module)
 }
 
 func (f ProxyFetcher) proxyGet(ctx context.Context, client *http.Client, modPath, suffix string) ([]byte, error) {

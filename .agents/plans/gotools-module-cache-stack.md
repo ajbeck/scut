@@ -39,15 +39,15 @@ or the stack shape changes.
 
 The stack is linear and listed bottom-to-top.
 
-| Layer | Branch                             | Issue                                           | Status                       | Scope                                                                                               |
-| ----- | ---------------------------------- | ----------------------------------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------- |
-| 1     | `gotools-cache/safety`             | [#50](https://github.com/ajbeck/scut/issues/50) | Implemented; awaiting review | Stop all writes of partial modules into `GOMODCACHE`; add an isolated regression.                   |
-| 2     | `gotools-cache/archive-store`      | [#51](https://github.com/ajbeck/scut/issues/51) | Implemented; awaiting review | Add the scut-owned complete immutable archive store with atomic publication and concurrency safety. |
-| 3     | `gotools-cache/go-cache-reader`    | [#52](https://github.com/ajbeck/scut/issues/52) | Implemented; awaiting review | Reuse verified Go download-cache archives read-only and establish final source ordering.            |
-| 4     | `gotools-cache/commands`           | [#53](https://github.com/ajbeck/scut/issues/53) | Implemented; awaiting review | Add path, list, verify, remove, clean, and prune cache-management commands.                         |
-| 5     | `gotools-resolution/proxy-policy`  | [#54](https://github.com/ajbeck/scut/issues/54) | Implemented; awaiting review | Match Go proxy fallback, private-module, authentication, and transport policy.                      |
-| 6     | `gotools-resolution/integrity`     | [#55](https://github.com/ajbeck/scut/issues/55) | Implemented; awaiting review | Verify archive structure and checksums before consumption or publication.                           |
-| 7     | `gotools-resolution/build-context` | [#56](https://github.com/ajbeck/scut/issues/56) | Implemented; awaiting review | Honor build constraints and add full-pipeline integration coverage and final documentation.         |
+| Layer | Branch                             | Issue                                           | Pull request                                  | Status       | Scope                                                                                               |
+| ----- | ---------------------------------- | ----------------------------------------------- | --------------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------- |
+| 1     | `gotools-cache/safety`             | [#50](https://github.com/ajbeck/scut/issues/50) | [#57](https://github.com/ajbeck/scut/pull/57) | Draft review | Stop all writes of partial modules into `GOMODCACHE`; add an isolated regression.                   |
+| 2     | `gotools-cache/archive-store`      | [#51](https://github.com/ajbeck/scut/issues/51) | [#58](https://github.com/ajbeck/scut/pull/58) | Draft review | Add the scut-owned complete immutable archive store with atomic publication and concurrency safety. |
+| 3     | `gotools-cache/go-cache-reader`    | [#52](https://github.com/ajbeck/scut/issues/52) | [#59](https://github.com/ajbeck/scut/pull/59) | Draft review | Reuse verified Go download-cache archives read-only and establish final source ordering.            |
+| 4     | `gotools-cache/commands`           | [#53](https://github.com/ajbeck/scut/issues/53) | [#60](https://github.com/ajbeck/scut/pull/60) | Draft review | Add path, list, verify, remove, clean, and prune cache-management commands.                         |
+| 5     | `gotools-resolution/proxy-policy`  | [#54](https://github.com/ajbeck/scut/issues/54) | [#61](https://github.com/ajbeck/scut/pull/61) | Draft review | Match Go proxy fallback, private-module, authentication, and transport policy.                      |
+| 6     | `gotools-resolution/integrity`     | [#55](https://github.com/ajbeck/scut/issues/55) | [#62](https://github.com/ajbeck/scut/pull/62) | Draft review | Verify archive structure and checksums before consumption or publication.                           |
+| 7     | `gotools-resolution/build-context` | [#56](https://github.com/ajbeck/scut/issues/56) | [#63](https://github.com/ajbeck/scut/pull/63) | Draft review | Honor build constraints and add full-pipeline integration coverage and final documentation.         |
 
 ## Layer 1 implementation plan
 
@@ -572,5 +572,6 @@ No blocking questions are open.
   routes.
 - 2026-09-06: Layer 7 passes `./walle fmt`, `./walle test`, `./walle vet`,
   `./walle build`, and `./walle docs` with Go 1.26.3. The complete parent-layer
-  diff was reviewed and the seven-layer stack is implemented locally without
-  pushing any branch.
+  diff was reviewed and the seven-layer stack was implemented locally.
+- 2026-09-06: Submitted GitHub stack #64, creating draft pull requests #57
+  through #63 with each layer based on the branch immediately below it.

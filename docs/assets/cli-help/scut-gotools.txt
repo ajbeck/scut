@@ -3,7 +3,8 @@ Usage: scut gotools <command> [flags]
 Go tool-inspired commands for agents.
 
 Commands:
-  gotools doc    Show Go documentation for a package or symbol.
+  gotools doc      Show Go documentation for a package or symbol.
+  gotools cache    Inspect and manage the scut-owned Go module cache.
 
 Flags:
   -h, --help       Show context-sensitive help.

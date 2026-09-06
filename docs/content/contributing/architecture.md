@@ -6,7 +6,6 @@ kicker: "Contributing"
 tags: ["architecture", "Kong"]
 weight: 10
 ---
-
 Scut is a Go module at `github.com/ajbeck/scut`. All packages live under `internal/` by default; public packages are exposed only when another tool needs to import typed contracts, such as hook payload definitions.
 
 ## CLI framework
@@ -27,19 +26,21 @@ err = ctx.Run(bindings...)
 
 ## Package layout
 
-| Area                   | Purpose                                              |
-| ---------------------- | ---------------------------------------------------- |
-| `cmd/scut`             | Main released binary entrypoint.                     |
-| `cmd/walle`            | Repository-local task runner for development.        |
-| `internal/cmd/claude`  | Claude command tree, status line, config, and hooks. |
-| `internal/cmd/codex`   | Codex command tree, config, and hooks.               |
-| `internal/cmd/initcmd` | Unified setup across supported agents.               |
-| `internal/cmd/doctor`  | Read-only diagnostics.                               |
-| `internal/cmd/mcp`     | MCP utility commands and proxy launchers.            |
-| `internal/cmd/update`  | Install-method detection and release binary updates. |
-| `internal/format`      | Formatter dispatch and ignore handling.              |
-| `hooks/claudecode`     | Public Claude Code hook payload types.               |
-| `hooks/codex`          | Public Codex hook payload types.                     |
+| Area                   | Purpose                                               |
+| ---------------------- | ----------------------------------------------------- |
+| `cmd/scut`             | Main released binary entrypoint.                      |
+| `cmd/walle`            | Repository-local task runner for development.         |
+| `internal/cmd/claude`  | Claude command tree, status line, config, and hooks.  |
+| `internal/cmd/codex`   | Codex command tree, config, and hooks.                |
+| `internal/cmd/gotools` | Go documentation and module-cache command tree.       |
+| `internal/cmd/initcmd` | Unified setup across supported agents.                |
+| `internal/cmd/doctor`  | Read-only diagnostics.                                |
+| `internal/cmd/mcp`     | MCP utility commands and proxy launchers.             |
+| `internal/cmd/update`  | Install-method detection and release binary updates.  |
+| `internal/godoc`       | Go source resolution, archives, cache, and rendering. |
+| `internal/format`      | Formatter dispatch and ignore handling.               |
+| `hooks/claudecode`     | Public Claude Code hook payload types.                |
+| `hooks/codex`          | Public Codex hook payload types.                      |
 
 ## Build rules
 

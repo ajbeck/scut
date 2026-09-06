@@ -63,6 +63,38 @@ func TestGotoolsDocCommandParses(t *testing.T) {
 	}
 }
 
+func TestGotoolsCacheCommandsParse(t *testing.T) {
+	tests := []struct {
+		args []string
+		want string
+	}{
+		{args: []string{"gotools", "cache", "path"}, want: "gotools cache path"},
+		{args: []string{"gotools", "cache", "list", "example.com/acme/tool", "--json"}, want: "gotools cache list <module>"},
+		{args: []string{"gotools", "cache", "verify"}, want: "gotools cache verify"},
+		{args: []string{"gotools", "cache", "remove", "example.com/acme/tool@v1.2.3"}, want: "gotools cache remove <module>"},
+		{args: []string{"gotools", "cache", "clean"}, want: "gotools cache clean"},
+		{args: []string{"gotools", "cache", "prune", "--older-than=720h"}, want: "gotools cache prune"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.want, func(t *testing.T) {
+			var c cli
+			parser := kong.Must(&c,
+				kong.Name("scut"),
+				kong.Vars{"version": versionmeta.String()},
+				kong.BindTo(&bytes.Buffer{}, (*io.Writer)(nil)),
+				kong.BindTo(afero.NewMemMapFs(), (*afero.Fs)(nil)),
+			)
+			ctx, err := parser.Parse(tt.args)
+			if err != nil {
+				t.Fatalf("Parse(%q) error = %v", tt.args, err)
+			}
+			if got := ctx.Command(); got != tt.want {
+				t.Fatalf("Command() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestRootHelpSeparatesCommandsAndCommandGroups(t *testing.T) {
 	var c cli
 	var stdout bytes.Buffer

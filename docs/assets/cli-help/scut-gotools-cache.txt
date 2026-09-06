@@ -1,0 +1,15 @@
+Usage: scut gotools cache <command>
+
+Inspect and manage the scut-owned Go module cache.
+
+Commands:
+  gotools cache path      Print the scut module cache path.
+  gotools cache list      List scut module cache entries.
+  gotools cache verify    Verify scut module cache entries.
+  gotools cache remove    Remove one module or exact module version.
+  gotools cache clean     Remove every scut module cache entry.
+  gotools cache prune     Prune scut module cache entries by age or size.
+
+Flags:
+  -h, --help       Show context-sensitive help.
+  -v, --version    Print version and exit.

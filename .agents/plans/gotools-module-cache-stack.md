@@ -44,7 +44,7 @@ The stack is linear and listed bottom-to-top.
 | 1     | `gotools-cache/safety`             | [#50](https://github.com/ajbeck/scut/issues/50) | Implemented; awaiting review | Stop all writes of partial modules into `GOMODCACHE`; add an isolated regression.                   |
 | 2     | `gotools-cache/archive-store`      | [#51](https://github.com/ajbeck/scut/issues/51) | Implemented; awaiting review | Add the scut-owned complete immutable archive store with atomic publication and concurrency safety. |
 | 3     | `gotools-cache/go-cache-reader`    | [#52](https://github.com/ajbeck/scut/issues/52) | Implemented; awaiting review | Reuse verified Go download-cache archives read-only and establish final source ordering.            |
-| 4     | `gotools-cache/commands`           | [#53](https://github.com/ajbeck/scut/issues/53) | Planned                      | Add path, list, verify, remove, clean, and prune cache-management commands.                         |
+| 4     | `gotools-cache/commands`           | [#53](https://github.com/ajbeck/scut/issues/53) | Implemented; awaiting review | Add path, list, verify, remove, clean, and prune cache-management commands.                         |
 | 5     | `gotools-resolution/proxy-policy`  | [#54](https://github.com/ajbeck/scut/issues/54) | Planned                      | Match Go proxy fallback, private-module, authentication, and transport policy.                      |
 | 6     | `gotools-resolution/integrity`     | [#55](https://github.com/ajbeck/scut/issues/55) | Planned                      | Verify archive structure and checksums before consumption or publication.                           |
 | 7     | `gotools-resolution/build-context` | [#56](https://github.com/ajbeck/scut/issues/56) | Planned                      | Honor build constraints and add full-pipeline integration coverage and final documentation.         |
@@ -101,6 +101,31 @@ The stack is linear and listed bottom-to-top.
 8. Add read-only snapshots, incomplete-cache, hash-mismatch, build-list version,
    replacement, and source-order regression tests.
 9. Update documentation and run all Walle verification tasks with Go 1.26.3.
+
+## Layer 4 implementation plan
+
+1. Add a cache inventory API that discovers only entries beneath the scut-owned
+   root and reports canonical module identity, size, publication time, revision,
+   latest-alias state, and validation problems deterministically.
+2. Add an `h1:` self-hash sidecar to new scut archive entries and verify it when
+   present, while recognizing pre-sidecar entries as incomplete legacy entries
+   instead of making an unsafe migration assumption.
+3. Add `scut gotools cache path`, `list`, and `verify` with stable human and JSON
+   output; verification returns a non-zero error when any selected entry or
+   cache artifact is invalid or incomplete.
+4. Add narrowly targeted `remove <module[@version]>`; removing a module removes
+   only its escaped cache subtree, while removing a version also clears a
+   matching `latest` alias without retargeting it.
+5. Add idempotent `clean` that removes only the resolved scut cache root.
+6. Add `prune` with required `--older-than` and/or human-readable `--max-size`
+   policies. Apply age first, then remove oldest remaining entries until the
+   total owned-cache bytes are within the size bound.
+7. Make destructive invocation sufficient intent, without interactive prompts,
+   and report removed entry counts and bytes deterministically.
+8. Add parser, inventory, validation, path-containment, alias, mutation, prune,
+   JSON, and command-tree regressions.
+9. Update gotools and architecture documentation and run all Walle verification
+   tasks with Go 1.26.3.
 
 ## Decisions
 
@@ -216,6 +241,37 @@ which never write, extract, repair, or chmod `GOMODCACHE`. Replacing the probe
 with a complete in-process module loader is a distinct future project, not an
 approximation added to this cache-safety stack.
 
+### D-017: Cache commands are non-interactive and narrowly rooted
+
+Invoking `remove`, `clean`, or `prune` is sufficient destructive intent. The
+commands do not prompt because they are designed for agents and automation.
+They resolve only beneath the operating-system-derived scut cache root, reject
+malformed module targets, and never operate on `GOMODCACHE`.
+
+### D-018: Latest aliases are evidence, not policy
+
+When removal or pruning deletes the version named by a module's `latest` alias,
+the alias is deleted. It is never retargeted to the highest remaining version,
+because only a successful proxy `@latest` response can establish that mapping.
+
+### D-019: Pruning uses immutable-entry publication time
+
+Archive reads do not update cache metadata. `--older-than` therefore compares
+the immutable archive's publication modification time, and `--max-size`
+removes oldest entries first after age pruning. Cache accounting includes every
+file under the owned root; if unassociated artifacts make the limit impossible,
+prune fails visibly rather than deleting paths it cannot identify as canonical
+entries. At least one policy is required, so bare `prune` cannot become an
+accidental synonym for `clean`.
+
+### D-020: Self-hash detects storage corruption, not source trust
+
+New scut cache entries include an `h1:` content hash generated alongside the
+validated ZIP before atomic publication. Inspection detects a missing or
+mismatched sidecar. This protects cache storage integrity but does not prove
+module authenticity; `go.sum`, checksum-database, and private-module trust
+policy remain layer 6.
+
 ## Open questions
 
 No blocking questions are open for layer 1. Later layers must resolve these
@@ -253,6 +309,13 @@ before implementation reaches them:
 - 2026-09-06: User accepted retaining the authoritative read-only `go list`
   build-list probe and scoping the strict no-`GOMODCACHE`-mutation invariant to
   scut's in-process fetchers and stores.
+- 2026-09-06: Implemented layer 4 cache inventory, self-hash sidecars, stable
+  human/JSON inspection, non-interactive exact removal and clean, age/size
+  pruning, total-byte accounting, latest-alias cleanup, and symlink-safe
+  destructive path validation.
+- 2026-09-06: Layer 4 passes `./walle fmt`, `./walle test`, `./walle vet`,
+  `./walle build`, and `./walle docs` with `GOTOOLCHAIN=go1.26.3`; generated
+  help covers every cache subcommand.
 - 2026-09-06: Removed direct proxy and private-Git writes to `GOMODCACHE`, added
   the isolated downstream-Go regression, and updated the gotools CLI docs.
 - 2026-09-06: Confirmed the repository test suite passes with its declared Go

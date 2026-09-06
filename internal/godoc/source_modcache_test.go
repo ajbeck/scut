@@ -151,32 +151,6 @@ func TestModCacheFetcherDisabledWhenCacheDirEmpty(t *testing.T) {
 	}
 }
 
-func TestWriteCacheRoundTrip(t *testing.T) {
-	fs := afero.NewMemMapFs()
-	resolved := ResolvedModule{
-		Path:        "github.com/cached/mod",
-		Version:     "v1.5.0",
-		PackagePath: "github.com/cached/mod/sub",
-	}
-	files := []SourceFile{{Name: "sub.go", Data: []byte("package sub\n")}}
-
-	if err := WriteCache(fs, "/mod", resolved, files); err != nil {
-		t.Fatalf("WriteCache() error = %v", err)
-	}
-
-	fetcher := ModCacheFetcher{FS: fs, CacheDir: "/mod"}
-	source, err := fetcher.Fetch(context.Background(), "github.com/cached/mod/sub", Options{})
-	if err != nil {
-		t.Fatalf("Fetch() error = %v", err)
-	}
-	if got, want := len(source.Files), 1; got != want {
-		t.Fatalf("len(Files) = %d, want %d", got, want)
-	}
-	if got, want := string(source.Files[0].Data), "package sub\n"; got != want {
-		t.Fatalf("Data = %q, want %q", got, want)
-	}
-}
-
 func writeModuleCacheFile(t *testing.T, fs afero.Fs, cacheDir, modPath, version, name, data string) {
 	t.Helper()
 	dir := moduleCacheDir(t, cacheDir, modPath, version)

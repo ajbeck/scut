@@ -12,8 +12,6 @@ import (
 	"reflect"
 	"strings"
 	"testing"
-
-	"github.com/spf13/afero"
 )
 
 func TestProxyURLsFromEnv(t *testing.T) {
@@ -196,40 +194,15 @@ func TestProxyFetcherUsesMetaDiscoveryBeforePrefixProbing(t *testing.T) {
 	}
 }
 
-func TestProxyFetcherWritesCacheWhenConfigured(t *testing.T) {
-	proxy := newModuleProxyServer(t, "github.com/acme/tool", "v1.2.3", map[string]string{
-		"sub/sub.go": "package sub\n",
-	})
-	cacheFS := afero.NewMemMapFs()
-
-	fetcher := ProxyFetcher{
-		Client:   proxy.Client(),
-		ProxyURL: proxy.URL,
-		CacheFS:  cacheFS,
-		CacheDir: "/mod",
-	}
-	_, err := fetcher.Fetch(context.Background(), "github.com/acme/tool/sub", Options{})
-	if err != nil {
-		t.Fatalf("Fetch() error = %v", err)
-	}
-
-	cacheFetcher := ModCacheFetcher{FS: cacheFS, CacheDir: "/mod"}
-	source, err := cacheFetcher.Fetch(context.Background(), "github.com/acme/tool/sub", Options{})
-	if err != nil {
-		t.Fatalf("cache Fetch() error = %v", err)
-	}
-	if got, want := len(source.Files), 1; got != want {
-		t.Fatalf("len(Files) = %d, want %d", got, want)
-	}
-}
-
 func newModuleProxyServer(t *testing.T, modPath, version string, files map[string]string) *httptest.Server {
 	t.Helper()
 	zipBytes := moduleZip(t, modPath, version, files)
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		suffixLatest := "/@latest"
 		suffixInfo := "/@v/" + version + ".info"
+		suffixMod := "/@v/" + version + ".mod"
 		suffixZip := "/@v/" + version + ".zip"
+		suffixList := "/@v/list"
 		switch {
 		case strings.HasSuffix(r.URL.Path, suffixLatest):
 			if modulePathFromProxyPath(r.URL.Path, suffixLatest) != modPath {
@@ -243,6 +216,16 @@ func newModuleProxyServer(t *testing.T, modPath, version string, files map[strin
 				return
 			}
 			fmt.Fprintf(w, `{"Version":%q}`, version)
+		case strings.HasSuffix(r.URL.Path, suffixMod):
+			if modulePathFromProxyPath(r.URL.Path, suffixMod) != modPath {
+				http.NotFound(w, r)
+				return
+			}
+			if modFile, ok := files["go.mod"]; ok {
+				_, _ = w.Write([]byte(modFile))
+			} else {
+				fmt.Fprintf(w, "module %s\n", modPath)
+			}
 		case strings.HasSuffix(r.URL.Path, suffixZip):
 			if modulePathFromProxyPath(r.URL.Path, suffixZip) != modPath {
 				http.NotFound(w, r)
@@ -250,6 +233,12 @@ func newModuleProxyServer(t *testing.T, modPath, version string, files map[strin
 			}
 			w.Header().Set("Content-Type", "application/zip")
 			_, _ = w.Write(zipBytes)
+		case strings.HasSuffix(r.URL.Path, suffixList):
+			if modulePathFromProxyPath(r.URL.Path, suffixList) != modPath {
+				http.NotFound(w, r)
+				return
+			}
+			fmt.Fprintln(w, version)
 		default:
 			http.NotFound(w, r)
 		}

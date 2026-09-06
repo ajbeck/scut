@@ -61,6 +61,7 @@ type LookupResolver struct {
 	Resolver     Resolver
 	PackageIndex PackageIndex
 	Current      CurrentPackage
+	BuildContext SourceBuildContext
 }
 
 func (r LookupResolver) Resolve(ctx context.Context, opts Options) (ResolvedLookup, error) {
@@ -162,16 +163,25 @@ func (r LookupResolver) resolveSuffixCandidate(ctx context.Context, candidate Lo
 	if err != nil {
 		return ResolvedLookup{Attempts: attempts}, false, err
 	}
+	var excluded error
 	for _, match := range matches {
 		attempts = append(attempts, match.ImportPath)
 		resolved, ok, err := r.resolvePackageCandidate(ctx, candidate, match.ImportPath, opts, attempts)
 		if err != nil {
+			if _, ok := errors.AsType[*buildConstraintsError](err); ok {
+				excluded = firstError(excluded, err)
+				attempts = resolved.Attempts
+				continue
+			}
 			return ResolvedLookup{}, false, err
 		}
 		if ok {
 			return resolved, true, nil
 		}
 		attempts = resolved.Attempts
+	}
+	if excluded != nil {
+		return ResolvedLookup{Attempts: attempts}, false, excluded
 	}
 	return ResolvedLookup{Attempts: attempts}, false, nil
 }
@@ -189,6 +199,13 @@ func (r LookupResolver) resolvePackageCandidate(ctx context.Context, candidate L
 		Package:  source.ImportPath,
 		UserPath: candidate.UserPath,
 		Symbol:   candidate.Symbol,
+	}
+	source.Files, err = r.BuildContext.Filter(source.Files)
+	if errors.Is(err, ErrNoGoFiles) {
+		return ResolvedLookup{Attempts: attempts}, false, &sourceResolutionError{err: &buildConstraintsError{Package: source.ImportPath}}
+	}
+	if err != nil {
+		return ResolvedLookup{}, false, err
 	}
 	parsed, err := ParsePackage(source.ImportPath, source.Files, lookupParseMode(opts))
 	if err != nil {

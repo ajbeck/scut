@@ -3,6 +3,7 @@ package godoc
 import (
 	"context"
 	"errors"
+	"go/build"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -127,6 +128,65 @@ type Widget struct {
 	}
 	if strings.Contains(out, "hidden string") {
 		t.Fatalf("output leaked unexported field:\n%s", out)
+	}
+}
+
+func TestClientDocUsesActiveBuildContextAcrossResolvedSource(t *testing.T) {
+	context := build.Default
+	context.GOOS = "linux"
+	context.GOARCH = "amd64"
+	context.BuildTags = []string{"feature"}
+	context.CgoEnabled = false
+	fetcher := &fakeSourceFetcher{source: PackageSource{
+		ImportPath: "example.com/widgets",
+		Files: []SourceFile{
+			{Name: "common.go", Data: []byte("package widgets\n\nconst Common = true\n")},
+			{Name: "platform_linux.go", Data: []byte("package widgets\n\nconst Linux = true\n")},
+			{Name: "platform_windows.go", Data: []byte("package conflicting\n\nconst Windows = true\n")},
+			{Name: "feature.go", Data: []byte("//go:build feature\n\npackage widgets\n\nconst Feature = true\n")},
+			{Name: "cgo.go", Data: []byte("package conflicting\n\nimport \"C\"\n")},
+			{Name: "widgets_test.go", Data: []byte("package widgets_test\n\nconst TestOnly = true\n")},
+		},
+	}}
+	client := Client{
+		Resolver:     Resolver{Fetchers: []SourceFetcher{fetcher}},
+		BuildContext: SourceBuildContext{Context: context},
+	}
+
+	out, err := client.Doc(t.Context(), Options{Package: "example.com/widgets"})
+	if err != nil {
+		t.Fatalf("Doc() error = %v", err)
+	}
+	for _, want := range []string{"Common", "Linux", "Feature"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("Doc() output missing %s:\n%s", want, out)
+		}
+	}
+	for _, excluded := range []string{"Windows", "TestOnly"} {
+		if strings.Contains(out, excluded) {
+			t.Fatalf("Doc() output includes excluded declaration %s:\n%s", excluded, out)
+		}
+	}
+}
+
+func TestClientDocReportsPackageExcludedByBuildContext(t *testing.T) {
+	context := build.Default
+	context.GOOS = "linux"
+	fetcher := &fakeSourceFetcher{source: PackageSource{
+		ImportPath: "example.com/widgets",
+		Files: []SourceFile{{
+			Name: "platform_windows.go",
+			Data: []byte("package widgets\n"),
+		}},
+	}}
+	client := Client{
+		Resolver:     Resolver{Fetchers: []SourceFetcher{fetcher}},
+		BuildContext: SourceBuildContext{Context: context},
+	}
+
+	_, err := client.Doc(t.Context(), Options{Package: "example.com/widgets"})
+	if err == nil || !strings.Contains(err.Error(), "build constraints exclude all Go files in example.com/widgets") {
+		t.Fatalf("Doc() error = %v, want build-constraint exclusion", err)
 	}
 }
 

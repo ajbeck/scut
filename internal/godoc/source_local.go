@@ -1,7 +1,6 @@
 package godoc
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -159,29 +158,10 @@ func readGoFiles(fs afero.Fs, dir string) ([]SourceFile, error) {
 		if err != nil {
 			return nil, fmt.Errorf("reading source file %s: %w", filename, err)
 		}
-		if isIgnoredBuildFile(data) {
-			continue
-		}
 		files = append(files, SourceFile{Name: filename, Data: data})
 	}
 	if len(files) == 0 {
 		return nil, ErrNoGoFiles
 	}
 	return files, nil
-}
-
-func isIgnoredBuildFile(data []byte) bool {
-	for _, line := range bytes.Split(data, []byte("\n")) {
-		line = bytes.TrimSpace(line)
-		if len(line) == 0 {
-			continue
-		}
-		if bytes.HasPrefix(line, []byte("//go:build ")) {
-			return bytes.Equal(bytes.TrimSpace(bytes.TrimPrefix(line, []byte("//go:build "))), []byte("ignore"))
-		}
-		if !bytes.HasPrefix(line, []byte("//")) {
-			return false
-		}
-	}
-	return false
 }

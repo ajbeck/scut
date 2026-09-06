@@ -39,15 +39,15 @@ or the stack shape changes.
 
 The stack is linear and listed bottom-to-top.
 
-| Layer | Branch                             | Issue                                           | Status                       | Scope                                                                                               |
-| ----- | ---------------------------------- | ----------------------------------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------- |
-| 1     | `gotools-cache/safety`             | [#50](https://github.com/ajbeck/scut/issues/50) | Implemented; awaiting review | Stop all writes of partial modules into `GOMODCACHE`; add an isolated regression.                   |
-| 2     | `gotools-cache/archive-store`      | [#51](https://github.com/ajbeck/scut/issues/51) | Implemented; awaiting review | Add the scut-owned complete immutable archive store with atomic publication and concurrency safety. |
-| 3     | `gotools-cache/go-cache-reader`    | [#52](https://github.com/ajbeck/scut/issues/52) | Implemented; awaiting review | Reuse verified Go download-cache archives read-only and establish final source ordering.            |
-| 4     | `gotools-cache/commands`           | [#53](https://github.com/ajbeck/scut/issues/53) | Implemented; awaiting review | Add path, list, verify, remove, clean, and prune cache-management commands.                         |
-| 5     | `gotools-resolution/proxy-policy`  | [#54](https://github.com/ajbeck/scut/issues/54) | Implemented; awaiting review | Match Go proxy fallback, private-module, authentication, and transport policy.                      |
-| 6     | `gotools-resolution/integrity`     | [#55](https://github.com/ajbeck/scut/issues/55) | Implemented; awaiting review | Verify archive structure and checksums before consumption or publication.                           |
-| 7     | `gotools-resolution/build-context` | [#56](https://github.com/ajbeck/scut/issues/56) | Planned                      | Honor build constraints and add full-pipeline integration coverage and final documentation.         |
+| Layer | Branch                             | Issue                                           | Pull request                                  | Status       | Scope                                                                                               |
+| ----- | ---------------------------------- | ----------------------------------------------- | --------------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------- |
+| 1     | `gotools-cache/safety`             | [#50](https://github.com/ajbeck/scut/issues/50) | [#57](https://github.com/ajbeck/scut/pull/57) | Draft review | Stop all writes of partial modules into `GOMODCACHE`; add an isolated regression.                   |
+| 2     | `gotools-cache/archive-store`      | [#51](https://github.com/ajbeck/scut/issues/51) | [#58](https://github.com/ajbeck/scut/pull/58) | Draft review | Add the scut-owned complete immutable archive store with atomic publication and concurrency safety. |
+| 3     | `gotools-cache/go-cache-reader`    | [#52](https://github.com/ajbeck/scut/issues/52) | [#59](https://github.com/ajbeck/scut/pull/59) | Draft review | Reuse verified Go download-cache archives read-only and establish final source ordering.            |
+| 4     | `gotools-cache/commands`           | [#53](https://github.com/ajbeck/scut/issues/53) | [#60](https://github.com/ajbeck/scut/pull/60) | Draft review | Add path, list, verify, remove, clean, and prune cache-management commands.                         |
+| 5     | `gotools-resolution/proxy-policy`  | [#54](https://github.com/ajbeck/scut/issues/54) | [#61](https://github.com/ajbeck/scut/pull/61) | Draft review | Match Go proxy fallback, private-module, authentication, and transport policy.                      |
+| 6     | `gotools-resolution/integrity`     | [#55](https://github.com/ajbeck/scut/issues/55) | [#62](https://github.com/ajbeck/scut/pull/62) | Draft review | Verify archive structure and checksums before consumption or publication.                           |
+| 7     | `gotools-resolution/build-context` | [#56](https://github.com/ajbeck/scut/issues/56) | [#63](https://github.com/ajbeck/scut/pull/63) | Draft review | Honor build constraints and add full-pipeline integration coverage and final documentation.         |
 
 ## Layer 1 implementation plan
 
@@ -183,6 +183,31 @@ The stack is linear and listed bottom-to-top.
    regressions.
 9. Update gotools and architecture documentation and run all Walle
    verification tasks with Go 1.26.3.
+
+## Layer 7 implementation plan
+
+1. Derive a documentation build context from `go/build.Default` plus `GOOS`,
+   `GOARCH`, `CGO_ENABLED`, and `GOFLAGS` using the Go environment precedence
+   reader introduced in layer 5.
+2. Parse configured `-tags` and `--tags` values with the Go command's quoted
+   field and legacy tag-list semantics while preserving the running toolchain's
+   compiler, tool, and release tags.
+3. Apply build selection once in the lookup resolver after any source backend
+   returns bytes and before package parsing, keeping complete archives
+   target-independent and every backend behaviorally consistent.
+4. Use `go/build.Context.MatchFile` for build expressions and filename suffixes,
+   exclude cgo source when `CGO_ENABLED=0`, and retain the existing exclusion of
+   test-only source.
+5. Distinguish a package excluded entirely by build constraints from a package
+   that does not exist, while allowing ambiguous and suffix lookups to continue
+   to viable interpretations.
+6. Add full-pipeline tests for concurrent uncached public-proxy lookups, offline
+   cache reuse, corrupt-cache rejection without remote fallback, and private
+   direct-Git acquisition and reuse.
+7. Complete user-facing and architecture documentation for build selection and
+   the full cache pipeline.
+8. Run `./walle fmt`, `./walle test`, `./walle vet`, `./walle build`, and
+   `./walle docs` with Go 1.26.3, then review and commit the final layer.
 
 ## Decisions
 
@@ -422,12 +447,48 @@ repository version enumeration and pseudo-version construction and is kept as
 a distinct follow-up instead of silently authenticating branch HEAD as a
 module version.
 
+### D-032: Build selection is shared above every source backend
+
+Scut stores and transports complete target-independent module archives. Once a
+backend returns package source, the lookup resolver applies one build-context
+filter immediately before parsing. Local, standard-library, Go-cache,
+scut-cache, proxy, and Git lookups therefore share exactly the same selection
+logic without duplicating it in each retrieval implementation.
+
+### D-033: Build context follows Go environment precedence
+
+The context starts from `go/build.Default`, retaining the running Go 1.26.3
+compiler, tool, and release tags. `GOOS`, `GOARCH`, `CGO_ENABLED`, and `GOFLAGS`
+are then resolved from a non-empty process environment value, the user
+`go/env` file, and `GOROOT/go.env`. Cross-target contexts disable cgo by default
+unless `CGO_ENABLED` explicitly enables it.
+
+### D-034: GOFLAGS is the configured build-tag surface
+
+Scut consumes the last `-tags=<value>` or `--tags=<value>` in `GOFLAGS`, using
+the Go command's quoted-field and compatibility tag-list behavior. It does not
+invent a scut-only tag flag or shell out to inspect tags, so settings written by
+`go env -w GOFLAGS=...` and process overrides affect documentation naturally.
+
+### D-035: Excluded packages are not missing packages
+
+When source resolution succeeds but the active build context selects no files,
+the command reports that build constraints exclude all Go files. Ambiguous
+package/symbol and suffix searches may still try another interpretation or
+matching package before returning that error.
+
+### D-036: Do not copy cmd/go's private tool-tag machinery
+
+`go/build.Default` supplies compiler, release, and tool tags for the running
+scut process, including process-level toolchain settings. The public API does
+not expose cmd/go's recomputation of experiment and microarchitecture tags for
+a different target stored only in a Go environment file. Scut does not add a
+Go subprocess or copy unstable internal tables for that edge; explicitly
+configured documentation tags remain available through `GOFLAGS=-tags`.
+
 ## Open questions
 
-No blocking questions are open. Layer 7 still needs to resolve:
-
-1. Which configured build tags, beyond `GOOS` and `GOARCH`, should feed the
-   documentation build context.
+No blocking questions are open.
 
 ## Progress log
 
@@ -502,3 +563,15 @@ No blocking questions are open. Layer 7 still needs to resolve:
   checksum database, left its empty `GOMODCACHE` untouched, published
   `sumdb:sum.golang.org` provenance, and then succeeded offline with
   `GOPROXY=off` from the scut cache.
+- 2026-09-06: Began layer 7 with one resolver-level `go/build.Context` filter,
+  Go environment precedence for target and tag settings, cgo and test-source
+  exclusion, and a distinct error for packages wholly excluded by constraints.
+- 2026-09-06: Added full-pipeline coverage for concurrent uncached public proxy
+  retrieval, atomic cache publication, offline reuse, corrupt-cache rejection,
+  private direct Git retrieval, and build-context consistency across those
+  routes.
+- 2026-09-06: Layer 7 passes `./walle fmt`, `./walle test`, `./walle vet`,
+  `./walle build`, and `./walle docs` with Go 1.26.3. The complete parent-layer
+  diff was reviewed and the seven-layer stack was implemented locally.
+- 2026-09-06: Submitted GitHub stack #64, creating draft pull requests #57
+  through #63 with each layer based on the branch immediately below it.

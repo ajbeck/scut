@@ -26,6 +26,7 @@ func TestFileArchiveStoreRoundTrip(t *testing.T) {
 		}),
 		Revision: "0123456789012345678901234567890123456789",
 	}
+	want = verifiedTestArchive(t, want)
 	store := FileArchiveStore{Root: t.TempDir()}
 
 	if err := store.Put(t.Context(), want); err != nil {
@@ -66,9 +67,28 @@ func TestFileArchiveStoreRejectsInvalidArchiveWithoutPublishing(t *testing.T) {
 			"tool.go": "package tool\n",
 		}),
 	}
+	archive.Verification = ArchiveVerification{Hash: "h1:invalid", Source: verificationPolicyOff}
 
 	if err := store.Put(t.Context(), archive); err == nil {
 		t.Fatal("Put() error = nil, want invalid archive error")
+	}
+	if _, err := store.Get(t.Context(), mod); !errors.Is(err, ErrArchiveNotFound) {
+		t.Fatalf("Get() error = %v, want ErrArchiveNotFound", err)
+	}
+}
+
+func TestFileArchiveStoreRequiresVerificationBeforePublishing(t *testing.T) {
+	mod := module.Version{Path: "example.com/acme/tool", Version: "v1.2.3"}
+	store := FileArchiveStore{Root: t.TempDir()}
+	archive := ModuleArchive{
+		Module: mod,
+		Data: moduleZip(t, mod.Path, mod.Version, map[string]string{
+			"tool.go": "package tool\n",
+		}),
+	}
+
+	if err := store.Put(t.Context(), archive); err == nil || !strings.Contains(err.Error(), "verification") {
+		t.Fatalf("Put() error = %v, want missing verification error", err)
 	}
 	if _, err := store.Get(t.Context(), mod); !errors.Is(err, ErrArchiveNotFound) {
 		t.Fatalf("Get() error = %v, want ErrArchiveNotFound", err)
@@ -83,6 +103,7 @@ func TestFileArchiveStorePublishesConcurrentWritesAtomically(t *testing.T) {
 			"tool.go": "package tool\n",
 		}),
 	}
+	archive = verifiedTestArchive(t, archive)
 	store := FileArchiveStore{Root: t.TempDir()}
 	start := make(chan struct{})
 	done := make(chan struct{})
@@ -145,6 +166,16 @@ func TestFileArchiveStorePublishesConcurrentWritesAtomically(t *testing.T) {
 			t.Fatalf("temporary cache entry remains after publication: %s", entry.Name())
 		}
 	}
+}
+
+func verifiedTestArchive(t *testing.T, archive ModuleArchive) ModuleArchive {
+	t.Helper()
+	verification, err := (ModuleArchiveVerifier{Policy: ModuleDownloadPolicy{GOSUMDB: "off"}}).Verify(t.Context(), archive)
+	if err != nil {
+		t.Fatalf("Verify(%s) error = %v", archive.Module, err)
+	}
+	archive.Verification = verification
+	return archive
 }
 
 type failingArchiveStore struct {

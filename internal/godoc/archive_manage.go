@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"golang.org/x/mod/module"
+	"golang.org/x/mod/sumdb/dirhash"
 	modzip "golang.org/x/mod/zip"
 )
 
@@ -27,14 +28,15 @@ const (
 
 // ModuleCacheEntry is one canonical version directory in the scut-owned cache.
 type ModuleCacheEntry struct {
-	Module   module.Version
-	Path     string
-	Size     int64
-	Modified time.Time
-	Revision string
-	Latest   bool
-	Status   ModuleCacheEntryStatus
-	Problem  string
+	Module       module.Version
+	Path         string
+	Size         int64
+	Modified     time.Time
+	Revision     string
+	Verification string
+	Latest       bool
+	Status       ModuleCacheEntryStatus
+	Problem      string
 }
 
 // ModuleCacheProblem describes cache content that cannot be associated with a
@@ -283,7 +285,7 @@ func inspectModuleCacheEntry(mod module.Version, entryPath string) (ModuleCacheE
 	if err != nil {
 		return ModuleCacheEntry{}, err
 	}
-	known := map[string]bool{archiveFileName: true, archiveHashName: true, revisionFileName: true}
+	known := map[string]bool{archiveFileName: true, archiveHashName: true, verificationName: true, revisionFileName: true}
 	for _, child := range dirEntries {
 		if !known[child.Name()] || child.IsDir() || child.Type()&os.ModeSymlink != 0 {
 			entry.Status = ModuleCacheEntryInvalid
@@ -313,11 +315,32 @@ func inspectModuleCacheEntry(mod module.Version, entryPath string) (ModuleCacheE
 	} else if err != nil {
 		return ModuleCacheEntry{}, err
 	}
-	if err := verifyOptionalArchiveHash(zipPath, hashPath); err != nil {
+	if err := verifyArchiveHash(zipPath, hashPath); err != nil {
 		entry.Status = ModuleCacheEntryInvalid
 		entry.Problem = err.Error()
 		return entry, nil
 	}
+	verification, err := readArchiveVerification(filepath.Join(entryPath, verificationName))
+	if err != nil {
+		entry.Status = ModuleCacheEntryIncomplete
+		if !strings.Contains(err.Error(), "missing") {
+			entry.Status = ModuleCacheEntryInvalid
+		}
+		entry.Problem = err.Error()
+		return entry, nil
+	}
+	gotHash, err := dirhash.HashZip(zipPath, dirhash.DefaultHash)
+	if err != nil {
+		entry.Status = ModuleCacheEntryInvalid
+		entry.Problem = err.Error()
+		return entry, nil
+	}
+	if verification.Hash != gotHash {
+		entry.Status = ModuleCacheEntryInvalid
+		entry.Problem = fmt.Sprintf("module archive verification hash mismatch: got %s, want %s", gotHash, verification.Hash)
+		return entry, nil
+	}
+	entry.Verification = verification.Source
 	revision, err := readOptionalRevision(filepath.Join(entryPath, revisionFileName))
 	if err != nil {
 		entry.Status = ModuleCacheEntryInvalid

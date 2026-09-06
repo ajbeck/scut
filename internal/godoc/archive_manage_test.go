@@ -113,6 +113,30 @@ func TestFileArchiveStoreInspectCacheReportsLegacyAndLayoutProblems(t *testing.T
 	}
 }
 
+func TestFileArchiveStoreInspectReportsMissingVerificationAsIncomplete(t *testing.T) {
+	store := FileArchiveStore{Root: t.TempDir()}
+	mod := module.Version{Path: "example.com/acme/tool", Version: "v1.2.3"}
+	putTestArchive(t, store, mod, "package tool\n")
+	entryDir, err := store.entryDir(mod)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(filepath.Join(entryDir, verificationName)); err != nil {
+		t.Fatal(err)
+	}
+
+	inventory, err := store.InspectCache(t.Context())
+	if err != nil {
+		t.Fatalf("InspectCache() error = %v", err)
+	}
+	if got := inventory.Entries[0].Status; got != ModuleCacheEntryIncomplete {
+		t.Fatalf("Status = %q, want %q", got, ModuleCacheEntryIncomplete)
+	}
+	if !strings.Contains(inventory.Entries[0].Problem, "verification is missing") {
+		t.Fatalf("Problem = %q, want missing verification", inventory.Entries[0].Problem)
+	}
+}
+
 func TestFileArchiveStoreRemoveCacheVersionClearsOnlyMatchingLatest(t *testing.T) {
 	store := FileArchiveStore{Root: t.TempDir()}
 	selected := module.Version{Path: "example.com/acme/tool", Version: "v1.2.3"}
@@ -292,6 +316,7 @@ func putTestArchive(t *testing.T, store FileArchiveStore, mod module.Version, so
 		Module: mod,
 		Data:   moduleZip(t, mod.Path, mod.Version, map[string]string{"tool.go": source}),
 	}
+	archive = verifiedTestArchive(t, archive)
 	if err := store.Put(t.Context(), archive); err != nil {
 		t.Fatalf("Put(%s@%s) error = %v", mod.Path, mod.Version, err)
 	}

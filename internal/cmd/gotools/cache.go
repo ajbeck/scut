@@ -56,15 +56,16 @@ type cachePruneCmd struct {
 }
 
 type cacheEntryOutput struct {
-	Module   string `json:"module"`
-	Version  string `json:"version"`
-	Path     string `json:"path"`
-	Size     int64  `json:"size"`
-	Modified string `json:"modified"`
-	Revision string `json:"revision,omitzero"`
-	Latest   bool   `json:"latest,omitzero"`
-	Status   string `json:"status"`
-	Problem  string `json:"problem,omitzero"`
+	Module       string `json:"module"`
+	Version      string `json:"version"`
+	Path         string `json:"path"`
+	Size         int64  `json:"size"`
+	Modified     string `json:"modified"`
+	Revision     string `json:"revision,omitzero"`
+	Verification string `json:"verification,omitzero"`
+	Latest       bool   `json:"latest,omitzero"`
+	Status       string `json:"status"`
+	Problem      string `json:"problem,omitzero"`
 }
 
 type cacheProblemOutput struct {
@@ -255,15 +256,16 @@ func listOutput(inventory godoc.ModuleCacheInventory) cacheListOutput {
 	}
 	for _, entry := range inventory.Entries {
 		out.Entries = append(out.Entries, cacheEntryOutput{
-			Module:   entry.Module.Path,
-			Version:  entry.Module.Version,
-			Path:     entry.Path,
-			Size:     entry.Size,
-			Modified: entry.Modified.UTC().Format(time.RFC3339Nano),
-			Revision: entry.Revision,
-			Latest:   entry.Latest,
-			Status:   string(entry.Status),
-			Problem:  entry.Problem,
+			Module:       entry.Module.Path,
+			Version:      entry.Module.Version,
+			Path:         entry.Path,
+			Size:         entry.Size,
+			Modified:     entry.Modified.UTC().Format(time.RFC3339Nano),
+			Revision:     entry.Revision,
+			Verification: entry.Verification,
+			Latest:       entry.Latest,
+			Status:       string(entry.Status),
+			Problem:      entry.Problem,
 		})
 	}
 	for _, problem := range inventory.Problems {
@@ -291,7 +293,7 @@ func writeCacheList(stdout io.Writer, inventory godoc.ModuleCacheInventory) erro
 		return err
 	}
 	w := tabwriter.NewWriter(stdout, 0, 4, 2, ' ', 0)
-	if _, err := fmt.Fprintln(w, "MODULE\tVERSION\tSIZE\tMODIFIED\tSTATUS\tLATEST"); err != nil {
+	if _, err := fmt.Fprintln(w, "MODULE\tVERSION\tSIZE\tMODIFIED\tSTATUS\tVERIFIED BY\tLATEST"); err != nil {
 		return err
 	}
 	for _, entry := range inventory.Entries {
@@ -299,12 +301,13 @@ func writeCacheList(stdout io.Writer, inventory godoc.ModuleCacheInventory) erro
 		if entry.Latest {
 			latest = "yes"
 		}
-		if _, err := fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n",
+		if _, err := fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
 			entry.Module.Path,
 			entry.Module.Version,
 			formatByteSize(entry.Size),
 			entry.Modified.UTC().Format(time.RFC3339),
 			entry.Status,
+			entry.Verification,
 			latest,
 		); err != nil {
 			return err

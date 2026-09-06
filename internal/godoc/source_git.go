@@ -132,6 +132,8 @@ func httpsRepositoryHost(repoURL string) (string, bool) {
 type GitFetcher struct {
 	GOPRIVATE       string
 	GONOPROXY       string
+	GONOSUMDB       string
+	GOSUMDB         string
 	GOINSECURE      string
 	GOVCS           string
 	RequireNoProxy  bool
@@ -144,6 +146,7 @@ type GitFetcher struct {
 	Store           ArchiveStore
 	Selector        ModuleSelector
 	Authenticator   *GoAuthenticator
+	Verifier        ArchiveVerifier
 }
 
 func (f GitFetcher) Fetch(ctx context.Context, pkg string, opts Options) (PackageSource, error) {
@@ -163,6 +166,10 @@ func (f GitFetcher) Fetch(ctx context.Context, pkg string, opts Options) (Packag
 	if f.RequireNoProxy && !matchesModulePattern(f.GONOPROXY, resolved.modulePath) {
 		return PackageSource{}, errUseProxy
 	}
+	concreteVersion := query != "" && query != "latest"
+	if !concreteVersion && f.Verifier != nil && f.GOSUMDB != "off" && !matchesModulePattern(f.GONOSUMDB, resolved.modulePath) {
+		return PackageSource{}, fmt.Errorf("cannot verify floating direct module %s: specify an exact @version or configure GONOSUMDB", resolved.modulePath)
+	}
 	policy := ModuleDownloadPolicy{GOPRIVATE: f.GOPRIVATE, GOINSECURE: f.GOINSECURE, GOVCS: f.GOVCS}
 	if err := checkGitAllowed(policy, resolved.modulePath); err != nil {
 		return PackageSource{}, err
@@ -181,7 +188,6 @@ func (f GitFetcher) Fetch(ctx context.Context, pkg string, opts Options) (Packag
 		Auth:            f.authProvider().Auth(ctx, resolved.repoURL),
 		InsecureSkipTLS: insecure,
 	}
-	concreteVersion := query != "" && query != "latest"
 	if concreteVersion {
 		if module.IsPseudoVersion(query) {
 			req.Revision, err = module.PseudoVersionRev(query)
@@ -211,15 +217,25 @@ func (f GitFetcher) Fetch(ctx context.Context, pkg string, opts Options) (Packag
 	if err != nil {
 		return PackageSource{}, err
 	}
+	var verifiedArchive *ModuleArchive
+	if concreteVersion && module.CanonicalVersion(sourceModule.Version) == sourceModule.Version {
+		archive, archiveErr := moduleArchiveFromFSRoot(sourceModule, clone.FS, moduleRoot, clone.Revision)
+		if archiveErr != nil {
+			return PackageSource{}, fmt.Errorf("creating module archive %s@%s: %w", sourceModule.Path, sourceModule.Version, archiveErr)
+		}
+		archive, archiveErr = f.verifyArchive(ctx, archive)
+		if archiveErr != nil {
+			return PackageSource{}, archiveErr
+		}
+		verifiedArchive = &archive
+	}
 	packageDir := path.Join(moduleRoot, packageSubdir(pkg, logical.Path))
 	files, err := copyPackageFilesToMem(clone.FS, packageDir)
 	if err != nil {
 		return PackageSource{}, err
 	}
-	if concreteVersion && module.CanonicalVersion(sourceModule.Version) == sourceModule.Version && clone.Revision != "" && f.Store != nil {
-		if archive, archiveErr := moduleArchiveFromFSRoot(sourceModule, clone.FS, moduleRoot, clone.Revision); archiveErr == nil {
-			_ = f.Store.Put(ctx, archive)
-		}
+	if verifiedArchive != nil && clone.Revision != "" && f.Store != nil {
+		_ = f.Store.Put(ctx, *verifiedArchive)
 	}
 
 	return PackageSource{
@@ -229,6 +245,19 @@ func (f GitFetcher) Fetch(ctx context.Context, pkg string, opts Options) (Packag
 		Module:     logical,
 		Version:    logical.Version,
 	}, nil
+}
+
+func (f GitFetcher) verifyArchive(ctx context.Context, archive ModuleArchive) (ModuleArchive, error) {
+	verifier := f.Verifier
+	if verifier == nil {
+		verifier = ModuleArchiveVerifier{Policy: ModuleDownloadPolicy{GOSUMDB: "off"}}
+	}
+	verification, err := verifier.Verify(ctx, archive)
+	if err != nil {
+		return ModuleArchive{}, err
+	}
+	archive.Verification = verification
+	return archive, nil
 }
 
 func (f GitFetcher) selectModule(ctx context.Context, pkg string, opts Options) (logical, source module.Version, query string, selected bool) {

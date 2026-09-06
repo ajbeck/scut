@@ -28,6 +28,7 @@ type ProxyFetcher struct {
 	Selector      ModuleSelector
 	Exclude       func(string) bool
 	Authenticator *GoAuthenticator
+	Verifier      ArchiveVerifier
 }
 
 var versionPattern = regexp.MustCompile(`"Version"\s*:\s*"([^"]+)"`)
@@ -62,6 +63,10 @@ func (f ProxyFetcher) Fetch(ctx context.Context, pkg string, opts Options) (Pack
 			}
 			return PackageSource{}, err
 		}
+		archive, err = f.verifyArchive(ctx, archive)
+		if err != nil {
+			return PackageSource{}, err
+		}
 		f.cacheArchive(ctx, archive, opts.Version == "" || opts.Version == "latest")
 		source, err := packageSourceFromArchive(archive, pkg, "proxy")
 		if err != nil {
@@ -83,12 +88,29 @@ func (f ProxyFetcher) fetchSelected(ctx context.Context, client httpDoer, pkg st
 	if err != nil {
 		return PackageSource{}, err
 	}
+	archive, err = f.verifyArchive(ctx, archive)
+	if err != nil {
+		return PackageSource{}, err
+	}
 	f.cacheArchive(ctx, archive, false)
 	source, err := packageSourceFromSelectedArchive(archive, pkg, selected.Module, "proxy")
 	if errors.Is(err, ErrNoGoFiles) {
 		return PackageSource{}, &cachedPackageAbsentError{Module: selected.Module, Package: pkg}
 	}
 	return source, err
+}
+
+func (f ProxyFetcher) verifyArchive(ctx context.Context, archive ModuleArchive) (ModuleArchive, error) {
+	verifier := f.Verifier
+	if verifier == nil {
+		verifier = ModuleArchiveVerifier{Policy: ModuleDownloadPolicy{GOSUMDB: "off"}}
+	}
+	verification, err := verifier.Verify(ctx, archive)
+	if err != nil {
+		return ModuleArchive{}, err
+	}
+	archive.Verification = verification
+	return archive, nil
 }
 
 func (f ProxyFetcher) client() httpDoer {

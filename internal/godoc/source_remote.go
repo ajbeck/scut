@@ -123,9 +123,10 @@ type remoteRouteFetchFunc func(context.Context, proxyRoute, string, Options) (Pa
 // RemoteFetcher applies Go's proxy fallback policy around proxy and direct
 // source mechanisms.
 type RemoteFetcher struct {
-	Policy ModuleDownloadPolicy
-	Proxy  ProxyFetcher
-	Direct GitFetcher
+	Policy   ModuleDownloadPolicy
+	Proxy    ProxyFetcher
+	Direct   GitFetcher
+	Verifier ArchiveVerifier
 
 	fetchRoute remoteRouteFetchFunc
 }
@@ -185,16 +186,22 @@ func (f RemoteFetcher) fetch(ctx context.Context, route proxyRoute, pkg string, 
 		direct.GONOPROXY = f.Policy.GONOPROXY
 		direct.GOINSECURE = f.Policy.GOINSECURE
 		direct.GOVCS = f.Policy.GOVCS
+		direct.GONOSUMDB = f.Policy.GONOSUMDB
+		direct.GOSUMDB = f.Policy.GOSUMDB
 		direct.RequireNoProxy = true
 		direct.AllowPublic = true
+		direct.Verifier = f.Verifier
 		return direct.Fetch(ctx, pkg, opts)
 	case proxyRouteDirect:
 		direct := f.Direct
 		direct.GOPRIVATE = f.Policy.GOPRIVATE
 		direct.GOINSECURE = f.Policy.GOINSECURE
 		direct.GOVCS = f.Policy.GOVCS
+		direct.GONOSUMDB = f.Policy.GONOSUMDB
+		direct.GOSUMDB = f.Policy.GOSUMDB
 		direct.RequireNoProxy = false
 		direct.AllowPublic = true
+		direct.Verifier = f.Verifier
 		return direct.Fetch(ctx, pkg, opts)
 	case proxyRouteOff:
 		return PackageSource{}, errProxyOff
@@ -204,6 +211,7 @@ func (f RemoteFetcher) fetch(ctx context.Context, route proxyRoute, pkg string, 
 		proxy.Exclude = func(modulePath string) bool {
 			return matchesModulePattern(f.Policy.GONOPROXY, modulePath)
 		}
+		proxy.Verifier = f.Verifier
 		return proxy.Fetch(ctx, pkg, opts)
 	default:
 		return PackageSource{}, errors.New("unknown module proxy route")

@@ -457,6 +457,25 @@ func TestGitFetcherDoesNotCacheFloatingVersion(t *testing.T) {
 	}
 }
 
+func TestGitFetcherRejectsUnverifiableFloatingPublicVersionBeforeClone(t *testing.T) {
+	cloner := &fakeGitCloner{}
+	fetcher := GitFetcher{
+		AllowPublic:  true,
+		GOSUMDB:      defaultGOSUMDB,
+		Cloner:       cloner,
+		AuthProvider: nilGitAuthProvider{},
+		Verifier:     ModuleArchiveVerifier{Policy: ModuleDownloadPolicy{GOSUMDB: defaultGOSUMDB}},
+	}
+
+	_, err := fetcher.Fetch(t.Context(), "github.com/acme/tool", Options{})
+	if err == nil || !strings.Contains(err.Error(), "specify an exact @version") {
+		t.Fatalf("Fetch() error = %v, want exact version guidance", err)
+	}
+	if len(cloner.requests) != 0 {
+		t.Fatalf("clone requests = %d, want 0", len(cloner.requests))
+	}
+}
+
 func TestGitFetcherRetriesGitHubAuthenticationFailureWithSSHAgent(t *testing.T) {
 	repo := afero.NewMemMapFs()
 	writeTestFile(t, repo, "/pkg/pkg.go", []byte("package pkg\n"))

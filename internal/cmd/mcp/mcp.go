@@ -32,7 +32,9 @@ type awsProxyCmd struct {
 
 	Metadata map[string]string `help:"Metadata to inject into MCP requests as key=value pairs." mapsep:"none" placeholder:"KEY=VALUE"`
 
-	ReadOnly *bool `name:"read-only" help:"Disable tools that do not advertise readOnlyHint=true."`
+	AllowEmptyTools *bool `name:"allow-empty-tools" help:"Allow the upstream server to return an empty tool catalog."`
+	LazyConnect     *bool `name:"lazy-connect" help:"Defer the upstream connection until tools are requested."`
+	ReadOnly        *bool `name:"read-only" help:"Disable tools that do not advertise readOnlyHint=true."`
 
 	LogLevel *string `name:"log-level" enum:"DEBUG,INFO,WARNING,ERROR,CRITICAL" help:"Set the logging level."`
 	Retries  *int    `help:"Number of retries when calling endpoint MCP. Defaults to 3; 0 disables retries."`
@@ -44,7 +46,8 @@ type awsProxyCmd struct {
 	ToolTimeout    *float64 `name:"tool-timeout" help:"Maximum seconds a tool call may take before cancellation."`
 
 	DisableTelemetry *bool `name:"disable-telemetry" help:"Disable client telemetry in outbound user-agent data."`
-	SkipAuth         *bool `name:"skip-auth" help:"Send unsigned requests when AWS credentials are unavailable."`
+	SkipAuth         *bool `name:"skip-auth" xor:"auth" help:"Send unsigned requests without loading AWS credentials."`
+	OptionalAuth     *bool `name:"optional-auth" xor:"auth" help:"Sign requests when credentials are available and otherwise send them unsigned."`
 }
 
 type runProxyFunc func(context.Context, awsproxy.Config, awsproxy.RunOptions) error
@@ -89,6 +92,8 @@ func (c awsProxyCmd) config(lookupEnv lookupEnvFunc) awsproxy.Config {
 		Service:          service,
 		Region:           region,
 		CaBundle:         c.CaBundle,
+		AllowEmptyTools:  c.AllowEmptyTools,
+		LazyConnect:      c.LazyConnect,
 		ReadOnly:         c.ReadOnly,
 		LogLevel:         c.LogLevel,
 		Retries:          c.Retries,
@@ -99,6 +104,7 @@ func (c awsProxyCmd) config(lookupEnv lookupEnvFunc) awsproxy.Config {
 		ToolTimeout:      seconds(c.ToolTimeout),
 		DisableTelemetry: c.DisableTelemetry,
 		SkipAuth:         c.SkipAuth,
+		OptionalAuth:     c.OptionalAuth,
 	}
 	profiles := dedupe(c.Profiles)
 	if len(profiles) > 0 {

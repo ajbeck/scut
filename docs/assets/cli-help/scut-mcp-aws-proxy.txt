@@ -19,6 +19,10 @@ Flags:
                                addition to the system roots ($AWS_CA_BUNDLE).
       --metadata=KEY=VALUE     Metadata to inject into MCP requests as key=value
                                pairs.
+      --allow-empty-tools      Allow the upstream server to return an empty tool
+                               catalog.
+      --lazy-connect           Defer the upstream connection until tools are
+                               requested.
       --read-only              Disable tools that do not advertise
                                readOnlyHint=true.
       --log-level=LOG-LEVEL    Set the logging level.
@@ -37,5 +41,7 @@ Flags:
                                cancellation.
       --disable-telemetry      Disable client telemetry in outbound user-agent
                                data.
-      --skip-auth              Send unsigned requests when AWS credentials are
-                               unavailable.
+      --skip-auth              Send unsigned requests without loading AWS
+                               credentials.
+      --optional-auth          Sign requests when credentials are available and
+                               otherwise send them unsigned.

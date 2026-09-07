@@ -1,5 +1,3 @@
-//go:build goexperiment.jsonv2
-
 package config
 
 import (
@@ -15,14 +13,14 @@ import (
 // Foreign top-level keys round-trip through the Foreign field.
 type HooksFile struct {
 	Hooks   map[string][]HookGroup    `json:"hooks,omitzero"`
-	Foreign map[string]jsontext.Value `json:",inline"`
+	Foreign map[string]jsontext.Value `json:",embed"`
 }
 
 // HookGroup is one matcher group for a Codex hook event.
 type HookGroup struct {
 	Matcher string                    `json:"matcher,omitzero"`
 	Hooks   []HookEntry               `json:"hooks"`
-	Foreign map[string]jsontext.Value `json:",inline"`
+	Foreign map[string]jsontext.Value `json:",embed"`
 }
 
 // HookEntry is one command hook handler.
@@ -32,7 +30,7 @@ type HookEntry struct {
 	CommandWindows string                    `json:"commandWindows,omitzero"`
 	Timeout        int                       `json:"timeout,omitzero"`
 	StatusMessage  string                    `json:"statusMessage,omitzero"`
-	Foreign        map[string]jsontext.Value `json:",inline"`
+	Foreign        map[string]jsontext.Value `json:",embed"`
 }
 
 func marshalHooksFile(h HooksFile) ([]byte, error) {

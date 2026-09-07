@@ -1,5 +1,3 @@
-//go:build goexperiment.jsonv2
-
 package hook
 
 import (
@@ -64,16 +62,12 @@ func TestHandlers_RoundTrip(t *testing.T) {
 
 func codexPostToolUsePayload(cwd string, toolInput json.RawMessage) string {
 	in := cx.PostToolUseInput{
-		TurnInput: cx.TurnInput{
-			Input: cx.Input{
-				SessionID:     "test-session",
-				CWD:           cwd,
-				HookEventName: cx.EventPostToolUse,
-			},
-			TurnID: "turn-1",
-		},
-		ToolName:  "apply_patch",
-		ToolInput: toolInput,
+		SessionID:     "test-session",
+		CWD:           cwd,
+		HookEventName: cx.EventPostToolUse,
+		TurnID:        "turn-1",
+		ToolName:      "apply_patch",
+		ToolInput:     toolInput,
 	}
 	data, _ := json.Marshal(in)
 	return string(data)

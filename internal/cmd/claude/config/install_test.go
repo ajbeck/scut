@@ -1,5 +1,3 @@
-//go:build goexperiment.jsonv2
-
 package config
 
 import (
@@ -52,7 +50,7 @@ func TestInstall(t *testing.T) {
 		if len(data) == 0 {
 			t.Fatal("expected non-empty output")
 		}
-		var m map[string]interface{}
+		var m map[string]any
 		if err := json.Unmarshal(bytes.TrimRight(data, "\n"), &m); err != nil {
 			t.Fatalf("output is not valid JSON: %v\n%s", err, data)
 		}
@@ -63,7 +61,7 @@ func TestInstall(t *testing.T) {
 			t.Errorf("expected hooks in output, got none\n%s", data)
 		}
 		// Only default hook events should be present.
-		hooks, _ := m["hooks"].(map[string]interface{})
+		hooks, _ := m["hooks"].(map[string]any)
 		if len(hooks) != 1 {
 			t.Errorf("expected 1 hook event, got %d\n%s", len(hooks), data)
 		}
@@ -133,14 +131,14 @@ func TestInstall(t *testing.T) {
 		}
 
 		data := stdout.Bytes()
-		var m map[string]interface{}
+		var m map[string]any
 		if err := json.Unmarshal(bytes.TrimRight(data, "\n"), &m); err != nil {
 			t.Fatalf("invalid JSON: %v\n%s", err, data)
 		}
 		if m["statusLine"] == nil {
 			t.Errorf("expected statusLine when status-line in --only\n%s", data)
 		}
-		hooks, _ := m["hooks"].(map[string]interface{})
+		hooks, _ := m["hooks"].(map[string]any)
 		if hooks["PostToolUse"] == nil {
 			t.Errorf("expected PostToolUse when post-tool-use in --only\n%s", data)
 		}

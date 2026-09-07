@@ -1,5 +1,3 @@
-//go:build goexperiment.jsonv2
-
 // Package format provides code formatting utilities.
 package format
 

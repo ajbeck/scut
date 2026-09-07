@@ -1,5 +1,3 @@
-//go:build goexperiment.jsonv2
-
 // Package doctor implements the "scut doctor" diagnostics command.
 package doctor
 
@@ -484,8 +482,8 @@ func tomlBoolValue(text, key string) string {
 }
 
 func stripTOMLComment(line string) string {
-	if i := strings.IndexByte(line, '#'); i >= 0 {
-		return line[:i]
+	if before, _, ok := strings.Cut(line, "#"); ok {
+		return before
 	}
 	return line
 }

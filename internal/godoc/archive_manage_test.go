@@ -298,8 +298,7 @@ func TestFileArchiveStorePruneCacheReportsUnassociatedBytes(t *testing.T) {
 	maxSize := int64(0)
 
 	removed, err := store.PruneCache(t.Context(), ModuleCachePrunePolicy{MaxSize: &maxSize})
-	var sizeErr ModuleCacheSizeError
-	if !errors.As(err, &sizeErr) {
+	if _, ok := errors.AsType[ModuleCacheSizeError](err); !ok {
 		t.Fatalf("PruneCache() error = %v, want ModuleCacheSizeError", err)
 	}
 	if removed.Entries != 1 || removed.Bytes == 0 {

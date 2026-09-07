@@ -800,7 +800,7 @@ func writeCommentGroup(b *strings.Builder, group *ast.CommentGroup, indent strin
 	if group == nil {
 		return
 	}
-	for _, line := range strings.Split(strings.TrimRight(group.Text(), "\n"), "\n") {
+	for line := range strings.SplitSeq(strings.TrimRight(group.Text(), "\n"), "\n") {
 		if line == "" {
 			b.WriteString(indent)
 			b.WriteString("//\n")

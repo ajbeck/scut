@@ -1,5 +1,3 @@
-//go:build goexperiment.jsonv2
-
 // Package update implements the "scut update" command.
 package update
 
@@ -201,7 +199,7 @@ func isHomebrewPath(path string) bool {
 }
 
 func isDevVersion(v string) bool {
-	base := strings.Split(v, "+")[0]
+	base, _, _ := strings.Cut(v, "+")
 	return base == "v0.0.0-dev" || strings.Contains(base, "-dev")
 }
 
@@ -425,7 +423,7 @@ func replaceExecutable(fs afero.Fs, path string, binary []byte) error {
 }
 
 func sameVersion(current, target string) bool {
-	base := strings.Split(current, "+")[0]
+	base, _, _ := strings.Cut(current, "+")
 	if !semver.IsValid(base) || !semver.IsValid(target) {
 		return current == target
 	}

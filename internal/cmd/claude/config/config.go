@@ -1,5 +1,3 @@
-//go:build goexperiment.jsonv2
-
 // Package config implements the "scut claude config" command group.
 package config
 

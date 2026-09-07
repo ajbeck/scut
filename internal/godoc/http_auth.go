@@ -171,11 +171,11 @@ func (a *GoAuthenticator) run(ctx context.Context, response *http.Response, requ
 			if err != nil {
 				continue
 			}
-			for i := len(lines) - 1; i >= 0; i-- {
+			for _, line := range slices.Backward(lines) {
 				header := make(http.Header)
 				req := http.Request{Header: header}
-				req.SetBasicAuth(lines[i].Login, lines[i].Password)
-				a.storeCredential(lines[i].Machine, header)
+				req.SetBasicAuth(line.Login, line.Password)
+				a.storeCredential(line.Machine, header)
 			}
 		case "git":
 			if len(args) != 2 || !filepath.IsAbs(args[1]) {

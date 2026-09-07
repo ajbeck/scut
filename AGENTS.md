@@ -17,10 +17,12 @@ CLI tool to be used by LLM agents via hooks, rules and instructions. Provides a 
 - **Package layout**: All packages go under `internal/` by default. Only expose a public package when explicitly directed.
 - **Module**: `github.com/ajbeck/scut`
 
-## Go 1.26
+## Go 1.27
 
-Target version is **Go 1.26**. Use these features where appropriate:
+Target version is **Go 1.27.1**. Use current language and library features where appropriate:
 
+- Generic methods — methods may declare their own type parameters.
+- Stable `encoding/json/v2` and `encoding/json/jsontext` packages.
 - `new(expr)` — pointer to a computed value without a temp variable.
 - `errors.AsType[T]()` — generic, type-safe alternative to `errors.As`.
 - Self-referential generic constraints — e.g., `type Adder[A Adder[A]] interface`.
@@ -34,8 +36,8 @@ Target version is **Go 1.26**. Use these features where appropriate:
 
 ## Walle Tasks
 
-**DO NOT run `go test`, `go build`, `go vet`, or `gofmt` directly.** Always use the corresponding Walle task. Walle sets `GOEXPERIMENT=jsonv2` and other required environment
-configuration automatically. Running Go toolchain commands directly will produce incorrect results or miss build tags.
+**DO NOT run `go test`, `go build`, `go vet`, or `gofmt` directly.** Always use the corresponding Walle task. Walle applies the repository's required build metadata and
+verification settings consistently.
 
 | Command                     | What it does                                             |
 | --------------------------- | -------------------------------------------------------- |
@@ -49,13 +51,9 @@ configuration automatically. Running Go toolchain commands directly will produce
 This applies to all contexts: manual terminal use, CI, agent tool calls, and hook scripts. If you need to run tests for a single package, use `./walle test` — do not construct a
 `go test` invocation yourself.
 
-## JSON v2
+## JSON
 
-We use `encoding/json/v2` (the new JSON package). This requires:
-
-- **Build tag**: All `.go` files that import `encoding/json/v2` or `encoding/json` (v1 shimmed by v2) must include `//go:build goexperiment.jsonv2` at the top.
-- **GOEXPERIMENT**: Set `GOEXPERIMENT=jsonv2` when building/testing (Walle should set this).
-- Import `encoding/json/v2` for the new API. The v1 `encoding/json` package still works but its behavior is altered by the experiment flag.
+Use the stable `encoding/json/v2` and `encoding/json/jsontext` packages for JSON processing. No experiment flag or build constraint is required with Go 1.27.
 
 ## Documentation
 

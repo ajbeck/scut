@@ -291,7 +291,6 @@ func command(ctx context.Context, extraEnv map[string]string, name string, args 
 
 func mergedEnv(extra map[string]string) []string {
 	env := os.Environ()
-	env = append(env, "GOEXPERIMENT=jsonv2")
 	for key, value := range extra {
 		env = append(env, key+"="+value)
 	}

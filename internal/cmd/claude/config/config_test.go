@@ -1,5 +1,3 @@
-//go:build goexperiment.jsonv2
-
 // Package config_test exercises the public surface of the config command group
 // via Kong wiring.
 package config_test

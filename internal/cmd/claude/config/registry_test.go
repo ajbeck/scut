@@ -1,5 +1,3 @@
-//go:build goexperiment.jsonv2
-
 package config
 
 import (
@@ -13,10 +11,10 @@ import (
 // the same set of event slugs — no orphans on either side.
 func TestHookSpecsMatchHookCmd(t *testing.T) {
 	// Collect slugs from hook.Cmd via reflection.
-	hookCmdType := reflect.TypeOf(hook.Cmd{})
+	hookCmdType := reflect.TypeFor[hook.Cmd]()
 	cmdSlugs := make(map[string]bool, hookCmdType.NumField())
-	for i := range hookCmdType.NumField() {
-		slug := hookCmdType.Field(i).Tag.Get("cmd")
+	for field := range hookCmdType.Fields() {
+		slug := field.Tag.Get("cmd")
 		if slug == "" {
 			continue
 		}

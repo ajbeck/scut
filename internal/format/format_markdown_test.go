@@ -158,3 +158,57 @@ func TestFormatMarkdownFrontMatter(t *testing.T) {
 		})
 	}
 }
+
+func TestFormatMarkdownV2Contracts(t *testing.T) {
+	tests := []struct {
+		name string
+		src  string
+		want string
+	}{
+		{
+			name: "preserves Setext headings",
+			src:  "Heading\n=======\n",
+			want: "Heading\n=======\n",
+		},
+		{
+			name: "canonicalizes combined emphasis",
+			src:  "***nested***\n",
+			want: "_**nested**_\n",
+		},
+		{
+			name: "preserves loose nested list spacing",
+			src:  "- parent\n\n  - child\n- sibling\n",
+			want: "- parent\n\n  - child\n- sibling\n",
+		},
+		{
+			name: "preserves footnotes and definition lists",
+			src:  "[^1]: note\n\nUses [^1].\n\nTerm\n: definition\n",
+			want: "[^1]: note\n\nUses [^1].\n\nTerm\n: definition\n",
+		},
+		{
+			name: "preserves MDX and raw HTML",
+			src:  "<Component value={1}>\n\n<div>raw</div>\n",
+			want: "<Component value={1}>\n\n<div>raw</div>\n",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := FormatMarkdown([]byte(tt.src))
+			if err != nil {
+				t.Fatalf("FormatMarkdown() error: %v", err)
+			}
+			if !bytes.Equal(got, []byte(tt.want)) {
+				t.Errorf("FormatMarkdown() = %q, want %q", got, tt.want)
+			}
+
+			gotAgain, err := FormatMarkdown(got)
+			if err != nil {
+				t.Fatalf("second FormatMarkdown() error: %v", err)
+			}
+			if !bytes.Equal(gotAgain, got) {
+				t.Errorf("second FormatMarkdown() = %q, want %q", gotAgain, got)
+			}
+		})
+	}
+}

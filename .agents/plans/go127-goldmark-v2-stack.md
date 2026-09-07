@@ -54,7 +54,7 @@ The stack is linear and listed bottom-to-top.
 | 2     | `go127-goldmark/aws-proxy-v1`  | Implemented locally | Upgrade go-aws-mcp-proxy from v0.3.0 to v1.0.0 and independently verify the source-compatible but behaviorally substantial proxy release.                             |
 | 3     | `go127-goldmark/renderer-v2`   | Implemented locally | Upgrade formatter and Goldmark module paths to v2, adopt the separated parse/render pipeline, preserve extension policy, and characterize intentional output changes. |
 | 4     | `go127-goldmark/dependencies`  | Implemented locally | Refresh the completed direct-dependency graph and its transitive modules to their latest stable releases, then audit every graph change.                              |
-| 5     | `go127-goldmark/file-contract` | Planned             | Make stdin a filter, make file arguments atomic in-place formatting, preserve modes, skip unchanged files, and add check mode.                                        |
+| 5     | `go127-goldmark/file-contract` | Implemented locally | Make stdin a filter, make file arguments atomic in-place formatting, preserve modes, skip unchanged files, and add check mode.                                        |
 | 6     | `go127-goldmark/options`       | Planned             | Expose prose-wrap, print-width, tab-width, and quote-style options for the direct Markdown command while retaining hook defaults.                                     |
 
 ## Layer 1 implementation plan
@@ -200,6 +200,21 @@ repaired normal package resolution without clearing downloaded modules. The
 current stack must use the repository-built scut for any further external doc
 lookups until a release containing the independent-cache work is installed.
 
+### D-011: File replacement is atomic per target
+
+Named files produce no stdout. Each changed regular file is written to a
+sibling temporary file, assigned the original mode, synchronized, closed, and
+renamed over its target. Symbolic links are resolved before replacement so the
+link remains intact. A multi-file invocation is intentionally not presented as
+transactional: earlier successful files remain committed if a later file fails.
+
+### D-012: Check mode applies to named files
+
+`--check` runs formatting and ignore selection without writes and returns changed
+paths once in argument order. It requires at least one named file. With no file
+arguments, normal mode remains a stdin-to-stdout filter and passes declined
+input through unchanged rather than swallowing it.
+
 ## Verification log
 
 ### Layer 1
@@ -259,3 +274,22 @@ lookups until a release containing the independent-cache work is installed.
 - `./walle test` — passed with the race detector after the clean redownload.
 - `./walle vet` — passed after the clean redownload.
 - `./walle build` — passed after the clean redownload.
+
+### Layer 5
+
+- Named Go and Markdown files are formatted atomically in place and no longer
+  concatenate their formatted contents on stdout.
+- Preserved modes and symbolic links, skipped unchanged and ignored files, and
+  retained per-file partial-failure semantics.
+- Added `--check` for named files with no writes and deterministic changed-path
+  reporting; stdin now passes declined content through unchanged.
+- Covered ignores, force, modes, symlinks, duplicate check paths, successful
+  checks, partial failures, rename failures, temp cleanup, and stdin decline in
+  tests.
+- End-to-end CLI smoke test confirmed empty stdout for file writes and a nonzero
+  check result with the changed path.
+- `./walle fmt` — passed.
+- `./walle test` — passed with the race detector.
+- `./walle vet` — passed.
+- `./walle build` — passed.
+- `./walle docs` — passed and regenerated CLI help.

@@ -7,10 +7,15 @@ Arguments:
                   writes to stdout.
 
 Flags:
-  -h, --help       Show context-sensitive help.
-  -v, --version    Print version and exit.
+  -h, --help                     Show context-sensitive help.
+  -v, --version                  Print version and exit.
 
-      --force      Format files even when ignored by .prettierignore or
-                   .scutignore.
-      --check      Check whether named files are formatted without writing
-                   changes.
+      --force                    Format files even when ignored by
+                                 .prettierignore or .scutignore.
+      --check                    Check whether named files are formatted without
+                                 writing changes.
+      --prose-wrap="preserve"    How to wrap prose: preserve, always, or never.
+      --print-width=80           Target line width for prose wrapping and
+                                 compact tables.
+      --tab-width=2              Tab width used for list indentation alignment.
+      --single-quote             Use single quotes for link and image titles.

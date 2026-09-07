@@ -55,7 +55,7 @@ The stack is linear and listed bottom-to-top.
 | 3     | `go127-goldmark/renderer-v2`   | Implemented locally | Upgrade formatter and Goldmark module paths to v2, adopt the separated parse/render pipeline, preserve extension policy, and characterize intentional output changes. |
 | 4     | `go127-goldmark/dependencies`  | Implemented locally | Refresh the completed direct-dependency graph and its transitive modules to their latest stable releases, then audit every graph change.                              |
 | 5     | `go127-goldmark/file-contract` | Implemented locally | Make stdin a filter, make file arguments atomic in-place formatting, preserve modes, skip unchanged files, and add check mode.                                        |
-| 6     | `go127-goldmark/options`       | Planned             | Expose prose-wrap, print-width, tab-width, and quote-style options for the direct Markdown command while retaining hook defaults.                                     |
+| 6     | `go127-goldmark/options`       | Implemented locally | Expose prose-wrap, print-width, tab-width, and quote-style options for the direct Markdown command while retaining hook defaults.                                     |
 
 ## Layer 1 implementation plan
 
@@ -215,6 +215,24 @@ paths once in argument order. It requires at least one named file. With no file
 arguments, normal mode remains a stdin-to-stdout filter and passes declined
 input through unchanged rather than swallowing it.
 
+### D-013: Direct Markdown options do not configure hooks
+
+The internal formatter owns a small validated configuration type and retains
+`FormatMarkdown` as the stable default entry point. The direct Markdown command
+maps its flags to that configuration. Post-tool-use hooks continue to call the
+default entry point, so adding CLI controls does not create an undocumented
+persistent configuration surface or change automatic formatting behavior.
+
+### D-014: Versioned-symbol doc lookup needs separate repair
+
+After switching the go-doc skill to the repository-built scut and its isolated
+module cache, package lookup for a `/v2` module succeeded but a package-level
+constant lookup such as `github.com/ajbeck/goldmark-prettier-markdown/v2.ProseWrapAlways`
+lost the `/v2` module suffix and failed version validation. The failure remained
+inside scut's independent cache, so it is not a regression in the cache
+isolation work. Track the versioned-symbol resolver defect as follow-up work
+outside this dependency and formatter stack.
+
 ## Verification log
 
 ### Layer 1
@@ -236,7 +254,7 @@ input through unchanged rather than swallowing it.
 - `./walle fmt` — passed.
 - `./walle test` — passed with the race detector.
 - `./walle vet` — passed.
-- `./walle build` — passed with host Go cache access.
+- `./walle build` — passed.
 - `./walle docs` — passed and regenerated CLI help.
 
 ### Layer 3
@@ -288,6 +306,20 @@ input through unchanged rather than swallowing it.
   tests.
 - End-to-end CLI smoke test confirmed empty stdout for file writes and a nonzero
   check result with the changed path.
+- `./walle fmt` — passed.
+- `./walle test` — passed with the race detector.
+- `./walle vet` — passed.
+- `./walle build` — passed.
+- `./walle docs` — passed and regenerated CLI help.
+
+### Layer 6
+
+- Added validated `--prose-wrap`, `--print-width`, `--tab-width`, and
+  `--single-quote` controls to the direct Markdown command.
+- Kept `FormatMarkdown` and both agent hooks on stable defaults while adding a
+  separate configuration entry point for direct invocations.
+- Covered each upstream renderer option and invalid values with exact-output
+  unit tests; command parsing and default mapping are covered independently.
 - `./walle fmt` — passed.
 - `./walle test` — passed with the race detector.
 - `./walle vet` — passed.

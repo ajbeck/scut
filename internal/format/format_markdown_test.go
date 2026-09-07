@@ -212,3 +212,119 @@ func TestFormatMarkdownV2Contracts(t *testing.T) {
 		})
 	}
 }
+
+func TestFormatMarkdownOptions(t *testing.T) {
+	tests := []struct {
+		name   string
+		config func() MarkdownConfig
+		src    string
+		want   string
+	}{
+		{
+			name: "prose wrap never",
+			config: func() MarkdownConfig {
+				config := DefaultMarkdownConfig()
+				config.ProseWrap = MarkdownProseWrapNever
+				return config
+			},
+			src:  "This is a line\nthat continues with several words.\n",
+			want: "This is a line that continues with several words.\n",
+		},
+		{
+			name: "print width",
+			config: func() MarkdownConfig {
+				config := DefaultMarkdownConfig()
+				config.ProseWrap = MarkdownProseWrapAlways
+				config.PrintWidth = 24
+				return config
+			},
+			src:  "This is a long line with enough words to demonstrate wrapping at a narrow width.\n",
+			want: "This is a long line with\nenough words to\ndemonstrate wrapping at\na narrow width.\n",
+		},
+		{
+			name: "tab width",
+			config: func() MarkdownConfig {
+				config := DefaultMarkdownConfig()
+				config.TabWidth = 3
+				return config
+			},
+			src:  "1.  first\n2.  second\n",
+			want: "1. first\n2. second\n",
+		},
+		{
+			name: "single quote",
+			config: func() MarkdownConfig {
+				config := DefaultMarkdownConfig()
+				config.SingleQuote = true
+				return config
+			},
+			src:  "[link](https://example.com \"Title\")\n",
+			want: "[link](https://example.com 'Title')\n",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := FormatMarkdownWithConfig([]byte(tt.src), tt.config())
+			if err != nil {
+				t.Fatalf("FormatMarkdownWithConfig() error: %v", err)
+			}
+			if !bytes.Equal(got, []byte(tt.want)) {
+				t.Errorf("FormatMarkdownWithConfig() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDefaultMarkdownConfig(t *testing.T) {
+	want := MarkdownConfig{
+		ProseWrap:   MarkdownProseWrapPreserve,
+		PrintWidth:  80,
+		TabWidth:    2,
+		SingleQuote: false,
+	}
+	if got := DefaultMarkdownConfig(); got != want {
+		t.Errorf("DefaultMarkdownConfig() = %+v, want %+v", got, want)
+	}
+}
+
+func TestMarkdownConfigValidation(t *testing.T) {
+	tests := []struct {
+		name   string
+		mutate func(*MarkdownConfig)
+		want   string
+	}{
+		{
+			name: "unknown prose wrap",
+			mutate: func(config *MarkdownConfig) {
+				config.ProseWrap = "sometimes"
+			},
+			want: `unknown prose wrap mode "sometimes"`,
+		},
+		{
+			name: "nonpositive print width",
+			mutate: func(config *MarkdownConfig) {
+				config.PrintWidth = 0
+			},
+			want: "print width must be greater than zero",
+		},
+		{
+			name: "nonpositive tab width",
+			mutate: func(config *MarkdownConfig) {
+				config.TabWidth = -1
+			},
+			want: "tab width must be greater than zero",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := DefaultMarkdownConfig()
+			tt.mutate(&config)
+			_, err := FormatMarkdownWithConfig([]byte("text\n"), config)
+			if err == nil || err.Error() != tt.want {
+				t.Fatalf("FormatMarkdownWithConfig() error = %v, want %q", err, tt.want)
+			}
+		})
+	}
+}

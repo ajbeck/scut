@@ -53,7 +53,7 @@ The stack is linear and listed bottom-to-top.
 | 1     | `go127-goldmark/toolchain`     | Implemented locally | Upgrade to Go 1.27.1, remove JSON experiment plumbing, migrate stable JSON tags, run `go fix ./...`, and update toolchain documentation.                              |
 | 2     | `go127-goldmark/aws-proxy-v1`  | Implemented locally | Upgrade go-aws-mcp-proxy from v0.3.0 to v1.0.0 and independently verify the source-compatible but behaviorally substantial proxy release.                             |
 | 3     | `go127-goldmark/renderer-v2`   | Implemented locally | Upgrade formatter and Goldmark module paths to v2, adopt the separated parse/render pipeline, preserve extension policy, and characterize intentional output changes. |
-| 4     | `go127-goldmark/dependencies`  | Planned             | Refresh the completed direct-dependency graph and its transitive modules to their latest stable releases, then audit every graph change.                              |
+| 4     | `go127-goldmark/dependencies`  | Implemented locally | Refresh the completed direct-dependency graph and its transitive modules to their latest stable releases, then audit every graph change.                              |
 | 5     | `go127-goldmark/file-contract` | Planned             | Make stdin a filter, make file arguments atomic in-place formatting, preserve modes, skip unchanged files, and add check mode.                                        |
 | 6     | `go127-goldmark/options`       | Planned             | Expose prose-wrap, print-width, tab-width, and quote-style options for the direct Markdown command while retaining hook defaults.                                     |
 
@@ -239,3 +239,23 @@ lookups until a release containing the independent-cache work is installed.
 - `./walle vet` — passed.
 - `./walle build` — passed with host Go cache access.
 - `./walle docs` — passed.
+
+### Layer 4
+
+- Confirmed every direct module is at its latest stable major and release.
+  go-git and go-billy v6 were evaluated but excluded because only alpha releases
+  exist.
+- Updated every module in scut's production and test package closure. This
+  includes the AWS SDK v2 family, smithy-go, ultraviolet, go-runewidth,
+  knownhosts, crypto, test libraries, and their selected graph dependencies.
+- Did not manually retain artificial pins for dependencies used only by
+  upstream repositories' own tests; the final indirect requirements are exactly
+  those retained by `go mod tidy` after the refresh.
+- The production and test closure audit reports no remaining same-path updates.
+- Cleared the complete Go build, module, test-result, and fuzz caches at the
+  user's request, then redownloaded the graph from proxy/sumdb sources.
+- `go mod verify` — passed against the cleanly redownloaded module cache.
+- `./walle fmt` — passed.
+- `./walle test` — passed with the race detector after the clean redownload.
+- `./walle vet` — passed after the clean redownload.
+- `./walle build` — passed after the clean redownload.

@@ -1,119 +1,138 @@
 name: Release
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
-      releaseVersion:
-        description: Version to release, for example 0.2.0 or v0.2.0.
-        required: true
-        type: string
-      targetSha:
-        description: Optional full commit SHA to release. Defaults to the current HEAD of main.
+      release_tag:
+        description: Existing release tag whose assets should be rebuilt and uploaded.
         required: false
         type: string
 
 permissions:
-  contents: write
-  actions: read
-  pages: write
-  id-token: write
+  contents: read
 
 concurrency:
-  group: release
+  group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  tag-release:
-    name: Tag Release
+  release-please:
+    name: Prepare Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     outputs:
-      commit_sha: ${{ steps.tag.outputs.commit_sha }}
-      release_tag: ${{ steps.tag.outputs.release_tag }}
-      major_tag: ${{ steps.tag.outputs.major_tag }}
-      minor_tag: ${{ steps.tag.outputs.minor_tag }}
+      commit_sha: ${{ steps.release-context.outputs.commit_sha }}
+      major_tag: ${{ steps.release-context.outputs.major_tag }}
+      minor_tag: ${{ steps.release-context.outputs.minor_tag }}
+      release_created: ${{ steps.release.outputs.release_created }}
+      release_tag: ${{ steps.release-context.outputs.release_tag }}
+      release_version: ${{ steps.release-context.outputs.release_version }}
     steps:
-      - name: Checkout main
-        uses: actions/checkout@v7
+      - name: Create release automation token
+        id: release-token
+        if: ${{ vars.RELEASE_PLEASE_CLIENT_ID != '' }}
+        uses: actions/create-github-app-token@v3.2.0
         with:
-          ref: main
-          fetch-depth: 0
-          fetch-tags: true
+          client-id: ${{ vars.RELEASE_PLEASE_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_PLEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
 
-      - name: Create release tags
-        id: tag
+      - name: Create or update release pull request or GitHub release
+        id: release
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.release_tag == '' }}
+        uses: googleapis/release-please-action@v5.0.0
+        with:
+          token: ${{ steps.release-token.outputs.token || github.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+          target-branch: main
+
+      - name: Sync pending release pull request
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.release_tag == '' }}
         env:
-          INPUT_VERSION: ${{ inputs.releaseVersion }}
-          TARGET_SHA: ${{ inputs.targetSha }}
+          GH_TOKEN: ${{ steps.release-token.outputs.token || github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
-          version="${INPUT_VERSION#v}"
-          VERSION="${version}" node <<'NODE'
-          const version = process.env.VERSION
-          const semverPattern = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/
-          const match = semverPattern.exec(version)
-          if (!match) {
-            console.error("releaseVersion must be a semantic version like 0.2.0 or v0.2.0")
-            process.exit(1)
-          }
-          if (match[4] || match[5]) {
-            console.error("releaseVersion must be stable; prerelease and build metadata are not accepted")
-            process.exit(1)
-          }
-          NODE
-          main_sha="$(git rev-parse origin/main)"
-          target_sha="${TARGET_SHA:-$main_sha}"
-          if [[ ! "$target_sha" =~ ^[0-9a-fA-F]{40}$ ]]; then
-            echo "targetSha must be a full 40-character commit SHA" >&2
+          release_pr="$(gh pr list \
+            --base main \
+            --state open \
+            --label 'autorelease: pending' \
+            --json number \
+            --jq '.[0].number')"
+
+          if [[ -z "$release_pr" ]]; then
+            echo 'No pending release pull request to sync.'
+            exit 0
+          fi
+
+          merge_state="$(gh pr view "$release_pr" --json mergeStateStatus --jq '.mergeStateStatus')"
+          if [[ "$merge_state" != 'BEHIND' ]]; then
+            echo "Release PR #$release_pr does not need a branch update ($merge_state)."
+            exit 0
+          fi
+
+          head_sha="$(gh pr view "$release_pr" --json headRefOid --jq '.headRefOid')"
+          gh api \
+            --method PUT \
+            "repos/$GITHUB_REPOSITORY/pulls/$release_pr/update-branch" \
+            -f expected_head_sha="$head_sha"
+
+      - name: Configure release asset packaging
+        id: release-context
+        if: ${{ steps.release.outputs.release_created == 'true' || inputs.release_tag != '' }}
+        env:
+          AUTOMATED_RELEASE_TAG: ${{ steps.release.outputs.tag_name }}
+          AUTOMATED_RELEASE_VERSION: ${{ steps.release.outputs.version }}
+          GH_TOKEN: ${{ steps.release-token.outputs.token || github.token }}
+          MANUAL_RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+
+          release_tag="${MANUAL_RELEASE_TAG:-$AUTOMATED_RELEASE_TAG}"
+          release_version="${AUTOMATED_RELEASE_VERSION:-${release_tag#v}}"
+          if [[ ! "$release_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "Release tag must identify a stable semantic version: $release_tag" >&2
             exit 1
           fi
 
-          IFS=. read -r major minor patch <<< "$version"
-          release_tag="v${major}.${minor}.${patch}"
-          minor_tag="v${major}.${minor}"
-          major_tag="v${major}"
-          commit_sha="$(git rev-parse "${target_sha}^{commit}")"
-          if [ "$commit_sha" != "$main_sha" ]; then
-            echo "targetSha must match the current HEAD of main (${main_sha})" >&2
-            exit 1
-          fi
+          gh release view "$release_tag" --repo "$GITHUB_REPOSITORY" --json tagName > /dev/null
+          commit_sha="$(gh api "repos/$GITHUB_REPOSITORY/commits/$release_tag" --jq '.sha')"
 
-          existing_sha="$(git rev-parse -q --verify "refs/tags/${release_tag}^{commit}" || true)"
-          if [ -n "$existing_sha" ] && [ "$existing_sha" != "$commit_sha" ]; then
-            echo "Tag ${release_tag} already exists at ${existing_sha}. Exact release tags are immutable." >&2
-            exit 1
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          if [ -z "$existing_sha" ]; then
-            git tag "${release_tag}" "${commit_sha}"
-          fi
-          git tag -f "${minor_tag}" "${commit_sha}"
-          git tag -f "${major_tag}" "${commit_sha}"
-
-          if [ -z "$existing_sha" ]; then
-            git push origin "refs/tags/${release_tag}"
-          fi
-          git push --force origin "refs/tags/${minor_tag}" "refs/tags/${major_tag}"
-
-          echo "commit_sha=${commit_sha}" >> "$GITHUB_OUTPUT"
-          echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"
-          echo "major_tag=${major_tag}" >> "$GITHUB_OUTPUT"
-          echo "minor_tag=${minor_tag}" >> "$GITHUB_OUTPUT"
+          {
+            echo "commit_sha=$commit_sha"
+            echo "major_tag=v${BASH_REMATCH[1]}"
+            echo "minor_tag=v${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
+            echo "release_tag=$release_tag"
+            echo "release_version=$release_version"
+          } >> "$GITHUB_OUTPUT"
 
   build:
     name: Build
-    needs: tag-release
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_tag != '' }}
+    permissions:
+      contents: read
     uses: ./.github/workflows/build.yaml
     with:
       mode: release
-      ref: ${{ needs.tag-release.outputs.release_tag }}
-      release_tag: ${{ needs.tag-release.outputs.release_tag }}
+      ref: ${{ needs.release-please.outputs.release_tag }}
+      release_tag: ${{ needs.release-please.outputs.release_tag }}
 
-  release:
-    name: Create GitHub Release
-    needs: [tag-release, build]
+  publish:
+    name: Publish Release Assets
+    needs: [release-please, build]
+    if: ${{ needs.release-please.outputs.release_tag != '' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Download release assets
         uses: actions/download-artifact@v8
@@ -121,24 +140,39 @@ jobs:
           name: release-assets
           path: release-assets
 
-      - name: Create release
+      - name: Upload release assets
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ needs.tag-release.outputs.release_tag }}
-          COMMIT_SHA: ${{ needs.tag-release.outputs.commit_sha }}
+          RELEASE_TAG: ${{ needs.release-please.outputs.release_tag }}
+        run: gh release upload "$RELEASE_TAG" release-assets/* --repo "$GITHUB_REPOSITORY" --clobber
+
+      - name: Checkout release commit
+        if: ${{ needs.release-please.outputs.release_created == 'true' }}
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.release-please.outputs.commit_sha }}
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Update movable release tags
+        if: ${{ needs.release-please.outputs.release_created == 'true' }}
+        env:
+          COMMIT_SHA: ${{ needs.release-please.outputs.commit_sha }}
+          MAJOR_TAG: ${{ needs.release-please.outputs.major_tag }}
+          MINOR_TAG: ${{ needs.release-please.outputs.minor_tag }}
         run: |
-          gh release create "${RELEASE_TAG}" release-assets/* \
-            --repo "${GITHUB_REPOSITORY}" \
-            --target "${COMMIT_SHA}" \
-            --title "scut ${RELEASE_TAG}" \
-            --generate-notes
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f "$MINOR_TAG" "$COMMIT_SHA"
+          git tag -f "$MAJOR_TAG" "$COMMIT_SHA"
+          git push --force origin "refs/tags/$MINOR_TAG" "refs/tags/$MAJOR_TAG"
 
       - name: Write release summary
         env:
-          RELEASE_TAG: ${{ needs.tag-release.outputs.release_tag }}
-          COMMIT_SHA: ${{ needs.tag-release.outputs.commit_sha }}
-          MAJOR_TAG: ${{ needs.tag-release.outputs.major_tag }}
-          MINOR_TAG: ${{ needs.tag-release.outputs.minor_tag }}
+          COMMIT_SHA: ${{ needs.release-please.outputs.commit_sha }}
+          MAJOR_TAG: ${{ needs.release-please.outputs.major_tag }}
+          MINOR_TAG: ${{ needs.release-please.outputs.minor_tag }}
+          RELEASE_TAG: ${{ needs.release-please.outputs.release_tag }}
         run: |
           cat >> "$GITHUB_STEP_SUMMARY" << EOF
           ## Release Summary
@@ -159,8 +193,9 @@ jobs:
           EOF
 
   update-homebrew-tap:
-    name: Update Homebrew Tap
-    needs: [tag-release, release]
+    name: Open Homebrew Tap Update
+    needs: [release-please, publish]
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Create release publisher token
@@ -176,27 +211,28 @@ jobs:
       - name: Trigger Homebrew tap update
         env:
           GH_TOKEN: ${{ steps.release-publisher-token.outputs.token }}
-          RELEASE_TAG: ${{ needs.tag-release.outputs.release_tag }}
+          RELEASE_TAG: ${{ needs.release-please.outputs.release_tag }}
         run: |
           gh api repos/ajbeck/homebrew-tap/actions/workflows/update-formula.yml/dispatches \
             --method POST \
             -f ref=main \
             -f inputs[formula]=scut \
-            -f inputs[version]="${RELEASE_TAG}"
+            -f inputs[version]="$RELEASE_TAG"
 
       - name: Write Homebrew tap summary
         env:
-          RELEASE_TAG: ${{ needs.tag-release.outputs.release_tag }}
+          RELEASE_TAG: ${{ needs.release-please.outputs.release_tag }}
         run: |
           cat >> "$GITHUB_STEP_SUMMARY" << EOF
           ## Homebrew Tap
 
-          Triggered \`ajbeck/homebrew-tap\` formula update for \`scut\` ${RELEASE_TAG}.
+          Opened the separately managed \`ajbeck/homebrew-tap\` formula update workflow for \`scut\` ${RELEASE_TAG}.
           EOF
 
   deploy-docs:
     name: Deploy Docs
-    needs: [tag-release, release]
+    needs: [release-please, publish]
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
     runs-on: ubuntu-latest
     concurrency:
       group: pages
@@ -204,11 +240,15 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     steps:
       - name: Checkout release commit
         uses: actions/checkout@v7
         with:
-          ref: ${{ needs.tag-release.outputs.commit_sha }}
+          ref: ${{ needs.release-please.outputs.commit_sha }}
           fetch-depth: 0
 
       - name: Setup Pages

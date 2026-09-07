@@ -3,7 +3,8 @@ Usage: scut format markdown [<file> ...] [flags]
 Format Markdown files. Reads from stdin if no files specified.
 
 Arguments:
-  [<file> ...]    Files to format. If omitted, reads from stdin.
+  [<file> ...]    Files to format in place. If omitted, reads from stdin and
+                  writes to stdout.
 
 Flags:
   -h, --help       Show context-sensitive help.
@@ -11,3 +12,5 @@ Flags:
 
       --force      Format files even when ignored by .prettierignore or
                    .scutignore.
+      --check      Check whether named files are formatted without writing
+                   changes.

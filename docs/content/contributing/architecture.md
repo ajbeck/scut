@@ -26,21 +26,23 @@ err = ctx.Run(bindings...)
 
 ## Package layout
 
-| Area                   | Purpose                                               |
-| ---------------------- | ----------------------------------------------------- |
-| `cmd/scut`             | Main released binary entrypoint.                      |
-| `cmd/walle`            | Repository-local task runner for development.         |
-| `internal/cmd/claude`  | Claude command tree, status line, config, and hooks.  |
-| `internal/cmd/codex`   | Codex command tree, config, and hooks.                |
-| `internal/cmd/gotools` | Go documentation and module-cache command tree.       |
-| `internal/cmd/initcmd` | Unified setup across supported agents.                |
-| `internal/cmd/doctor`  | Read-only diagnostics.                                |
-| `internal/cmd/mcp`     | MCP utility commands and proxy launchers.             |
-| `internal/cmd/update`  | Install-method detection and release binary updates.  |
-| `internal/godoc`       | Go source resolution, archives, cache, and rendering. |
-| `internal/format`      | Formatter dispatch and ignore handling.               |
-| `hooks/claudecode`     | Public Claude Code hook payload types.                |
-| `hooks/codex`          | Public Codex hook payload types.                      |
+| Area                    | Purpose                                               |
+| ----------------------- | ----------------------------------------------------- |
+| `cmd/scut`              | Main released binary entrypoint.                      |
+| `cmd/walle`             | Repository-local task runner for development.         |
+| `internal/cmd/claude`   | Claude command tree, status line, config, and hooks.  |
+| `internal/cmd/codex`    | Codex command tree, config, and hooks.                |
+| `internal/cmd/gotools`  | Go documentation and module-cache command tree.       |
+| `internal/cmd/initcmd`  | Unified setup across supported agents.                |
+| `internal/cmd/doctor`   | Read-only diagnostics.                                |
+| `internal/cmd/format`   | Direct formatter CLI and atomic file handling.        |
+| `internal/cmd/mcp`      | MCP utility commands and proxy launchers.             |
+| `internal/cmd/update`   | Install-method detection and release binary updates.  |
+| `internal/godoc`        | Go source resolution, archives, cache, and rendering. |
+| `internal/format`       | Pure byte-oriented Go and Markdown formatters.        |
+| `internal/formatignore` | Formatter ignore-file discovery and matching.         |
+| `hooks/claudecode`      | Public Claude Code hook payload types.                |
+| `hooks/codex`           | Public Codex hook payload types.                      |
 
 ## Build rules
 

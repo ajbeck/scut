@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/alecthomas/kong"
 )
 
 func TestAWSProxyConfigUsesEndpointAndEnvironmentFallbacks(t *testing.T) {
@@ -18,6 +20,8 @@ func TestAWSProxyConfigUsesEndpointAndEnvironmentFallbacks(t *testing.T) {
 			"team":       "platform",
 			"AWS_REGION": "us-west-2",
 		},
+		AllowEmptyTools:  new(true),
+		LazyConnect:      new(true),
 		ReadOnly:         new(true),
 		LogLevel:         new("DEBUG"),
 		Retries:          new(3),
@@ -27,7 +31,7 @@ func TestAWSProxyConfigUsesEndpointAndEnvironmentFallbacks(t *testing.T) {
 		WriteTimeout:     new(4.0),
 		ToolTimeout:      new(5.0),
 		DisableTelemetry: new(true),
-		SkipAuth:         new(true),
+		OptionalAuth:     new(true),
 	}.config(lookupEnv(map[string]string{"AWS_REGION": "eu-west-1"}))
 
 	if cfg.Endpoint == nil || *cfg.Endpoint != "https://service.example.com/mcp" {
@@ -48,6 +52,9 @@ func TestAWSProxyConfigUsesEndpointAndEnvironmentFallbacks(t *testing.T) {
 	if cfg.Metadata == nil || (*cfg.Metadata)["team"] != "platform" || (*cfg.Metadata)["AWS_REGION"] != "us-west-2" {
 		t.Fatalf("Metadata = %#v", cfg.Metadata)
 	}
+	if cfg.AllowEmptyTools == nil || !*cfg.AllowEmptyTools || cfg.LazyConnect == nil || !*cfg.LazyConnect {
+		t.Fatalf("expected allow empty tools and lazy connect: %+v", cfg)
+	}
 	if cfg.ReadOnly == nil || !*cfg.ReadOnly || cfg.LogLevel == nil || *cfg.LogLevel != "DEBUG" || cfg.Retries == nil || *cfg.Retries != 3 {
 		t.Fatalf("unexpected config: %+v", cfg)
 	}
@@ -58,8 +65,8 @@ func TestAWSProxyConfigUsesEndpointAndEnvironmentFallbacks(t *testing.T) {
 		cfg.WriteTimeout == nil || *cfg.WriteTimeout != 4*time.Second || cfg.ToolTimeout == nil || *cfg.ToolTimeout != 5*time.Second {
 		t.Fatalf("unexpected timeouts: %+v", cfg)
 	}
-	if cfg.DisableTelemetry == nil || !*cfg.DisableTelemetry || cfg.SkipAuth == nil || !*cfg.SkipAuth {
-		t.Fatalf("expected disable telemetry and skip auth: %+v", cfg)
+	if cfg.DisableTelemetry == nil || !*cfg.DisableTelemetry || cfg.OptionalAuth == nil || !*cfg.OptionalAuth {
+		t.Fatalf("expected disable telemetry and optional auth: %+v", cfg)
 	}
 }
 
@@ -119,8 +126,16 @@ func TestAWSProxyConfigLeavesOmittedOptionalValuesUnset(t *testing.T) {
 	if cfg.Profiles != nil {
 		t.Fatalf("Profiles = %#v, want nil", cfg.Profiles)
 	}
-	if cfg.ReadOnly != nil || cfg.Retries != nil || cfg.Timeout != nil {
+	if cfg.AllowEmptyTools != nil || cfg.LazyConnect != nil || cfg.ReadOnly != nil || cfg.Retries != nil || cfg.Timeout != nil || cfg.OptionalAuth != nil {
 		t.Fatalf("optional defaults were unexpectedly set: %+v", cfg)
+	}
+}
+
+func TestAWSProxyAuthModesAreMutuallyExclusive(t *testing.T) {
+	parser := kong.Must(&awsProxyCmd{})
+	_, err := parser.Parse([]string{"https://service.us-east-1.api.aws/mcp", "--skip-auth", "--optional-auth"})
+	if err == nil || !strings.Contains(err.Error(), "--skip-auth and --optional-auth can't be used together") {
+		t.Fatalf("Parse() error = %v", err)
 	}
 }
 

@@ -51,7 +51,7 @@ The stack is linear and listed bottom-to-top.
 | Layer | Branch                         | Status              | Scope                                                                                                                                                                 |
 | ----- | ------------------------------ | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1     | `go127-goldmark/toolchain`     | Implemented locally | Upgrade to Go 1.27.1, remove JSON experiment plumbing, migrate stable JSON tags, run `go fix ./...`, and update toolchain documentation.                              |
-| 2     | `go127-goldmark/aws-proxy-v1`  | Planned             | Upgrade go-aws-mcp-proxy from v0.3.0 to v1.0.0 and independently verify the source-compatible but behaviorally substantial proxy release.                             |
+| 2     | `go127-goldmark/aws-proxy-v1`  | Implemented locally | Upgrade go-aws-mcp-proxy from v0.3.0 to v1.0.0 and independently verify the source-compatible but behaviorally substantial proxy release.                             |
 | 3     | `go127-goldmark/renderer-v2`   | Planned             | Upgrade formatter and Goldmark module paths to v2, adopt the separated parse/render pipeline, preserve extension policy, and characterize intentional output changes. |
 | 4     | `go127-goldmark/dependencies`  | Planned             | Refresh the completed direct-dependency graph and its transitive modules to their latest stable releases, then audit every graph change.                              |
 | 5     | `go127-goldmark/file-contract` | Planned             | Make stdin a filter, make file arguments atomic in-place formatting, preserve modes, skip unchanged files, and add check mode.                                        |
@@ -198,3 +198,16 @@ adopting prerelease dependencies is separately approved.
 - `./walle vet` — passed.
 - `./walle build` — passed with host Go cache access.
 - `./walle docs` — passed.
+
+### Layer 2
+
+- Compared the published v0.3.0 and v1.0.0 `proxy.Config`, `RunOptions`, and
+  `Run` APIs; scut's existing integration is source-compatible.
+- Exposed v1's allow-empty-tools, lazy-connect, and optional-auth controls while
+  preserving nil defaults and making optional and skipped authentication
+  mutually exclusive in the CLI.
+- `./walle fmt` — passed.
+- `./walle test` — passed with the race detector.
+- `./walle vet` — passed.
+- `./walle build` — passed with host Go cache access.
+- `./walle docs` — passed and regenerated CLI help.

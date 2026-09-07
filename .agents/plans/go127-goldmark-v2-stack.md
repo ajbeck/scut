@@ -1,9 +1,10 @@
 # Go 1.27 and Goldmark v2 stack
 
-Status: active\
+Status: submitted for review\
 Last updated: 2026-09-07\
 Repository: `ajbeck/scut`\
-Trunk: `main`
+Trunk: `main`\
+GitHub stack: [#71](https://github.com/ajbeck/scut/stacks/71)
 
 ## Objective
 
@@ -48,14 +49,14 @@ or the stack shape changes.
 
 The stack is linear and listed bottom-to-top.
 
-| Layer | Branch                         | Status              | Scope                                                                                                                                                                 |
-| ----- | ------------------------------ | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1     | `go127-goldmark/toolchain`     | Implemented locally | Upgrade to Go 1.27.1, remove JSON experiment plumbing, migrate stable JSON tags, run `go fix ./...`, and update toolchain documentation.                              |
-| 2     | `go127-goldmark/aws-proxy-v1`  | Implemented locally | Upgrade go-aws-mcp-proxy from v0.3.0 to v1.0.0 and independently verify the source-compatible but behaviorally substantial proxy release.                             |
-| 3     | `go127-goldmark/renderer-v2`   | Implemented locally | Upgrade formatter and Goldmark module paths to v2, adopt the separated parse/render pipeline, preserve extension policy, and characterize intentional output changes. |
-| 4     | `go127-goldmark/dependencies`  | Implemented locally | Refresh the completed direct-dependency graph and its transitive modules to their latest stable releases, then audit every graph change.                              |
-| 5     | `go127-goldmark/file-contract` | Implemented locally | Make stdin a filter, make file arguments atomic in-place formatting, preserve modes, skip unchanged files, and add check mode.                                        |
-| 6     | `go127-goldmark/options`       | Implemented locally | Expose prose-wrap, print-width, tab-width, and quote-style options for the direct Markdown command while retaining hook defaults.                                     |
+| Layer | Branch                         | PR                                            | Status               | Scope                                                                                                                                                                 |
+| ----- | ------------------------------ | --------------------------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | `go127-goldmark/toolchain`     | [#65](https://github.com/ajbeck/scut/pull/65) | Submitted for review | Upgrade to Go 1.27.1, remove JSON experiment plumbing, migrate stable JSON tags, run `go fix ./...`, and update toolchain documentation.                              |
+| 2     | `go127-goldmark/aws-proxy-v1`  | [#66](https://github.com/ajbeck/scut/pull/66) | Submitted for review | Upgrade go-aws-mcp-proxy from v0.3.0 to v1.0.0 and independently verify the source-compatible but behaviorally substantial proxy release.                             |
+| 3     | `go127-goldmark/renderer-v2`   | [#67](https://github.com/ajbeck/scut/pull/67) | Submitted for review | Upgrade formatter and Goldmark module paths to v2, adopt the separated parse/render pipeline, preserve extension policy, and characterize intentional output changes. |
+| 4     | `go127-goldmark/dependencies`  | [#68](https://github.com/ajbeck/scut/pull/68) | Submitted for review | Refresh the completed direct-dependency graph and its transitive modules to their latest stable releases, then audit every graph change.                              |
+| 5     | `go127-goldmark/file-contract` | [#69](https://github.com/ajbeck/scut/pull/69) | Submitted for review | Make stdin a filter, make file arguments atomic in-place formatting, preserve modes, skip unchanged files, and add check mode.                                        |
+| 6     | `go127-goldmark/options`       | [#70](https://github.com/ajbeck/scut/pull/70) | Submitted for review | Expose prose-wrap, print-width, tab-width, and quote-style options for the direct Markdown command while retaining hook defaults.                                     |
 
 ## Layer 1 implementation plan
 

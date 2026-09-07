@@ -1,5 +1,3 @@
-//go:build goexperiment.jsonv2
-
 package claude
 
 import (
@@ -74,7 +72,7 @@ func TestStatusLineLogsFullInputOnlyAtDebug(t *testing.T) {
 
 func inputPayloadFromLog(t *testing.T, logs []byte) string {
 	t.Helper()
-	for _, line := range bytes.Split(bytes.TrimSpace(logs), []byte{'\n'}) {
+	for line := range bytes.SplitSeq(bytes.TrimSpace(logs), []byte{'\n'}) {
 		var record struct {
 			Message string `json:"msg"`
 			Payload string `json:"payload"`

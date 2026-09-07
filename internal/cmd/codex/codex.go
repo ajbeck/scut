@@ -1,5 +1,3 @@
-//go:build goexperiment.jsonv2
-
 // Package codex implements the "codex" agent command group.
 package codex
 

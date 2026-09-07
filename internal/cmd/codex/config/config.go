@@ -1,5 +1,3 @@
-//go:build goexperiment.jsonv2
-
 // Package config implements the "scut codex config" command group.
 package config
 

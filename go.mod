@@ -1,13 +1,12 @@
 module github.com/ajbeck/scut
 
-go 1.26.3
-
-require github.com/alecthomas/kong v1.16.1
+go 1.27.1
 
 require (
 	charm.land/lipgloss/v2 v2.0.6
 	github.com/ajbeck/go-aws-mcp-proxy v0.3.0
 	github.com/ajbeck/goldmark-prettier-markdown v0.2.1
+	github.com/alecthomas/kong v1.16.1
 	github.com/go-git/go-billy/v5 v5.9.1
 	github.com/go-git/go-git/v5 v5.19.2
 	github.com/spf13/afero v1.15.0

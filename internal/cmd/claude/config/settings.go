@@ -1,5 +1,3 @@
-//go:build goexperiment.jsonv2
-
 package config
 
 import (
@@ -16,7 +14,7 @@ import (
 type Settings struct {
 	StatusLine *StatusLine               `json:"statusLine,omitzero"`
 	Hooks      map[string][]HookGroup    `json:"hooks,omitzero"`
-	Foreign    map[string]jsontext.Value `json:",inline"`
+	Foreign    map[string]jsontext.Value `json:",embed"`
 }
 
 // StatusLine represents the settings.json statusLine object.

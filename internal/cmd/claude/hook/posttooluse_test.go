@@ -1,5 +1,3 @@
-//go:build goexperiment.jsonv2
-
 package hook
 
 import (
@@ -23,12 +21,10 @@ func toolInput(path string) json.RawMessage {
 // hookPayload builds a full PostToolUseInput JSON string.
 func hookPayload(toolInput json.RawMessage) string {
 	in := cc.PostToolUseInput{
-		Input: cc.Input{
-			SessionID:     "test-session",
-			HookEventName: cc.EventPostToolUse,
-		},
-		ToolName:  "Write",
-		ToolInput: toolInput,
+		SessionID:     "test-session",
+		HookEventName: cc.EventPostToolUse,
+		ToolName:      "Write",
+		ToolInput:     toolInput,
 	}
 	data, _ := json.Marshal(in)
 	return string(data)

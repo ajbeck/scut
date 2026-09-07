@@ -1,5 +1,3 @@
-//go:build goexperiment.jsonv2
-
 // Package claudecode provides types for Claude Code hook inputs and outputs.
 //
 // Claude Code invokes hooks as subprocesses, passing a JSON payload on stdin

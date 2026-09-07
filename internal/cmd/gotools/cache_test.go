@@ -1,5 +1,3 @@
-//go:build goexperiment.jsonv2
-
 package gotools
 
 import (
@@ -77,8 +75,7 @@ func TestCacheVerifyCmdWritesJSONBeforeReturningInvalidStatus(t *testing.T) {
 	var stdout bytes.Buffer
 
 	err = (&cacheVerifyCmd{JSON: true}).Run(&stdout)
-	var verificationErr cacheVerificationError
-	if !errors.As(err, &verificationErr) {
+	if _, ok := errors.AsType[cacheVerificationError](err); !ok {
 		t.Fatalf("Run() error = %v, want cacheVerificationError", err)
 	}
 	var out cacheVerifyOutput

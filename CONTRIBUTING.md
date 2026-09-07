@@ -4,7 +4,7 @@ Thanks for considering a contribution to `scut`.
 
 ## Development
 
-This project targets Go 1.26 and uses `./walle` for all build, format, vet, and test commands.
+This project targets Go 1.27.1 and uses `./walle` for all build, format, vet, and test commands.
 
 ```bash
 ./walle fmt
@@ -13,7 +13,7 @@ This project targets Go 1.26 and uses `./walle` for all build, format, vet, and 
 ./walle build
 ```
 
-Do not run `go test`, `go build`, `go vet`, or `gofmt` directly for repository verification. Walle sets the required `GOEXPERIMENT=jsonv2` environment.
+Do not run `go test`, `go build`, `go vet`, or `gofmt` directly for repository verification. Walle applies the repository's build and verification settings consistently.
 
 ## Commits
 

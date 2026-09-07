@@ -6,8 +6,7 @@ kicker: "Usage"
 tags: ["install", "release"]
 weight: 20
 ---
-
-Scut ships as GitHub Release tarballs for macOS and Linux. The install script detects the current platform, downloads the matching artifact, verifies it against `checksums.txt`, and places the binary on `PATH`.
+Scut ships as GitHub Release tarballs for macOS 13 or later and Linux. The install script detects the current platform, downloads the matching artifact, verifies it against `checksums.txt`, and places the binary on `PATH`.
 
 ## Install script
 
@@ -66,7 +65,7 @@ Go users can install from source:
 go install github.com/ajbeck/scut@latest
 ```
 
-For local development, use Walle so the JSON v2 experiment and build metadata are set consistently:
+Source builds require Go 1.27.1 or later. For local development, use Walle so build metadata and verification settings are applied consistently:
 
 ```bash
 ./walle build

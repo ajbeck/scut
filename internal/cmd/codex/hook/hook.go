@@ -1,5 +1,3 @@
-//go:build goexperiment.jsonv2
-
 // Package hook implements the "codex hook" subcommand tree.
 package hook
 

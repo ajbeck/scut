@@ -44,7 +44,7 @@ err = ctx.Run(bindings...)
 
 ## Build rules
 
-Use Walle for all Go operations. The task runner sets `GOEXPERIMENT=jsonv2` and other required build metadata.
+Use Walle for all Go operations. The task runner applies required build metadata and verification settings consistently. Scut targets Go 1.27.1 and uses the stable `encoding/json/v2` APIs without experiment flags or build constraints.
 
 ```bash
 ./walle fmt

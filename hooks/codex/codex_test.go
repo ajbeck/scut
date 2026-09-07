@@ -1,5 +1,3 @@
-//go:build goexperiment.jsonv2
-
 package codex
 
 import (
@@ -110,7 +108,7 @@ func TestPostToolUseInput_FilePaths(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			in := &PostToolUseInput{
-				TurnInput: TurnInput{Input: Input{CWD: tt.cwd}},
+				CWD:       tt.cwd,
 				ToolInput: tt.toolInput,
 			}
 			if got := in.FilePaths(); !slices.Equal(got, tt.want) {

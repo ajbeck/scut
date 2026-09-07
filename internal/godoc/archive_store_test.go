@@ -111,14 +111,12 @@ func TestFileArchiveStorePublishesConcurrentWritesAtomically(t *testing.T) {
 	var writers sync.WaitGroup
 
 	for range 16 {
-		writers.Add(1)
-		go func() {
-			defer writers.Done()
+		writers.Go(func() {
 			<-start
 			if err := store.Put(context.Background(), archive); err != nil {
 				errs <- err
 			}
-		}()
+		})
 	}
 	readerDone := make(chan struct{})
 	go func() {

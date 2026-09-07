@@ -1,5 +1,3 @@
-//go:build goexperiment.jsonv2
-
 // Package codex provides types for Codex hook inputs and outputs.
 //
 // Codex invokes command hooks as subprocesses, passing a JSON payload on stdin

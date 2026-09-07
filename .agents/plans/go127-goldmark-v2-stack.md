@@ -52,7 +52,7 @@ The stack is linear and listed bottom-to-top.
 | ----- | ------------------------------ | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1     | `go127-goldmark/toolchain`     | Implemented locally | Upgrade to Go 1.27.1, remove JSON experiment plumbing, migrate stable JSON tags, run `go fix ./...`, and update toolchain documentation.                              |
 | 2     | `go127-goldmark/aws-proxy-v1`  | Implemented locally | Upgrade go-aws-mcp-proxy from v0.3.0 to v1.0.0 and independently verify the source-compatible but behaviorally substantial proxy release.                             |
-| 3     | `go127-goldmark/renderer-v2`   | Planned             | Upgrade formatter and Goldmark module paths to v2, adopt the separated parse/render pipeline, preserve extension policy, and characterize intentional output changes. |
+| 3     | `go127-goldmark/renderer-v2`   | Implemented locally | Upgrade formatter and Goldmark module paths to v2, adopt the separated parse/render pipeline, preserve extension policy, and characterize intentional output changes. |
 | 4     | `go127-goldmark/dependencies`  | Planned             | Refresh the completed direct-dependency graph and its transitive modules to their latest stable releases, then audit every graph change.                              |
 | 5     | `go127-goldmark/file-contract` | Planned             | Make stdin a filter, make file arguments atomic in-place formatting, preserve modes, skip unchanged files, and add check mode.                                        |
 | 6     | `go127-goldmark/options`       | Planned             | Expose prose-wrap, print-width, tab-width, and quote-style options for the direct Markdown command while retaining hook defaults.                                     |
@@ -158,9 +158,10 @@ upgrade does not silently broaden Markdown interpretation.
 
 ### D-005: Accept intentional v2 source-preservation improvements
 
-The v2 renderer preserves Setext headings, changes nested emphasis
-canonicalization, and correctly spaces loose nested lists. These are accepted as
-upstream formatter behavior and protected by local characterization tests.
+The v2 renderer preserves Setext headings, canonicalizes combined emphasis such
+as `***text***` to `_**text**_`, and correctly preserves loose nested-list
+spacing. These are accepted as upstream formatter behavior and protected by
+local characterization tests.
 
 ### D-006: CLI contract changes remain separate
 
@@ -188,6 +189,17 @@ The go-git and go-billy v6 lines currently contain alpha releases only. The
 stack records them as evaluated but retains the latest stable v5 releases unless
 adopting prerelease dependencies is separately approved.
 
+### D-010: Module-cache repair may require build-index invalidation
+
+While resolving Goldmark v2, the installed scut v0.8.0 used by the go-doc skill
+partially populated the shared module cache before the independent-cache release
+was installed. Re-extracting the exact module directory restored its files, but
+Go's build-cache module index continued reporting the restored packages as
+missing. A fresh `GOCACHE` confirmed the stale index, and `go clean -cache`
+repaired normal package resolution without clearing downloaded modules. The
+current stack must use the repository-built scut for any further external doc
+lookups until a release containing the independent-cache work is installed.
+
 ## Verification log
 
 ### Layer 1
@@ -211,3 +223,19 @@ adopting prerelease dependencies is separately approved.
 - `./walle vet` — passed.
 - `./walle build` — passed with host Go cache access.
 - `./walle docs` — passed and regenerated CLI help.
+
+### Layer 3
+
+- Upgraded `goldmark-prettier-markdown` to v2.0.0 and Goldmark to v2.0.1.
+- Replaced the combined Goldmark v1 converter with the v2 parser, AST, and
+  prettier renderer pipeline while preserving the existing extension policy.
+- Added exact, idempotent output contracts for Setext headings, combined
+  emphasis, loose nested lists, footnotes, definition lists, MDX, and raw HTML.
+- Removed the Goldmark v1 and wikilink modules through `go mod tidy`.
+- Repaired a partially populated Goldmark module directory and its stale Go
+  build-cache module index; no downloaded module cache was cleared wholesale.
+- `./walle fmt` — passed.
+- `./walle test` — passed with the race detector.
+- `./walle vet` — passed.
+- `./walle build` — passed with host Go cache access.
+- `./walle docs` — passed.

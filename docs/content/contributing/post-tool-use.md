@@ -6,7 +6,6 @@ kicker: "Contributing"
 tags: ["formatter", "hooks"]
 weight: 50
 ---
-
 The `PostToolUse` formatter is shared in spirit across Claude Code and Codex, but each agent provides a different payload shape.
 
 ## Claude path extraction
@@ -41,12 +40,14 @@ For each candidate path:
 | Extension | Formatter          | Behavior                                                             |
 | --------- | ------------------ | -------------------------------------------------------------------- |
 | `.go`     | Go formatter       | Uses Go parser/formatter APIs and skips syntactically invalid files. |
-| `.md`     | Markdown formatter | Uses `goldmark-prettier-markdown`.                                   |
+| `.md`     | Markdown formatter | Uses `goldmark-prettier-markdown/v2` with Goldmark v2.               |
 | `.mdx`    | Markdown formatter | Uses the same Markdown formatter.                                    |
 
 Ignore files such as `.prettierignore` and `.scutignore` can prevent formatting.
 
 For Markdown and MDX files, the shared formatter preserves leading Hugo YAML, TOML, and JSON front matter verbatim. When it cannot safely identify a complete leading front matter block, the formatter returns no result, so the hook leaves the file unchanged.
+
+The Goldmark v2 parser registers tables, strikethrough, task lists, footnotes, and definition lists individually. It intentionally does not use the aggregate GFM parser, which would also enable linkification and broaden the formatter's syntax policy.
 
 `.scutignore` is loaded after `.prettierignore`, so it can add scut-specific exclusions or re-include paths with `!` patterns.
 

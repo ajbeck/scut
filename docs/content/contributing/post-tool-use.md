@@ -49,6 +49,8 @@ For Markdown and MDX files, the shared formatter preserves leading Hugo YAML, TO
 
 The Goldmark v2 parser registers tables, strikethrough, task lists, footnotes, and definition lists individually. It intentionally does not use the aggregate GFM parser, which would also enable linkification and broaden the formatter's syntax policy.
 
+Hooks call `FormatMarkdown` with scut's stable defaults: preserved prose wrapping, print width 80, tab width 2, and double-quoted link and image titles. The options exposed by `scut format markdown` configure only that direct invocation and are not persistent hook configuration.
+
 `.scutignore` is loaded after `.prettierignore`, so it can add scut-specific exclusions or re-include paths with `!` patterns.
 
 ## Decision control

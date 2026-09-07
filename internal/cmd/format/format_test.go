@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	byteformat "github.com/ajbeck/scut/internal/format"
+	"github.com/alecthomas/kong"
 	"github.com/spf13/afero"
 )
 
@@ -248,5 +249,83 @@ func TestMarkdownRunFormatsNamedFileWithoutStdout(t *testing.T) {
 		t.Fatalf("ReadFile(document.md): %v", err)
 	} else if want := "# Hello\n"; string(got) != want {
 		t.Errorf("document.md = %q, want %q", got, want)
+	}
+}
+
+func TestMarkdownFormatConfig(t *testing.T) {
+	printWidth := 100
+	tabWidth := 4
+	cmd := markdownCmd{
+		ProseWrap:   "never",
+		PrintWidth:  &printWidth,
+		TabWidth:    &tabWidth,
+		SingleQuote: true,
+	}
+
+	got, err := cmd.formatConfig()
+	if err != nil {
+		t.Fatalf("formatConfig() error = %v", err)
+	}
+	if got.ProseWrap != byteformat.MarkdownProseWrapNever || got.PrintWidth != 100 || got.TabWidth != 4 || !got.SingleQuote {
+		t.Errorf("formatConfig() = %+v", got)
+	}
+}
+
+func TestMarkdownFormatConfigUsesDefaults(t *testing.T) {
+	got, err := (&markdownCmd{}).formatConfig()
+	if err != nil {
+		t.Fatalf("formatConfig() error = %v", err)
+	}
+	want := byteformat.DefaultMarkdownConfig()
+	if got != want {
+		t.Errorf("formatConfig() = %+v, want %+v", got, want)
+	}
+}
+
+func TestMarkdownRunAppliesOptions(t *testing.T) {
+	cmd := markdownCmd{ProseWrap: "never", SingleQuote: true}
+	stdin := strings.NewReader("This is a line\nthat continues.\n\n[link](https://example.com \"Title\")\n")
+	var stdout bytes.Buffer
+
+	if err := cmd.Run(stdin, &stdout, afero.NewMemMapFs()); err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+	want := "This is a line that continues.\n\n[link](https://example.com 'Title')\n"
+	if got := stdout.String(); got != want {
+		t.Errorf("stdout = %q, want %q", got, want)
+	}
+}
+
+func TestMarkdownOptionValidation(t *testing.T) {
+	tests := []struct {
+		name string
+		args []string
+		want string
+	}{
+		{
+			name: "unknown prose wrap",
+			args: []string{"document.md", "--prose-wrap=sometimes"},
+			want: `--prose-wrap must be one of "preserve","always","never" but got "sometimes"`,
+		},
+		{
+			name: "zero print width",
+			args: []string{"document.md", "--print-width=0"},
+			want: "--print-width must be greater than zero",
+		},
+		{
+			name: "negative tab width",
+			args: []string{"document.md", "--tab-width=-1"},
+			want: "--tab-width must be greater than zero",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			parser := kong.Must(&markdownCmd{})
+			_, err := parser.Parse(tt.args)
+			if err == nil || !strings.Contains(err.Error(), tt.want) {
+				t.Fatalf("Parse(%q) error = %v, want containing %q", tt.args, err, tt.want)
+			}
+		})
 	}
 }

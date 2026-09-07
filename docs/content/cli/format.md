@@ -16,6 +16,17 @@ Markdown formatting preserves leading Hugo front matter verbatim in YAML, TOML, 
 
 The Markdown formatter uses Goldmark v2 with table, strikethrough, task-list, footnote, and definition-list parsing. It preserves the document's existing prose wrapping and Setext heading style; aggregate GFM linkification is not enabled.
 
+The direct Markdown command accepts these formatting options:
+
+| Option           | Default    | Behavior                                                                                                             |
+| ---------------- | ---------- | -------------------------------------------------------------------------------------------------------------------- |
+| `--prose-wrap`   | `preserve` | `preserve` retains source prose line breaks, `always` wraps prose to the print width, and `never` joins prose lines. |
+| `--print-width`  | `80`       | Sets the positive target width used by prose wrapping and compact tables.                                            |
+| `--tab-width`    | `2`        | Sets the positive indentation width used to align list content.                                                      |
+| `--single-quote` | disabled   | Uses single quotes instead of double quotes for link and image titles.                                               |
+
+These options apply only to the current direct command invocation. Agent hooks continue to use the stable defaults and do not read persistent formatter configuration.
+
 ## Generated help
 
 {{< clihelp file="scut-format" command="scut format --help" >}}

@@ -3,6 +3,7 @@ package format
 
 import (
 	"bytes"
+	"fmt"
 
 	"encoding/json/jsontext"
 	"go/format"
@@ -26,6 +27,48 @@ func FormatGo(src []byte) ([]byte, error) {
 // Leading Hugo YAML, TOML, and JSON front matter is preserved verbatim.
 // Returns nil, nil if the source cannot be parsed safely (decline to format).
 func FormatMarkdown(src []byte) ([]byte, error) {
+	return FormatMarkdownWithConfig(src, DefaultMarkdownConfig())
+}
+
+// MarkdownProseWrap controls how prose line breaks are formatted.
+type MarkdownProseWrap string
+
+const (
+	MarkdownProseWrapPreserve MarkdownProseWrap = "preserve"
+	MarkdownProseWrapAlways   MarkdownProseWrap = "always"
+	MarkdownProseWrapNever    MarkdownProseWrap = "never"
+)
+
+// MarkdownConfig configures Markdown rendering.
+type MarkdownConfig struct {
+	ProseWrap   MarkdownProseWrap
+	PrintWidth  int
+	TabWidth    int
+	SingleQuote bool
+}
+
+// DefaultMarkdownConfig returns the stable formatting configuration used by
+// agent hooks and direct commands without explicit options.
+func DefaultMarkdownConfig() MarkdownConfig {
+	defaults := prettier.DefaultConfig()
+	return MarkdownConfig{
+		ProseWrap:   MarkdownProseWrapPreserve,
+		PrintWidth:  defaults.PrintWidth,
+		TabWidth:    defaults.TabWidth,
+		SingleQuote: defaults.SingleQuote,
+	}
+}
+
+// FormatMarkdownWithConfig formats Markdown using config.
+func FormatMarkdownWithConfig(src []byte, config MarkdownConfig) ([]byte, error) {
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
+	proseWrap, err := prettierProseWrap(config.ProseWrap)
+	if err != nil {
+		return nil, err
+	}
+
 	frontMatter, body, ok := splitFrontMatter(src)
 	if !ok {
 		return nil, nil
@@ -43,7 +86,12 @@ func FormatMarkdown(src []byte) ([]byte, error) {
 	document := p.Parse(body)
 
 	var buf bytes.Buffer
-	r := prettier.NewRenderer(prettier.WithProseWrap(prettier.ProseWrapPreserve))
+	r := prettier.NewRenderer(
+		prettier.WithProseWrap(proseWrap),
+		prettier.WithPrintWidth(config.PrintWidth),
+		prettier.WithTabWidth(config.TabWidth),
+		prettier.WithSingleQuote(config.SingleQuote),
+	)
 	if err := r.Render(&buf, body, document); err != nil {
 		return nil, nil
 	}
@@ -55,6 +103,33 @@ func FormatMarkdown(src []byte) ([]byte, error) {
 	result := make([]byte, 0, len(frontMatter)+len(formatted))
 	result = append(result, frontMatter...)
 	return append(result, formatted...), nil
+}
+
+// Validate reports invalid Markdown formatting configuration.
+func (c MarkdownConfig) Validate() error {
+	if _, err := prettierProseWrap(c.ProseWrap); err != nil {
+		return err
+	}
+	if c.PrintWidth <= 0 {
+		return fmt.Errorf("print width must be greater than zero")
+	}
+	if c.TabWidth <= 0 {
+		return fmt.Errorf("tab width must be greater than zero")
+	}
+	return nil
+}
+
+func prettierProseWrap(value MarkdownProseWrap) (prettier.ProseWrap, error) {
+	switch value {
+	case MarkdownProseWrapPreserve:
+		return prettier.ProseWrapPreserve, nil
+	case MarkdownProseWrapAlways:
+		return prettier.ProseWrapAlways, nil
+	case MarkdownProseWrapNever:
+		return prettier.ProseWrapNever, nil
+	default:
+		return 0, fmt.Errorf("unknown prose wrap mode %q", value)
+	}
 }
 
 var (

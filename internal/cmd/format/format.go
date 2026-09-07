@@ -37,19 +37,65 @@ func (c *goCmd) Run(stdin io.Reader, stdout io.Writer, fs afero.Fs) error {
 }
 
 type markdownCmd struct {
-	Files []string `arg:"" optional:"" name:"file" help:"Files to format in place. If omitted, reads from stdin and writes to stdout."`
-	Force bool     `help:"Format files even when ignored by .prettierignore or .scutignore."`
-	Check bool     `help:"Check whether named files are formatted without writing changes."`
+	Files       []string `arg:"" optional:"" name:"file" help:"Files to format in place. If omitted, reads from stdin and writes to stdout."`
+	Force       bool     `help:"Format files even when ignored by .prettierignore or .scutignore."`
+	Check       bool     `help:"Check whether named files are formatted without writing changes."`
+	ProseWrap   string   `name:"prose-wrap" default:"preserve" enum:"preserve,always,never" help:"How to wrap prose: preserve, always, or never."`
+	PrintWidth  *int     `name:"print-width" default:"80" help:"Target line width for prose wrapping and compact tables."`
+	TabWidth    *int     `name:"tab-width" default:"2" help:"Tab width used for list indentation alignment."`
+	SingleQuote bool     `name:"single-quote" help:"Use single quotes for link and image titles."`
 }
 
 func (c *markdownCmd) Run(stdin io.Reader, stdout io.Writer, fs afero.Fs) error {
+	config, err := c.formatConfig()
+	if err != nil {
+		return err
+	}
 	if len(c.Files) == 0 {
 		if c.Check {
 			return fmt.Errorf("--check requires at least one file")
 		}
-		return formatStdin(stdout, stdin, format.FormatMarkdown)
+		return formatStdin(stdout, stdin, markdownFormatter(config))
 	}
-	return formatFiles(fs, c.Files, format.FormatMarkdown, c.Force, c.Check)
+	return formatFiles(fs, c.Files, markdownFormatter(config), c.Force, c.Check)
+}
+
+func (c *markdownCmd) Validate() error {
+	if c.Check && len(c.Files) == 0 {
+		return fmt.Errorf("--check requires at least one file")
+	}
+	_, err := c.formatConfig()
+	return err
+}
+
+func (c *markdownCmd) formatConfig() (format.MarkdownConfig, error) {
+	config := format.DefaultMarkdownConfig()
+	if c.ProseWrap != "" {
+		config.ProseWrap = format.MarkdownProseWrap(c.ProseWrap)
+	}
+	if c.PrintWidth != nil {
+		config.PrintWidth = *c.PrintWidth
+	}
+	if c.TabWidth != nil {
+		config.TabWidth = *c.TabWidth
+	}
+	if config.PrintWidth <= 0 {
+		return format.MarkdownConfig{}, fmt.Errorf("--print-width must be greater than zero")
+	}
+	if config.TabWidth <= 0 {
+		return format.MarkdownConfig{}, fmt.Errorf("--tab-width must be greater than zero")
+	}
+	config.SingleQuote = c.SingleQuote
+	if err := config.Validate(); err != nil {
+		return format.MarkdownConfig{}, err
+	}
+	return config, nil
+}
+
+func markdownFormatter(config format.MarkdownConfig) formatter {
+	return func(src []byte) ([]byte, error) {
+		return format.FormatMarkdownWithConfig(src, config)
+	}
 }
 
 type formatter func([]byte) ([]byte, error)

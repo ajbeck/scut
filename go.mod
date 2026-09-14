@@ -4,21 +4,20 @@ go 1.27.1
 
 require (
 	charm.land/lipgloss/v2 v2.0.6
-	github.com/ajbeck/go-aws-mcp-proxy v1.0.0
+	github.com/ajbeck/go-aws-mcp-proxy v1.0.1
 	github.com/ajbeck/goldmark-prettier-markdown/v2 v2.0.0
 	github.com/alecthomas/kong v1.16.1
 	github.com/go-git/go-billy/v5 v5.9.1
 	github.com/go-git/go-git/v5 v5.19.2
 	github.com/spf13/afero v1.15.0
-	github.com/yuin/goldmark/v2 v2.0.1
-	golang.org/x/mod v0.40.0
+	github.com/yuin/goldmark/v2 v2.0.2
+	golang.org/x/mod v0.41.0
 )
 
 require (
 	dario.cat/mergo v1.0.2 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.4.1 // indirect
-	github.com/alecthomas/repr v0.5.4 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.46.0 // indirect
 	github.com/aws/aws-sdk-go-v2/config v1.33.3 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.20.3 // indirect

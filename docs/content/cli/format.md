@@ -16,6 +16,8 @@ Markdown formatting preserves leading Hugo front matter verbatim in YAML, TOML, 
 
 The Markdown formatter uses Goldmark v2 with table, strikethrough, task-list, footnote, and definition-list parsing. It preserves the document's existing prose wrapping and Setext heading style; aggregate GFM linkification is not enabled.
 
+Reference-style links and images retain their full, collapsed, or shortcut syntax and their definitions. Raw HTML and MDX content is retained, while spacing between adjacent blocks may be normalized.
+
 The direct Markdown command accepts these formatting options:
 
 | Option           | Default    | Behavior                                                                                                             |

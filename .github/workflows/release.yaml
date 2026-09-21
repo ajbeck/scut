@@ -258,7 +258,7 @@ jobs:
       - name: Install Hugo
         uses: ./.github/actions/setup-hugo
         with:
-          version: 0.162.1
+          version: 0.166.0
 
       - name: Build docs
         run: |

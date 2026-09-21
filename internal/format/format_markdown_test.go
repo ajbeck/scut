@@ -186,9 +186,19 @@ func TestFormatMarkdownV2Contracts(t *testing.T) {
 			want: "[^1]: note\n\nUses [^1].\n\nTerm\n: definition\n",
 		},
 		{
-			name: "preserves MDX and raw HTML",
+			name: "normalizes spacing between MDX and raw HTML blocks",
 			src:  "<Component value={1}>\n\n<div>raw</div>\n",
-			want: "<Component value={1}>\n\n<div>raw</div>\n",
+			want: "<Component value={1}>\n<div>raw</div>\n",
+		},
+		{
+			name: "preserves reference links and definitions",
+			src:  "[full][ref] [collapsed][] [shortcut]\n\n[ref]: https://example.com/full \"Title\"\n[collapsed]: https://example.com/collapsed\n[shortcut]: https://example.com/shortcut\n",
+			want: "[full][ref] [collapsed][] [shortcut]\n\n[ref]: https://example.com/full \"Title\"\n[collapsed]: https://example.com/collapsed\n[shortcut]: https://example.com/shortcut\n",
+		},
+		{
+			name: "preserves reference images and definitions",
+			src:  "![full][ref] ![collapsed][] ![shortcut]\n\n[ref]: https://example.com/full.png \"Title\"\n[collapsed]: https://example.com/collapsed.png\n[shortcut]: https://example.com/shortcut.png\n",
+			want: "![full][ref] ![collapsed][] ![shortcut]\n\n[ref]: https://example.com/full.png \"Title\"\n[collapsed]: https://example.com/collapsed.png\n[shortcut]: https://example.com/shortcut.png\n",
 		},
 	}
 

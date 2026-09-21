@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 This project uses Conventional Commits and GitHub Releases.
 
+## [0.9.1](https://github.com/ajbeck/scut/compare/v0.9.0...v0.9.1) (2026-09-21)
+
+
+### Miscellaneous Chores
+
+* **deps:** update stable dependencies and Hugo ([#75](https://github.com/ajbeck/scut/issues/75)) ([d2344b5](https://github.com/ajbeck/scut/commit/d2344b57fab0d49997a03bc0d15dff309d107c09))
+
 ## [0.9.0](https://github.com/ajbeck/scut/compare/v0.8.0...v0.9.0) (2026-09-07)
 
 
